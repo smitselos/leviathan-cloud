@@ -28,13 +28,7 @@ export default function Login() {
     <div style={styles.container}>
       <div style={styles.card}>
         <div style={styles.logo}>
-          <div style={styles.waves}>
-            {[...Array(7)].map((_, i) => (
-              <div key={i} style={{...styles.wave, height: `${4 + i * 3}px`}}></div>
-            ))}
-          </div>
-          <h1 style={styles.title}>ΛΕΒΙΑΘΑΝ</h1>
-          <p style={styles.subtitle}>ΕΠΟΠΤΙΚΟΝ</p>
+          <img src="/logo.png" alt="ΛΕΒΙΑΘΑΝ" style={styles.logoImage} />
         </div>
         
         {error && (
@@ -87,31 +81,9 @@ const styles = {
   logo: {
     marginBottom: '30px'
   },
-  waves: {
-    display: 'flex',
-    justifyContent: 'center',
-    gap: '4px',
-    marginBottom: '16px'
-  },
-  wave: {
-    width: '8px',
-    background: 'linear-gradient(180deg, #2563eb, #60a5fa)',
-    borderRadius: '4px'
-  },
-  title: {
-    fontSize: '42px',
-    fontWeight: '900',
-    background: 'linear-gradient(180deg, #ef4444, #991b1b)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    margin: '0',
-    textShadow: '2px 2px 4px rgba(0,0,0,.1)'
-  },
-  subtitle: {
-    fontSize: '14px',
-    letterSpacing: '8px',
-    color: '#1e40af',
-    margin: '8px 0 0 0'
+  logoImage: {
+    width: '200px',
+    height: 'auto'
   },
   error: {
     background: '#fef2f2',
