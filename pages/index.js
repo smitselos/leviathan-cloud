@@ -180,8 +180,7 @@ export default function Home() {
       
       {/* Logo */}
       <div style={styles.logoArea}>
-        <div style={styles.logoTitle}>ΛΕΒΙΑΘΑΝ</div>
-        <div style={styles.logoSubtitle}>ΕΠΟΠΤΙΚΟΝ</div>
+  <img src="/logo.png" alt="ΛΕΒΙΑΘΑΝ" style={{width: '180px', height: 'auto'}} />
         <div style={styles.version}>Cloud Edition</div>
       </div>
       
