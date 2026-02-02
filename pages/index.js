@@ -4,12 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 
 const FOLDERS = {
   keimena: { name: 'Κείμενα', icon: '📁' },
-  biblia: { name: 'Βιβλία', icon: '📚' },
-  diktya: { name: 'Δίκτυα κειμένων', icon: '🔗' },
-  epexergasia: { name: 'Επεξεργασία', icon: '✏️' },
-  theoria_glossa: { name: 'Θεωρία Ν. Γλώσσας', icon: '📖' },
-  theoria_logotexnia: { name: 'Θεωρία Λογοτεχνίας', icon: '📜' },
-  logotexnia: { name: 'Λογοτεχνία', icon: '🎭' }
+  biblia: { name: 'Βιβλία', icon: '📚' }
 };
 
 export default function Home() {
@@ -190,7 +185,7 @@ export default function Home() {
   
   return (
     <div style={{...styles.desktop, ...theme.desktop}}>
-      {/* Desktop Icons - Folders */}
+      {/* Desktop Icons - Folders & Tools in left column */}
       <div style={styles.iconsLeft}>
         {Object.entries(FOLDERS).map(([id, folder]) => (
           <div 
@@ -202,24 +197,28 @@ export default function Home() {
             <div style={{...styles.label, ...theme.text}}>{folder.name}</div>
           </div>
         ))}
-      </div>
-      
-      {/* Desktop Icons - Tools */}
-      {tools.length > 0 && (
-        <div style={styles.iconsRight}>
-          <div style={styles.toolsLabel}>🔧 Εργαλεία</div>
-          {tools.map((tool) => (
-            <div 
-              key={tool.file}
-              style={{...styles.icon, ...styles.toolIcon, ...theme.icon}}
-              onClick={() => openTool(tool)}
-            >
-              <div style={styles.glyph}>{tool.icon || '🔧'}</div>
-              <div style={{...styles.label, ...theme.text}}>{tool.name}</div>
+        
+        {/* Tools separator and icons */}
+        {tools.length > 0 && (
+          <>
+            <div style={{...styles.toolsDivider, ...theme.text}}>
+              <div style={styles.dividerLine}></div>
+              <span style={styles.toolsLabel}>🔧 Εργαλεία</span>
+              <div style={styles.dividerLine}></div>
             </div>
-          ))}
-        </div>
-      )}
+            {tools.map((tool) => (
+              <div 
+                key={tool.file}
+                style={{...styles.icon, ...styles.toolIcon, ...theme.icon}}
+                onClick={() => openTool(tool)}
+              >
+                <div style={styles.glyph}>{tool.icon || '🔧'}</div>
+                <div style={{...styles.label, ...theme.text}}>{tool.name}</div>
+              </div>
+            ))}
+          </>
+        )}
+      </div>
       
       {/* Logo */}
       <div style={styles.logoArea}>
@@ -460,25 +459,30 @@ const styles = {
     position: 'absolute',
     top: '28px',
     left: '22px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '10px'
-  },
-  iconsRight: {
-    position: 'absolute',
-    top: '28px',
-    right: '22px',
+    bottom: '55px',
     display: 'flex',
     flexDirection: 'column',
     gap: '10px',
-    alignItems: 'center'
+    overflowY: 'auto',
+    paddingRight: '8px'
+  },
+  toolsDivider: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    margin: '6px 0',
+    width: '110px'
+  },
+  dividerLine: {
+    flex: 1,
+    height: '1px',
+    background: 'rgba(100,116,139,.3)'
   },
   toolsLabel: {
-    fontSize: '13px',
+    fontSize: '10px',
     fontWeight: '700',
-    color: '#475569',
-    marginBottom: '6px',
-    letterSpacing: '1px'
+    color: '#64748b',
+    whiteSpace: 'nowrap'
   },
   icon: {
     width: '110px',
@@ -520,7 +524,7 @@ const styles = {
     marginTop: '8px'
   },
   footer: {
-    position: 'absolute',
+    position: 'fixed',
     bottom: 0,
     left: 0,
     right: 0,
@@ -529,7 +533,8 @@ const styles = {
     justifyContent: 'space-between',
     alignItems: 'center',
     fontSize: '12px',
-    borderTop: '1px solid rgba(15,23,42,.12)'
+    borderTop: '1px solid rgba(15,23,42,.12)',
+    zIndex: 50
   },
   logoutBtn: {
     marginLeft: '12px',
