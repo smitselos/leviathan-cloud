@@ -1,0 +1,1852 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>👤 Περικλής - Κεφάλαιο 2.3</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #E8F4F8;
+            min-height: 100vh;
+            font-size: 18px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1E3A8A, #3B82F6);
+            color: white;
+            padding: 25px;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-info {
+            font-size: 16px;
+            opacity: 0.95;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        h1 {
+            font-size: 36px;
+            margin: 8px 0;
+            font-weight: bold;
+        }
+
+        .subtitle {
+            font-size: 20px;
+            margin-top: 8px;
+            font-weight: 500;
+        }
+
+        .points {
+            text-align: right;
+        }
+
+        .points-label {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .points-value {
+            font-size: 40px;
+            font-weight: bold;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background-color: rgba(255,255,255,0.3);
+            border-radius: 10px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: #2ECC71;
+            border-radius: 10px;
+            transition: width 0.3s;
+        }
+
+        .navigation {
+            background-color: white;
+            border-bottom: 3px solid #3B82F6;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .nav-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 10px 15px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav-btn {
+            padding: 12px 24px;
+            border-radius: 10px 10px 0 0;
+            border: none;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background-color: #BFDBFE;
+            color: #1E40AF;
+            white-space: nowrap;
+        }
+
+        .nav-btn.active {
+            background-color: #2563EB;
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .nav-btn:not(.active):hover {
+            background-color: #93C5FD;
+        }
+
+        .nav-btn.locked {
+            background-color: #e0e0e0;
+            color: #999;
+            cursor: not-allowed;
+        }
+
+        .glossary-btn {
+            padding: 12px 20px;
+            border-radius: 8px;
+            border: 2px solid #4A90E2;
+            background-color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            border: 2px solid #DBEAFE;
+        }
+
+        .section-tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .section-tab {
+            flex: 1;
+            padding: 14px;
+            border-radius: 10px;
+            border: 3px solid transparent;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            background: linear-gradient(to bottom, #BFDBFE, #93C5FD);
+            color: #1E40AF;
+            transition: all 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .section-tab:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .section-tab.active {
+            background: linear-gradient(135deg, #2563EB, #1D4ED8);
+            color: white;
+            border-color: #1E40AF;
+            box-shadow: 0 4px 12px rgba(37,99,235,0.4);
+        }
+
+        .subsection {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: linear-gradient(to right, #EFF6FF, #DBEAFE);
+            border-radius: 12px;
+            border-left: 6px solid #2563EB;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .subsection h3 {
+            margin-top: 0;
+            color: #1E40AF;
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .subsection ul {
+            margin: 15px 0;
+            padding-left: 25px;
+        }
+
+        .subsection li {
+            margin-bottom: 12px;
+            font-size: 18px;
+            line-height: 1.6;
+            color: #1F2937;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .grid-item {
+            padding: 15px;
+            background-color: white;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .grid-item-icon {
+            font-size: 32px;
+            margin-bottom: 5px;
+        }
+
+        .grid-item-label {
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .info-box {
+            background: linear-gradient(to right, #FEF3C7, #FDE68A);
+            padding: 18px;
+            border-radius: 12px;
+            font-size: 16px;
+            margin-top: 20px;
+            border: 3px solid #F59E0B;
+            box-shadow: 0 2px 8px rgba(245,158,11,0.2);
+        }
+
+        .quote-box {
+            background: linear-gradient(135deg, #FFFBEB, #FEF3C7);
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 6px solid #F59E0B;
+            margin: 20px 0;
+            font-style: italic;
+            box-shadow: 0 2px 8px rgba(245,158,11,0.15);
+            font-size: 17px;
+            line-height: 1.7;
+        }
+
+        .button-group {
+            margin-top: 25px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-prev {
+            background-color: #CBD5E0;
+            color: #2C3E50;
+        }
+
+        .btn-prev:disabled {
+            background-color: #e0e0e0;
+            cursor: not-allowed;
+        }
+
+        .btn-next {
+            background-color: #2ECC71;
+            color: white;
+        }
+
+        .success-box {
+            margin-top: 25px;
+            padding: 20px;
+            background: linear-gradient(135deg, #D1FAE5, #A7F3D0);
+            border-radius: 12px;
+            text-align: center;
+            border: 3px solid #10B981;
+            box-shadow: 0 4px 12px rgba(16,185,129,0.3);
+        }
+
+        .success-box p {
+            margin: 0;
+            font-weight: bold;
+            font-size: 18px;
+            color: #065F46;
+        }
+
+        .continue-btn {
+            margin-top: 15px;
+            padding: 12px 28px;
+            border-radius: 10px;
+            border: none;
+            background: linear-gradient(135deg, #2563EB, #1D4ED8);
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(37,99,235,0.3);
+        }
+
+        .continue-btn:hover {
+            background: linear-gradient(135deg, #1D4ED8, #1E40AF);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(37,99,235,0.4);
+        }
+
+        .source-card {
+            background: linear-gradient(135deg, #FEF3C7, #FDE68A);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 25px;
+            border: 4px solid #F59E0B;
+            box-shadow: 0 4px 12px rgba(245,158,11,0.3);
+        }
+
+        .source-title {
+            color: #92400E;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .source-text {
+            background-color: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin: 20px 0;
+            line-height: 2;
+            border-left: 6px solid #F59E0B;
+            font-size: 18px;
+            color: #1F2937;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .keywords-box {
+            background: linear-gradient(to right, #DBEAFE, #BFDBFE);
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 25px;
+            border: 3px solid #2563EB;
+            box-shadow: 0 2px 8px rgba(37,99,235,0.2);
+        }
+
+        .keywords-flex {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin: 15px 0;
+        }
+
+        .keyword-btn {
+            padding: 10px 18px;
+            border-radius: 25px;
+            border: 3px solid #2563EB;
+            background-color: white;
+            color: #1E40AF;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            transition: all 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .keyword-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .keyword-btn.highlighted {
+            background: linear-gradient(135deg, #F59E0B, #D97706);
+            color: white;
+            border-color: #92400E;
+            transform: scale(1.15);
+            box-shadow: 0 4px 12px rgba(245,158,11,0.4);
+        }
+
+        .exercise-numbers {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .exercise-number {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            border: none;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #e0e0e0;
+            color: #2C3E50;
+        }
+
+        .exercise-number.active {
+            background-color: #4A90E2;
+            color: white;
+        }
+
+        .exercise-number.completed {
+            background-color: #2ECC71;
+            color: white;
+        }
+
+        .exercise-tag {
+            padding: 5px 10px;
+            background-color: #4A90E2;
+            color: white;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        .question {
+            font-size: 22px;
+            font-weight: bold;
+            margin: 25px 0;
+            color: #1E3A8A;
+            line-height: 1.5;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .option-btn {
+            padding: 20px;
+            border-radius: 12px;
+            border: 4px solid #BFDBFE;
+            background-color: white;
+            cursor: pointer;
+            text-align: left;
+            font-size: 18px;
+            transition: all 0.3s;
+            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .option-btn:hover {
+            border-color: #60A5FA;
+            transform: translateX(5px);
+        }
+
+        .option-btn.selected {
+            border-color: #2563EB;
+            background: linear-gradient(to right, #EFF6FF, #DBEAFE);
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(37,99,235,0.2);
+        }
+
+        .option-btn.correct {
+            border-color: #059669;
+            background: linear-gradient(to right, #D1FAE5, #A7F3D0);
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(5,150,105,0.3);
+        }
+
+        .option-btn.wrong {
+            border-color: #DC2626;
+            background: linear-gradient(to right, #FEE2E2, #FECACA);
+            box-shadow: 0 4px 8px rgba(220,38,38,0.3);
+        }
+
+        .submit-btn {
+            margin-top: 20px;
+            padding: 16px 32px;
+            border-radius: 10px;
+            border: none;
+            background: linear-gradient(135deg, #10B981, #059669);
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 18px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(16,185,129,0.4);
+        }
+
+        .submit-btn:hover {
+            background: linear-gradient(135deg, #059669, #047857);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(16,185,129,0.5);
+        }
+
+        .submit-btn:disabled {
+            background: #D1D5DB;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .result-box {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .result-box.correct {
+            background: linear-gradient(135deg, #D1FAE5, #A7F3D0);
+            border: 3px solid #059669;
+            color: #065F46;
+        }
+
+        .result-box.incorrect {
+            background: linear-gradient(135deg, #FEF3C7, #FDE68A);
+            border: 3px solid #F59E0B;
+            color: #92400E;
+        }
+
+        .result-box {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .result-box.correct {
+            background-color: #d4edda;
+        }
+
+        .result-box.incorrect {
+            background-color: #fff3cd;
+        }
+
+        .drag-items-box {
+            padding: 15px;
+            background-color: #F0F4F8;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .drag-items-flex {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .drag-item {
+            padding: 10px 15px;
+            background-color: #4A90E2;
+            color: white;
+            border-radius: 8px;
+            cursor: move;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        .timeline {
+            position: relative;
+            padding: 20px 0;
+        }
+
+        .timeline-slot {
+            min-height: 60px;
+            background-color: #F0F4F8;
+            border: 3px dashed #ccc;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .timeline-slot.filled {
+            background-color: #e3f2fd;
+            border: 3px solid #4A90E2;
+        }
+
+        .truefalse-question {
+            margin-bottom: 15px;
+            padding: 15px;
+            background-color: #F0F4F8;
+            border-radius: 10px;
+        }
+
+        .truefalse-text {
+            margin-bottom: 10px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .truefalse-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .truefalse-btn {
+            flex: 1;
+            padding: 10px;
+            border-radius: 8px;
+            border: 3px solid #ddd;
+            background-color: white;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .truefalse-btn.selected {
+            border-color: #4A90E2;
+            background-color: #e3f2fd;
+        }
+
+        .truefalse-btn.correct-answer {
+            border-color: #2ECC71;
+            background-color: #d4edda;
+        }
+
+        .fill-blank {
+            background-color: #F0F4F8;
+            padding: 20px;
+            border-radius: 10px;
+            line-height: 2;
+        }
+
+        .blank-input {
+            display: inline-block;
+            min-width: 150px;
+            padding: 5px 10px;
+            border: 2px solid #4A90E2;
+            border-radius: 5px;
+            font-weight: bold;
+            margin: 0 5px;
+        }
+
+        .blank-input.correct-fill {
+            background-color: #d4edda;
+            border-color: #2ECC71;
+        }
+
+        .blank-input.wrong-fill {
+            background-color: #f8d7da;
+            border-color: #E74C3C;
+        }
+
+        .matching-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 20px 0;
+        }
+
+        .matching-column {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .matching-item {
+            padding: 15px;
+            background-color: white;
+            border: 3px solid #ddd;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .matching-item.selected-left {
+            border-color: #4A90E2;
+            background-color: #e3f2fd;
+        }
+
+        .matching-item.matched {
+            border-color: #2ECC71;
+            background-color: #d4edda;
+            cursor: default;
+        }
+
+        .matching-item.wrong-match {
+            border-color: #E74C3C;
+            background-color: #f8d7da;
+        }
+
+        .matching-column h4 {
+            text-align: center;
+            color: #2C5282;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .matching-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .quiz-container {
+            background-color: white;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .quiz-emoji {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        .quiz-score-box {
+            background-color: #F0F4F8;
+            padding: 30px;
+            border-radius: 12px;
+            margin: 20px 0;
+            border: 4px solid #FFD700;
+        }
+
+        .quiz-score {
+            font-size: 48px;
+            color: #FFD700;
+            margin-bottom: 15px;
+        }
+
+        .quiz-details {
+            margin: 10px 0;
+        }
+
+        .quiz-question-card {
+            background-color: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: white;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .close-btn {
+            border: none;
+            background: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #E74C3C;
+        }
+
+        .glossary-item {
+            margin-bottom: 18px;
+            padding: 18px;
+            background: linear-gradient(to right, #EDE9FE, #DDD6FE);
+            border-radius: 12px;
+            border-left: 5px solid #7C3AED;
+            box-shadow: 0 2px 6px rgba(124,58,237,0.15);
+            transition: all 0.3s;
+        }
+
+        .glossary-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(124,58,237,0.25);
+        }
+
+        .glossary-term-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .glossary-icon {
+            font-size: 28px;
+            margin-right: 12px;
+        }
+
+        .glossary-term {
+            font-weight: bold;
+            font-size: 18px;
+            color: #5B21B6;
+        }
+
+        .glossary-def {
+            margin: 0;
+            font-size: 16px;
+            line-height: 1.6;
+            color: #1F2937;
+            padding-left: 40px;
+        }
+
+        footer {
+            background-color: #2C5282;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            margin-top: 40px;
+        }
+
+        footer p {
+            margin: 5px 0;
+            font-size: 13px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .grid-2, .grid-3 {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-content {
+                flex-direction: column;
+            }
+
+            .section-tabs {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-content">
+            <div class="header-flex">
+                <div>
+                    <div class="header-info">ΚΕΦΑΛΑΙΟ 2.3 | Α' ΛΥΚΕΙΟΥ</div>
+                    <h1>👤 ΠΕΡΙΚΛΗΣ</h1>
+                    <div class="subtitle">Η Χρυσή Εποχή της Αθήνας</div>
+                </div>
+                <div class="points">
+                    <div class="points-label">Πόντοι</div>
+                    <div class="points-value">⭐ <span id="points">0</span></div>
+                </div>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- NAVIGATION -->
+    <div class="navigation">
+        <div class="nav-content">
+            <button class="nav-btn active" id="navTheory" onclick="switchTab('theory')">📚 ΘΕΩΡΙΑ</button>
+            <button class="nav-btn" id="navSource" onclick="switchTab('source')">📖 ΠΗΓΗ</button>
+            <button class="nav-btn" id="navExercises" onclick="switchTab('exercises')">✏️ ΑΣΚΗΣΕΙΣ</button>
+            <button class="nav-btn" id="navGlossary" onclick="switchTab('glossary')">📚 ΓΛΩΣΣΑΡΙΟ</button>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+        <!-- THEORY TAB -->
+        <div id="theoryTab" class="card">
+            <div class="section-tabs">
+                <button class="section-tab active" onclick="switchTheorySection(0)">👤 Ο ΠΕΡΙΚΛΗΣ</button>
+                <button class="section-tab" onclick="switchTheorySection(1)">⚖️ ΠΟΛΙΤΙΚΗ</button>
+                <button class="section-tab" onclick="switchTheorySection(2)">💰 ΟΙΚΟΝΟΜΙΑ</button>
+            </div>
+
+            <div id="theoryContent"></div>
+        </div>
+
+        <!-- SOURCE TAB -->
+        <div id="sourceTab" class="card hidden">
+            <h2 style="text-align: center; margin-bottom: 20px;">📖 ΠΗΓΗ</h2>
+            <div id="sourceContent"></div>
+        </div>
+
+        <!-- EXERCISES TAB -->
+        <div id="exercisesTab" class="hidden">
+            <div class="exercise-numbers" id="exerciseNumbers"></div>
+            <div class="card" id="exerciseContent"></div>
+        </div>
+
+        <!-- QUIZ TAB -->
+        <div id="quizTab" class="hidden">
+            <div id="quizContent"></div>
+        </div>
+
+        <!-- GLOSSARY TAB -->
+        <div id="glossaryTab" class="card hidden">
+            <h2 style="text-align: center; margin-bottom: 20px;">📚 ΓΛΩΣΣΑΡΙΟ</h2>
+            <div id="glossaryContent"></div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer>
+        <p>📚 Πηγή: Ιστορία του Αρχαίου Κόσμου, Α΄ Λυκείου</p>
+        <p style="opacity: 0.8;">© 2ο ΓΕΛ, 2026</p>
+    </footer>
+
+    <script>
+        // STATE
+        let state = {
+            activeTab: 'theory',
+            currentTheorySection: 0,
+            currentExercise: 0,
+            points: 0,
+            completedSections: {
+                theory: false,
+                source: false,
+                exercises: false
+            },
+            answers: {},
+            showResults: {},
+            highlightedKeywords: [],
+            quizActive: false,
+            quizAnswers: [],
+            quizComplete: false,
+            timelineSlots: [null, null, null, null],
+            draggedItem: null,
+            fillBlanks: {}
+        };
+
+        // DATA
+        const glossary = [
+            { term: 'ΔΗΜΟΚΡΑΤΙΑ', def: 'Πολίτευμα όπου η εξουσία ανήκει στο λαό. Ο Περικλής την ενίσχυσε με μισθούς για κληρωτούς άρχοντες, βουλευτές και δικαστές, επιτρέποντας τη συμμετοχή όλων στη διοίκηση.', icon: '⚖️' },
+            { term: 'ΑΡΕΙΟΣ ΠΑΓΟΣ', def: 'Αριστοκρατικό συμβούλιο της Αθήνας. Ο Περικλής αφαίρεσε μερικές από τις αρμοδιότητές του για να ενισχύσει τη δημοκρατία.', icon: '🏛️' },
+            { term: 'ΤΡΙΑΚΟΝΤΟΥΤΕΙΣ ΣΠΟΝΔΑΙ', def: 'Ειρηνική συνθήκη 30 ετών που υπέγραψαν Αθήνα και Σπάρτη το 445 π.Χ., εξασφαλίζοντας περίοδο σταθερότητας κατά τη Χρυσή Εποχή του Περικλή.', icon: '🤝' },
+            { term: 'ΧΡΥΣΟΣ ΑΙΩΝ ΤΟΥ ΠΕΡΙΚΛΗ', def: 'Η περίοδος του 5ου αιώνα π.Χ. όπου η Αθήνα βρέθηκε στο απόγειο της πολιτικής και πολιτιστικής ανάπτυξης υπό την ηγεσία του Περικλή.', icon: '✨' },
+            { term: 'ΛΕΙΤΟΥΡΓΙΑ', def: 'Υποχρεωτική οικονομική υποχρέωση των πλουσιότερων πολιτών για στρατιωτικές και θρησκευτικές εκδηλώσεις. Είχαν τιμητικό χαρακτήρα και αποτελούσαν σημαντική πηγή εσόδων για το κράτος.', icon: '💰' },
+            { term: 'ΧΟΡΗΓΙΑ', def: 'Λειτουργία για τη χρηματοδότηση θεατρικού έργου. Ο χορηγός πλήρωνε τη διδασκαλία του χορού, τα κοστούμια, τις μάσκες και τα σκηνικά, υποστηρίζοντας την πολιτιστική ανάπτυξη.', icon: '🎭' },
+            { term: 'ΤΡΙΗΡΑΡΧΙΑ', def: 'Λειτουργία για τη συντήρηση πολεμικού πλοίου (τριήρης). Ο τριήραρχος ήταν υπεύθυνος για τον εξοπλισμό, τις επισκευές και την πληρωμή του πληρώματος, ενισχύοντας τη ναυτική δύναμη.', icon: '⛵' },
+            { term: 'ΑΡΧΙΘΕΩΡΙΑ', def: 'Λειτουργία για την κάλυψη εξόδων επίσημης αντιπροσωπείας σε πανελλήνια ιερά (Δελφοί, Ολυμπία). Περιλάμβανε ταξίδι, θυσίες και εκπροσώπηση της Αθήνας σε θρησκευτικές γιορτές.', icon: '🎪' },
+            { term: 'ΓΥΜΝΑΣΙΑΡΧΙΑ', def: 'Λειτουργία για την οργάνωση αθλητικών αγώνων. Κάλυπτε δαπάνες για γυμνικούς αγώνες με δάδες, προπόνηση νέων αθλητών και λάδι, προωθώντας την αθλητική εκπαίδευση.', icon: '🏛️' },
+            { term: 'ΘΕΩΡΙΚΑ', def: 'Χρήματα που δινόταν στους φτωχούς πολίτες για ελεύθερη είσοδο στο θέατρο. Μέτρο του Περικλή για πολιτιστική ανάπτυξη και πρόσβαση όλων στην παιδεία.', icon: '🎭' },
+            { term: 'ΜΕΤΟΙΚΙΟ', def: 'Ετήσιος φόρος που πλήρωναν οι μέτοικοι (μόνιμοι κάτοικοι ξένης καταγωγής). Οι άνδρες πλήρωναν 12 δραχμές και οι γυναίκες 6 δραχμές το χρόνο.', icon: '💵' },
+            { term: 'ΤΑΛΑΝΤΟ', def: 'Μονάδα βάρους και νομισματική μονάδα. Το συμμαχικό ταμείο έφτασε τα 9.700 τάλαντα το 445 π.Χ., δείχνοντας την οικονομική ισχύ της Αθήνας.', icon: '⚖️' },
+            { term: 'ΝΑΥΤΙΚΗ ΔΥΝΑΜΗ', def: 'Ο Περικλής οργάνωσε τη ναυτική δύναμη της πολιτείας, δίνοντας θάρρος και πολιτική ισχύ στο λαό. Βασικός πυλώνας της αθηναϊκής κυριαρχίας στο Αιγαίο.', icon: '⚓' }
+        ];
+
+        const sourceText = {
+            title: 'Αριστοτέλης, Αθηναίων Πολιτεία, 27',
+            intro: 'Ο Αριστοτέλης περιγράφει τα σημαντικά μέτρα της πολιτικής του Περικλή:',
+            text: `Ύστερα από αυτά, όταν ο Περικλής έγινε αρχηγός της δημοκρατικής παράταξης, το πολίτευμα εκδημοκρατικοποιήθηκε περισσότερο. Ο Περικλής αφαίρεσε μερικές αρμοδιότητες από τον Άρειο Πάγο και κυρίως προσπάθησε να οργανώσει τη ναυτική δύναμη της πολιτείας. Έτσι το πλήθος απέκτησε θάρρος μεγαλύτερο και περισσότερες εξουσίες. Σαράντα εννέα χρόνια μετά από τη ναυμαχία της Σαλαμίνας, όταν ήταν επώνυμος άρχοντας ο Πυθόδωρος, άρχισε ο πελοποννησιακός πόλεμος. Κατά τη διάρκεια του πολέμου όλος ο λαός συγκεντρώθηκε μέσα στην πόλη και οι πολίτες συνήθισαν να παίρνουν μισθό όταν ήταν σε εκστρατεία. Με αυτόν τον τρόπο ο λαός, συνειδητά ή ασυνείδητα, ασκούσε ο ίδιος την εξουσία. Ο Περικλής πρώτος χορήγησε μισθό στους δικαστές για να συναγωνιστεί τον Κίμωνα που ήταν πλούσιος και ξόδευε για το λαό.`,
+            keywords: ['δημοκρατική', 'Άρειο Πάγο', 'ναυτική δύναμη', 'μισθό', 'δικαστές', 'Κίμωνα']
+        };
+
+        const exercises = [
+            {
+                id: 1,
+                type: 'multiple',
+                question: 'Ποιος αρχιτέκτονας σχεδίασε τον Πειραιά με το ορθογώνιο σύστημα;',
+                options: ['Φειδίας', 'Ιππόδαμος ο Μιλήσιος', 'Ικτίνος', 'Καλλικράτης'],
+                correct: 1,
+                points: 10
+            },
+            {
+                id: 2,
+                type: 'multiple',
+                question: 'Πόσα τάλαντα ήταν το συμμαχικό ταμείο το 445 π.Χ.;',
+                options: ['6.000 τάλαντα', '8.000 τάλαντα', '9.700 τάλαντα', '12.000 τάλαντα'],
+                correct: 2,
+                points: 10
+            },
+            {
+                id: 3,
+                type: 'truefalse',
+                questions: [
+                    { text: 'Υπήρχε άμεση φορολογία στην Αθήνα την εποχή του Περικλή', correct: false },
+                    { text: 'Οι μέτοικοι άνδρες πλήρωναν 12 δραχμές το χρόνο', correct: true },
+                    { text: 'Τα μεταλλεία λειτουργούσαν με εργασία μόνο ελεύθερων', correct: false },
+                    { text: 'Ο Πειραιάς έγινε το κυριότερο εμπορικό κέντρο της Μεσογείου', correct: true }
+                ],
+                points: 12
+            },
+            {
+                id: 4,
+                type: 'truefalse',
+                questions: [
+                    { text: 'Η Χορηγία αφορούσε τη χρηματοδότηση θεατρικών έργων', correct: true },
+                    { text: 'Η Τριηραρχία ήταν προαιρετική λειτουργία', correct: false },
+                    { text: 'Η Αρχιθεωρία αφορούσε ταξίδια σε πανελλήνια ιερά', correct: true },
+                    { text: 'Οι λειτουργίες είχαν μόνο οικονομικό χαρακτήρα', correct: false }
+                ],
+                points: 12
+            },
+            {
+                id: 5,
+                type: 'timeline',
+                question: 'Τοποθέτησε τα γεγονότα στη σωστή χρονολογική σειρά:',
+                items: [
+                    'Μεταφορά συμμαχικού ταμείου στην Αθήνα',
+                    'Τριακοντούτεις σπονδαί με Σπάρτη',
+                    'Ίδρυση αποικίας Θουρίων',
+                    'Έναρξη Πελοποννησιακού πολέμου'
+                ],
+                points: 15
+            },
+            {
+                id: 6,
+                type: 'timeline',
+                question: 'Τοποθέτησε τις οικονομικές πηγές κατά σημασία (από μικρότερη σε μεγαλύτερη):',
+                items: [
+                    'Μετοίκιο',
+                    'Εκμετάλλευση μεταλλείων',
+                    'Έμμεση φορολογία',
+                    'Φόρος συμμάχων'
+                ],
+                points: 15
+            },
+            {
+                id: 7,
+                type: 'fillblanks',
+                question: 'Συμπλήρωσε τα κενά σχετικά με τις λειτουργίες:',
+                text: 'Η {blank1} αφορούσε τη συντήρηση πολεμικού πλοίου, ενώ η {blank2} τη χρηματοδότηση θεατρικών παραστάσεων. Οι λειτουργίες ήταν {blank3} για τους πλούσιους πολίτες και είχαν {blank4} χαρακτήρα.',
+                blanks: {
+                    blank1: 'Τριηραρχία',
+                    blank2: 'Χορηγία',
+                    blank3: 'υποχρεωτικές',
+                    blank4: 'τιμητικό'
+                },
+                points: 12
+            },
+            {
+                id: 8,
+                type: 'fillblanks',
+                question: 'Συμπλήρωσε τα κενά σχετικά με τα έσοδα:',
+                text: 'Το κράτος εκμίσθωνε τα {blank1} σε ιδιώτες. Η εργασία εκεί γινόταν κυρίως από {blank2}. Το συμμαχικό ταμείο μεταφέρθηκε στην Αθήνα το {blank3} π.Χ. και έφτασε τα {blank4} τάλαντα το 445 π.Χ.',
+                blanks: {
+                    blank1: 'μεταλλεία',
+                    blank2: 'δούλους',
+                    blank3: '454',
+                    blank4: '9.700'
+                },
+                points: 12
+            },
+            {
+                id: 9,
+                type: 'multiple',
+                question: 'Τι ήταν η Γυμνασιαρχία;',
+                options: ['Λειτουργία για στρατιωτικούς αγώνες', 'Λειτουργία για αθλητικούς αγώνες', 'Φόρος για το γυμναστήριο', 'Δημόσιο αξίωμα'],
+                correct: 1,
+                points: 10
+            },
+            {
+                id: 10,
+                type: 'multiple',
+                question: 'Πόσες δραχμές πλήρωναν οι μέτοικοι γυναίκες ως μετοίκιο;',
+                options: ['3 δραχμές', '6 δραχμές', '12 δραχμές', '15 δραχμές'],
+                correct: 1,
+                points: 10
+            }
+        ];
+
+        const finalQuiz = [
+            { q: 'Ποια εποχή ταυτίζεται με τον Περικλή;', opts: ['Αρχαϊκή', 'Κλασική', 'Ελληνιστική', 'Ρωμαϊκή'], correct: 1 },
+            { q: 'Τι πολίτευμα ενίσχυσε ο Περικλής;', opts: ['Μοναρχία', 'Ολιγαρχία', 'Δημοκρατία', 'Τυραννίδα'], correct: 2 },
+            { q: 'Ποιο λιμάνι έγινε εμπορικό κέντρο;', opts: ['Πειραιάς', 'Κόρινθος', 'Χαλκίδα', 'Μίλητος'], correct: 0 },
+            { q: 'Τι ήταν τα θεωρικά;', opts: ['Φόρος', 'Μισθός στρατιωτών', 'Είσοδος θεάτρου', 'Τιμή πλοίου'], correct: 2 },
+            { q: 'Ποιος ήταν ο αντίπαλος του Περικλή;', opts: ['Θεμιστοκλής', 'Κίμων', 'Σόλων', 'Κλεισθένης'], correct: 1 }
+        ];
+
+        // INIT
+        function init() {
+            renderGlossary();
+            renderTheorySection();
+            renderExerciseNumbers();
+            updatePoints();
+            updateProgress();
+        }
+
+        // GLOSSARY
+        function renderGlossary() {
+            const content = glossary.map(g => `
+                <div class="glossary-item">
+                    <div class="glossary-term-header">
+                        <span class="glossary-icon">${g.icon}</span>
+                        <strong class="glossary-term">${g.term}</strong>
+                    </div>
+                    <p class="glossary-def">${g.def}</p>
+                </div>
+            `).join('');
+            document.getElementById('glossaryContent').innerHTML = content;
+        }
+
+        // NAVIGATION
+        function switchTab(tab) {
+            state.activeTab = tab;
+
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('theoryTab').classList.add('hidden');
+            document.getElementById('sourceTab').classList.add('hidden');
+            document.getElementById('exercisesTab').classList.add('hidden');
+            document.getElementById('quizTab').classList.add('hidden');
+            document.getElementById('glossaryTab').classList.add('hidden');
+
+            if (tab === 'theory') {
+                document.getElementById('navTheory').classList.add('active');
+                document.getElementById('theoryTab').classList.remove('hidden');
+            } else if (tab === 'source') {
+                document.getElementById('navSource').classList.add('active');
+                document.getElementById('sourceTab').classList.remove('hidden');
+                renderSource();
+            } else if (tab === 'exercises') {
+                document.getElementById('navExercises').classList.add('active');
+                document.getElementById('exercisesTab').classList.remove('hidden');
+                renderExercise();
+            } else if (tab === 'glossary') {
+                document.getElementById('navGlossary').classList.add('active');
+                document.getElementById('glossaryTab').classList.remove('hidden');
+            }
+        }
+
+        // THEORY
+        function switchTheorySection(section) {
+            state.currentTheorySection = section;
+            renderTheorySection();
+            
+            document.querySelectorAll('.section-tab').forEach((tab, i) => {
+                tab.classList.toggle('active', i === section);
+            });
+        }
+
+        function renderTheorySection() {
+            const sections = [
+                {
+                    title: '👤 Ο ΠΕΡΙΚΛΗΣ',
+                    subsections: [
+                        {
+                            title: '📜 Η Προσωπικότητά του',
+                            points: [
+                                'Χαρισματικός ηγέτης της δημοκρατικής παράταξης',
+                                'Εκλεγόταν στρατηγός κάθε χρόνο',
+                                'Επιβαλλόταν με πολιτική οξυδέρκεια',
+                                'Σφράγισε την εποχή με τη δράση του'
+                            ]
+                        },
+                        {
+                            title: '⏳ Ιστορικό Πλαίσιο',
+                            points: [
+                                'Ανέλαβε μετά τον Εφιάλτη και τον Κίμωνα',
+                                'Τριακοντούτεις σπονδαί με Σπάρτη (445 π.Χ.)',
+                                'Χρυσός αιών του Περικλέους (5ος αι. π.Χ.)',
+                                'Αθήνα στο απόγειο πολιτικής και πολιτιστικής ανάπτυξης'
+                            ]
+                        }
+                    ]
+                },
+                {
+                    title: '⚖️ ΠΟΛΙΤΙΚΗ ΔΡΑΣΗ',
+                    subsections: [
+                        {
+                            title: '🏛️ Ενίσχυση Δημοκρατίας',
+                            points: [
+                                'Χρηματική αποζημίωση κληρωτών αρχόντων',
+                                'Μισθός για βουλευτές και δικαστές',
+                                'Στόχος: οικονομική ενίσχυση λαϊκών στρωμάτων',
+                                'Συμμετοχή όλων στη διοίκηση'
+                            ]
+                        },
+                        {
+                            title: '🎭 Πολιτιστική Ανάπτυξη',
+                            points: [
+                                'Θεωρικά: ελεύθερη είσοδος στο θέατρο',
+                                'Θέατρο = χώρος παιδείας',
+                                'Πολιτιστικές δαπάνες για τους Αθηναίους',
+                                'Ανάπτυξη τεχνών και επιστημών'
+                            ]
+                        },
+                        {
+                            title: '🌍 Εξωτερική Πολιτική',
+                            points: [
+                                'Κυριαρχία Αθήνας επί των συμμάχων',
+                                'Επέκταση εμπορικής επιρροής προς Δύση',
+                                'Συμμαχίες: Εγέστα, Λεοντίνοι, Ρήγιο',
+                                'Ίδρυση αποικίας Θουρίων (444/3 π.Χ.)'
+                            ]
+                        }
+                    ]
+                },
+                {
+                    title: '💰 ΟΙΚΟΝΟΜΙΑ',
+                    subsections: [
+                        {
+                            title: '💵 Πηγές Εσόδων του Κράτους',
+                            points: [
+                                '⛏️ Εκμετάλλευση Μεταλλείων',
+                                '💰 Φορολογία (άμεση και έμμεση)',
+                                '🏛️ Φόρος των συμμάχων',
+                                '📊 Έκτακτες εισφορές - Λειτουργίες'
+                            ]
+                        },
+                        {
+                            title: '⛏️ Μεταλλεία',
+                            points: [
+                                'Το κράτος εκμίσθωνε σε ιδιώτες τα ορυχεία',
+                                'Εκμίσθωση για ορισμένο χρονικό διάστημα',
+                                'Εργασία κυρίως από δούλους',
+                                'Κύρια μεταλλεία: Λαύριο (αργυρούχος μόλυβδος)'
+                            ]
+                        },
+                        {
+                            title: '💰 Φορολογία',
+                            points: [
+                                '❌ Άμεση φορολογία: ΔΕΝ υπήρχε στην Αθήνα',
+                                '⚠️ Μόνο σε στιγμές μεγάλης κρίσης',
+                                '👥 Μετοίκιο: 12 δραχμές/χρόνο (άνδρες), 6 δραχμές (γυναίκες)',
+                                '⚓ Έμμεση φορολογία: εισαγόμενα/εξαγόμενα προϊόντα (Πειραιάς)'
+                            ]
+                        },
+                        {
+                            title: '🏛️ Φόρος Συμμάχων',
+                            points: [
+                                '454 π.Χ.: Μεταφορά ταμείου από Δήλο στην Αθήνα',
+                                '454 π.Χ.: 8.000 τάλαντα',
+                                '445 π.Χ.: 9.700 τάλαντα',
+                                '431 π.Χ.: 6.000 τάλαντα (πριν Πελοποννησιακό)',
+                                '⚠️ Έκτακτη φορολογία: πολεμικές αποζημιώσεις'
+                            ]
+                        },
+                        {
+                            title: '📜 Τι είναι οι Λειτουργίες;',
+                            points: [
+                                'Δαπάνες στρατιωτικών & θρησκευτικών εκδηλώσεων',
+                                'Αναλάμβαναν οι πλουσιότεροι πολίτες',
+                                '✅ Υποχρεωτικές',
+                                '🏆 Τιμητικός χαρακτήρας',
+                                'Σημαντική πηγή εσόδων για το κράτος'
+                            ]
+                        },
+                        {
+                            title: '🎭 ΧΟΡΗΓΙΑ (Χορική)',
+                            points: [
+                                '📌 Ορισμός: Χρηματοδότηση θεατρικού έργου',
+                                'Δαπάνες διδασκαλίας του χορού',
+                                'Κοστούμια, μάσκες και σκηνικά',
+                                'Υποστήριξη πολιτιστικής ανάπτυξης',
+                                '🎯 Στόχος: Θεατρικές παραστάσεις'
+                            ]
+                        },
+                        {
+                            title: '⛵ ΤΡΙΗΡΑΡΧΙΑ',
+                            points: [
+                                '📌 Ορισμός: Συντήρηση πολεμικού πλοίου (τριήρης)',
+                                'Εξοπλισμός του πλοίου',
+                                'Πληρωμή πληρώματος (αν χρειαζόταν)',
+                                'Επισκευές και συντήρηση',
+                                '🎯 Στόχος: Ναυτική δύναμη Αθήνας'
+                            ]
+                        },
+                        {
+                            title: '🎪 ΑΡΧΙΘΕΩΡΙΑ',
+                            points: [
+                                '📌 Ορισμός: Έξοδα επίσημης αντιπροσωπείας',
+                                'Ταξίδι σε πανελλήνια ιερά (Δελφοί, Ολυμπία)',
+                                'Θυσίες και προσφορές',
+                                'Εκπροσώπηση και τιμή της Αθήνας',
+                                '🎯 Στόχος: Θρησκευτικές γιορτές'
+                            ]
+                        },
+                        {
+                            title: '🏛️ ΓΥΜΝΑΣΙΑΡΧΙΑ',
+                            points: [
+                                '📌 Ορισμός: Οργάνωση αθλητικών αγώνων',
+                                'Δαπάνες για γυμνικούς αγώνες με δάδες',
+                                'Προπόνηση νέων αθλητών',
+                                'Λάδι για τους αθλητές',
+                                '🎯 Στόχος: Αθλητική εκπαίδευση νέων'
+                            ]
+                        },
+                        {
+                            title: '🍽️ ΕΣΤΙΑΣΙΣ',
+                            points: [
+                                '📌 Ορισμός: Παροχή δημόσιων γευμάτων',
+                                'Φιλοξενία της φυλής του λειτουργού',
+                                'Συμπόσια και τελετές',
+                                'Τροφή για μεγάλο αριθμό πολιτών',
+                                '🎯 Στόχος: Κοινωνική συνοχή'
+                            ]
+                        },
+                        {
+                            title: '🚢 ΝΑΥΚΡΑΡΙΑ (παλαιότερα)',
+                            points: [
+                                '📌 Ορισμός: Κατασκευή και συντήρηση πλοίου',
+                                'Παλαιότερη μορφή λειτουργίας',
+                                'Προ της τριηραρχίας',
+                                'Συλλογική ευθύνη ναυκράρων',
+                                '🎯 Στόχος: Ναυτική ισχύς'
+                            ]
+                        },
+                        {
+                            title: '⚓ Πειραιάς - Εμπορικό Κέντρο',
+                            points: [
+                                '🏗️ Πολεοδομικά σχέδια Ιππόδαμου του Μιλήσιου',
+                                '⚓ Μεγαλύτερο εμπορικό λιμάνι Μεσογείου',
+                                '💰 Έμμεση φορολογία: τελωνειακά τέλη',
+                                '🌍 Διεθνές εμπορικό κέντρο εποχής Περικλή'
+                            ]
+                        }
+                    ]
+                }
+            ];
+
+            const section = sections[state.currentTheorySection];
+            let html = `<h2>${section.title}</h2>`;
+
+            if (section.subsections) {
+                section.subsections.forEach(sub => {
+                    html += `<div class="subsection"><h3>${sub.title}</h3>`;
+                    if (sub.content) {
+                        html += '<div class="grid-2">';
+                        sub.content.forEach(item => {
+                            html += `
+                                <div class="grid-item">
+                                    <div class="grid-item-icon">${item.icon}</div>
+                                    <div class="grid-item-label">${item.label}</div>
+                                </div>
+                            `;
+                        });
+                        html += '</div>';
+                    } else if (sub.points) {
+                        html += '<ul>';
+                        sub.points.forEach(p => html += `<li>${p}</li>`);
+                        html += '</ul>';
+                    }
+                    html += '</div>';
+                });
+            }
+
+            if (state.currentTheorySection === 0) {
+                html += `
+                    <div class="quote-box">
+                        💬 "Εγίγνετό τε λόγῳ μὲν δημοκρατία, ἔργῳ δὲ ὑπὸ τοῦ πρώτου ἀνδρὸς ἀρχή"<br>
+                        <small>- Θουκυδίδης (Β, 65.9)</small><br>
+                        <em>"Ήταν κατ' όνομα μεν δημοκρατία, στην πράξη όμως εξουσία του πρώτου ανδρός"</em>
+                    </div>
+                `;
+            }
+
+            html += `
+                <div class="button-group">
+                    <button class="btn btn-prev" ${state.currentTheorySection === 0 ? 'disabled' : ''} 
+                        onclick="switchTheorySection(${state.currentTheorySection - 1})">← Προηγ.</button>
+                    <button class="btn btn-next" onclick="handleNextTheory()">
+                        ${state.currentTheorySection === 2 ? 'Ολοκλήρωση' : 'Επόμενο'} →
+                    </button>
+                </div>
+            `;
+
+            if (state.currentTheorySection === 2) {
+                html += `
+                    <div class="success-box" id="theorySuccess" style="display: none;">
+                        <p>✅ Ολοκλήρωσες τη Θεωρία! (+20 πόντοι ⭐)</p>
+                        <button class="continue-btn" onclick="completeTheory()">Συνέχεια στην Πηγή →</button>
+                    </div>
+                `;
+            }
+
+            document.getElementById('theoryContent').innerHTML = html;
+        }
+
+        function handleNextTheory() {
+            if (state.currentTheorySection < 2) {
+                addPoints(10);
+                switchTheorySection(state.currentTheorySection + 1);
+            } else {
+                document.getElementById('theorySuccess').style.display = 'block';
+            }
+        }
+
+        function completeTheory() {
+            state.completedSections.theory = true;
+            addPoints(20);
+            updateProgress();
+            switchTab('source');
+        }
+
+        // SOURCE
+        function renderSource() {
+            let html = `
+                <div class="source-card">
+                    <h3 class="source-title">${sourceText.title}</h3>
+                    <p style="text-align: center; color: #666; margin-bottom: 15px;">${sourceText.intro}</p>
+                    <div class="source-text">${sourceText.text}</div>
+                    
+                    <h4 style="margin-top: 25px; color: #2C5282;">🎯 ΕΡΩΤΗΣΕΙΣ ΚΑΤΑΝΟΗΣΗΣ:</h4>
+                    
+                    <div class="keywords-box">
+                        <p style="font-weight: bold;">1. Βρες και επισήμανε τις λέξεις-κλειδιά:</p>
+                        <div class="keywords-flex" id="keywordsContainer">
+                            ${sourceText.keywords.map((kw, i) => `
+                                <button class="keyword-btn" onclick="toggleKeyword(${i})">${kw}</button>
+                            `).join('')}
+                        </div>
+                        <div style="font-size: 12px; color: #666; margin-top: 10px;">
+                            (+<span id="keywordPoints">0</span> πόντοι)
+                        </div>
+                    </div>
+
+                    <div class="info-box" style="margin-top: 20px;">
+                        <p style="font-weight: bold; margin-bottom: 10px;">2. Ερωτήσεις για συζήτηση:</p>
+                        <ul style="margin-left: 20px;">
+                            <li>Ποιες αρμοδιότητες αφαίρεσε ο Περικλής από τον Άρειο Πάγο;</li>
+                            <li>Πώς η ναυτική δύναμη ενίσχυσε τη δημοκρατία;</li>
+                            <li>Γιατί ο Περικλής έδωσε μισθό στους δικαστές;</li>
+                            <li>Ποια ήταν η σχέση Περικλή-Κίμωνα;</li>
+                        </ul>
+                    </div>
+
+                    <div class="success-box" style="margin-top: 25px;">
+                        <p>✅ Ολοκλήρωσες την Πηγή! (+25 πόντοι ⭐)</p>
+                        <button class="continue-btn" onclick="completeSource()">Συνέχεια στις Ασκήσεις →</button>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('sourceContent').innerHTML = html;
+        }
+
+        function toggleKeyword(index) {
+            const keywordBtns = document.querySelectorAll('.keyword-btn');
+            if (state.highlightedKeywords.includes(index)) {
+                state.highlightedKeywords = state.highlightedKeywords.filter(i => i !== index);
+                keywordBtns[index].classList.remove('highlighted');
+            } else {
+                state.highlightedKeywords.push(index);
+                keywordBtns[index].classList.add('highlighted');
+                addPoints(2);
+            }
+            document.getElementById('keywordPoints').textContent = state.highlightedKeywords.length * 2;
+        }
+
+        function completeSource() {
+            state.completedSections.source = true;
+            addPoints(25);
+            updateProgress();
+            switchTab('exercises');
+        }
+
+        // EXERCISES
+        function renderExerciseNumbers() {
+            const html = exercises.map((ex, i) => `
+                <button class="exercise-number ${i === state.currentExercise ? 'active' : ''} ${state.showResults[ex.id] ? 'completed' : ''}" 
+                    onclick="switchExercise(${i})">${i + 1}</button>
+            `).join('');
+            document.getElementById('exerciseNumbers').innerHTML = html;
+        }
+
+        function switchExercise(index) {
+            state.currentExercise = index;
+            renderExerciseNumbers();
+            renderExercise();
+        }
+
+        function renderExercise() {
+            const ex = exercises[state.currentExercise];
+            let html = `
+                <span class="exercise-tag">ΑΣΚΗΣΗ ${ex.id} | ${ex.points} Πόντοι</span>
+                <p class="question">❓ ${ex.question}</p>
+            `;
+
+            if (ex.type === 'multiple') {
+                html += '<div class="options">';
+                ex.options.forEach((opt, i) => {
+                    const selected = state.answers[ex.id] === i;
+                    const showResult = state.showResults[ex.id];
+                    const correct = i === ex.correct;
+                    const wrong = selected && !correct;
+                    
+                    html += `
+                        <button class="option-btn ${selected ? 'selected' : ''} ${showResult && correct ? 'correct' : ''} ${showResult && wrong ? 'wrong' : ''}"
+                            onclick="selectAnswer(${ex.id}, ${i})">
+                            ${['Α', 'Β', 'Γ', 'Δ'][i]}. ${opt}
+                        </button>
+                    `;
+                });
+                html += '</div>';
+
+                if (!state.showResults[ex.id]) {
+                    html += `<button class="submit-btn" ${state.answers[ex.id] === undefined ? 'disabled' : ''} 
+                        onclick="checkAnswer(${ex.id})">Υποβολή</button>`;
+                } else {
+                    const correct = state.answers[ex.id] === ex.correct;
+                    html += `
+                        <div class="result-box ${correct ? 'correct' : 'incorrect'}">
+                            <p style="margin: 0; font-weight: bold;">
+                                ${correct ? `✓ ΣΩΣΤΟ! (+${ex.points} πόντοι ⭐)` : '✗ Λάθος!'}
+                            </p>
+                        </div>
+                    `;
+                }
+            } else if (ex.type === 'timeline') {
+                html += '<div class="timeline">';
+                [0, 1, 2, 3].forEach((i) => {
+                    html += `
+                        <div class="timeline-slot ${state.timelineSlots[i] ? 'filled' : ''}" 
+                            ondrop="drop(event, ${i})" 
+                            ondragover="allowDrop(event)">
+                            ${state.timelineSlots[i] || `${i + 1}η θέση`}
+                        </div>
+                    `;
+                });
+                html += '</div>';
+
+                html += '<div class="drag-items-box"><p style="font-weight: bold; margin-bottom: 10px;">📦 Σύρε τα γεγονότα:</p><div class="drag-items-flex">';
+                ex.items.forEach((item, i) => {
+                    if (!state.timelineSlots.includes(item)) {
+                        html += `<div class="drag-item" draggable="true" ondragstart="drag(event, ${i})">${item}</div>`;
+                    }
+                });
+                html += '</div></div>';
+
+                html += `
+                    <div class="button-group">
+                        <button class="btn btn-next" ${state.timelineSlots.includes(null) ? 'disabled' : ''} 
+                            onclick="checkTimeline()">Έλεγχος</button>
+                        <button class="btn" onclick="resetTimeline()" style="background-color: white; border: 2px solid #ddd; color: #2C3E50;">Επαναφορά</button>
+                    </div>
+                `;
+
+                if (state.showResults[ex.id]) {
+                    const correct = state.timelineSlots.every((s, i) => s === ex.items[i]);
+                    html += `
+                        <div class="result-box ${correct ? 'correct' : 'incorrect'}">
+                            <p style="margin: 0; font-weight: bold;">
+                                ${correct ? `✓ ΣΩΣΤΟ! (+${ex.points} πόντοι ⭐)` : '✗ Ξανά!'}
+                            </p>
+                        </div>
+                    `;
+                }
+            } else if (ex.type === 'truefalse') {
+                ex.questions.forEach((q, i) => {
+                    const answer = state.answers[ex.id] ? state.answers[ex.id][i] : undefined;
+                    const showResult = state.showResults[ex.id];
+                    
+                    html += `
+                        <div class="truefalse-question">
+                            <p class="truefalse-text">${q.text}</p>
+                            <div class="truefalse-buttons">
+                                <button class="truefalse-btn ${answer === true ? 'selected' : ''} ${showResult && q.correct ? 'correct-answer' : ''}"
+                                    onclick="selectTrueFalse(${ex.id}, ${i}, true)">Σωστό ✓</button>
+                                <button class="truefalse-btn ${answer === false ? 'selected' : ''} ${showResult && !q.correct ? 'correct-answer' : ''}"
+                                    onclick="selectTrueFalse(${ex.id}, ${i}, false)">Λάθος ✗</button>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                if (!state.showResults[ex.id]) {
+                    const allAnswered = state.answers[ex.id] && state.answers[ex.id].length === ex.questions.length;
+                    html += `<button class="submit-btn" ${!allAnswered ? 'disabled' : ''} 
+                        onclick="checkTrueFalse(${ex.id})">Υποβολή</button>`;
+                } else {
+                    const allCorrect = ex.questions.every((q, i) => state.answers[ex.id][i] === q.correct);
+                    html += `
+                        <div class="result-box ${allCorrect ? 'correct' : 'incorrect'}">
+                            <p style="margin: 0; font-weight: bold;">
+                                ${allCorrect ? `✓ ΟΛΕΣ ΣΩΣΤΕΣ! (+${ex.points} πόντοι ⭐)` : '✗ Κάποιες λάθος!'}
+                            </p>
+                        </div>
+                    `;
+                }
+            } else if (ex.type === 'fillblanks') {
+                let displayText = ex.text;
+                Object.keys(ex.blanks).forEach(key => {
+                    const userAnswer = state.fillBlanks[key] || '';
+                    const showResult = state.showResults[ex.id];
+                    const isCorrect = showResult && userAnswer.toLowerCase().trim() === ex.blanks[key].toLowerCase().trim();
+                    const isWrong = showResult && userAnswer && !isCorrect;
+                    
+                    displayText = displayText.replace(`{${key}}`, 
+                        `<input type="text" class="blank-input ${isCorrect ? 'correct-fill' : ''} ${isWrong ? 'wrong-fill' : ''}" 
+                            value="${userAnswer}" 
+                            onchange="updateFillBlank('${key}', this.value)"
+                            ${showResult ? 'disabled' : ''}>`
+                    );
+                });
+
+                html += `<div class="fill-blank">${displayText}</div>`;
+
+                if (!state.showResults[ex.id]) {
+                    const allFilled = Object.keys(ex.blanks).every(key => state.fillBlanks[key]);
+                    html += `<button class="submit-btn" ${!allFilled ? 'disabled' : ''} 
+                        onclick="checkFillBlanks(${ex.id})">Υποβολή</button>`;
+                } else {
+                    const allCorrect = Object.keys(ex.blanks).every(key => 
+                        state.fillBlanks[key] && state.fillBlanks[key].toLowerCase().trim() === ex.blanks[key].toLowerCase().trim()
+                    );
+                    html += `
+                        <div class="result-box ${allCorrect ? 'correct' : 'incorrect'}">
+                            <p style="margin: 0; font-weight: bold;">
+                                ${allCorrect ? `✓ ΟΛΕΣ ΣΩΣΤΕΣ! (+${ex.points} πόντοι ⭐)` : '✗ Κάποιες λάθος!'}
+                            </p>
+                        </div>
+                    `;
+                }
+            }
+
+            html += `
+                <div class="button-group" style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #eee;">
+                    <button class="btn btn-prev" ${state.currentExercise === 0 ? 'disabled' : ''} 
+                        onclick="switchExercise(${state.currentExercise - 1})">← Προηγ.</button>
+                    ${state.currentExercise === exercises.length - 1 
+                        ? '<button class="btn" style="background-color: #FFD700; color: #2C3E50;" onclick="startQuiz()">🏆 Τελικό Quiz</button>'
+                        : `<button class="btn btn-next" onclick="switchExercise(${state.currentExercise + 1})">Επόμ. →</button>`
+                    }
+                </div>
+            `;
+
+            document.getElementById('exerciseContent').innerHTML = html;
+        }
+
+        function selectAnswer(exId, optionIndex) {
+            if (!state.showResults[exId]) {
+                state.answers[exId] = optionIndex;
+                renderExercise();
+            }
+        }
+
+        function checkAnswer(exId) {
+            const ex = exercises.find(e => e.id === exId);
+            state.showResults[exId] = true;
+            if (state.answers[exId] === ex.correct) {
+                addPoints(ex.points);
+            }
+            renderExerciseNumbers();
+            renderExercise();
+        }
+
+        function selectTrueFalse(exId, questionIndex, answer) {
+            if (!state.showResults[exId]) {
+                if (!state.answers[exId]) state.answers[exId] = [];
+                state.answers[exId][questionIndex] = answer;
+                renderExercise();
+            }
+        }
+
+        function checkTrueFalse(exId) {
+            const ex = exercises.find(e => e.id === exId);
+            state.showResults[exId] = true;
+            const allCorrect = ex.questions.every((q, i) => state.answers[exId][i] === q.correct);
+            if (allCorrect) {
+                addPoints(ex.points);
+            }
+            renderExerciseNumbers();
+            renderExercise();
+        }
+
+        function allowDrop(ev) {
+            ev.preventDefault();
+        }
+
+        function drag(ev, index) {
+            state.draggedItem = index;
+        }
+
+        function drop(ev, slotIndex) {
+            ev.preventDefault();
+            if (state.draggedItem !== null) {
+                const ex = exercises[state.currentExercise];
+                state.timelineSlots[slotIndex] = ex.items[state.draggedItem];
+                state.draggedItem = null;
+                renderExercise();
+            }
+        }
+
+        function resetTimeline() {
+            state.timelineSlots = [null, null, null, null];
+            renderExercise();
+        }
+
+        function checkTimeline() {
+            const ex = exercises[state.currentExercise];
+            state.showResults[ex.id] = true;
+            const correct = state.timelineSlots.every((s, i) => s === ex.items[i]);
+            if (correct) {
+                addPoints(ex.points);
+            }
+            renderExerciseNumbers();
+            renderExercise();
+        }
+
+        function updateFillBlank(key, value) {
+            state.fillBlanks[key] = value;
+            renderExercise();
+        }
+
+        function checkFillBlanks(exId) {
+            const ex = exercises.find(e => e.id === exId);
+            state.showResults[exId] = true;
+            const allCorrect = Object.keys(ex.blanks).every(key => 
+                state.fillBlanks[key] && state.fillBlanks[key].toLowerCase().trim() === ex.blanks[key].toLowerCase().trim()
+            );
+            if (allCorrect) {
+                addPoints(ex.points);
+            }
+            renderExerciseNumbers();
+            renderExercise();
+        }
+
+        // QUIZ
+        function startQuiz() {
+            state.quizActive = true;
+            state.quizAnswers = [];
+            state.quizComplete = false;
+            state.completedSections.exercises = true;
+            updateProgress();
+            
+            document.getElementById('exercisesTab').classList.add('hidden');
+            document.getElementById('quizTab').classList.remove('hidden');
+            renderQuiz();
+        }
+
+        function renderQuiz() {
+            if (state.quizComplete) {
+                const correct = finalQuiz.filter((q, i) => state.quizAnswers[i] === q.correct).length;
+                const score = Math.round((correct / finalQuiz.length) * 100);
+                
+                const html = `
+                    <div class="quiz-container">
+                        <div class="quiz-emoji">🎊</div>
+                        <h2>ΣΥΓΧΑΡΗΤΗΡΙΑ!</h2>
+                        <div class="quiz-score-box">
+                            <div class="quiz-score">⭐ ${score}/100 ⭐</div>
+                            <p class="quiz-details">Σωστές: ${correct}/${finalQuiz.length}</p>
+                            <p class="quiz-details">Πόντοι: ⭐ ${state.points}</p>
+                        </div>
+                        <button class="continue-btn" onclick="resetApp()">📚 Επανάληψη</button>
+                    </div>
+                `;
+                document.getElementById('quizContent').innerHTML = html;
+            } else {
+                let html = '<div class="quiz-question-card"><h3>🎯 ΤΕΛΙΚΟ QUIZ</h3>';
+                
+                finalQuiz.forEach((q, qIdx) => {
+                    html += `
+                        <div style="margin-bottom: 25px;">
+                            <p style="font-weight: bold; margin-bottom: 10px;">${qIdx + 1}. ${q.q}</p>
+                            <div class="options">
+                                ${q.opts.map((opt, oIdx) => {
+                                    const selected = state.quizAnswers[qIdx] === oIdx;
+                                    return `
+                                        <button class="option-btn ${selected ? 'selected' : ''}"
+                                            onclick="selectQuizAnswer(${qIdx}, ${oIdx})">
+                                            ${['Α', 'Β', 'Γ', 'Δ'][oIdx]}. ${opt}
+                                        </button>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += `
+                    <button class="submit-btn" ${state.quizAnswers.length !== finalQuiz.length ? 'disabled' : ''} 
+                        onclick="submitQuiz()">Ολοκλήρωση</button>
+                    </div>
+                `;
+                
+                document.getElementById('quizContent').innerHTML = html;
+            }
+        }
+
+        function selectQuizAnswer(qIdx, oIdx) {
+            state.quizAnswers[qIdx] = oIdx;
+            renderQuiz();
+        }
+
+        function submitQuiz() {
+            const correct = finalQuiz.filter((q, i) => state.quizAnswers[i] === q.correct).length;
+            const score = Math.round((correct / finalQuiz.length) * 100);
+            addPoints(score);
+            state.quizComplete = true;
+            renderQuiz();
+        }
+
+        function resetApp() {
+            location.reload();
+        }
+
+        // UTILITIES
+        function addPoints(pts) {
+            state.points += pts;
+            updatePoints();
+        }
+
+        function updatePoints() {
+            document.getElementById('points').textContent = state.points;
+        }
+
+        function updateProgress() {
+            let progress = 0;
+            if (state.completedSections.theory) progress += 33;
+            if (state.completedSections.source) progress += 33;
+            if (state.completedSections.exercises) progress += 34;
+            document.getElementById('progressFill').style.width = progress + '%';
+        }
+
+        // INIT APP
+        init();
+    </script>
+</body>
+</html>
