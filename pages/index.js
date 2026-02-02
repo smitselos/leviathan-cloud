@@ -28,6 +28,8 @@ export default function Home() {
   const [favorites, setFavorites] = useState([]);
   const [history, setHistory] = useState([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+  const [tools, setTools] = useState([]);
+  const [currentTool, setCurrentTool] = useState(null);
   
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -44,6 +46,9 @@ export default function Home() {
     if (savedNotes) setNotes(JSON.parse(savedNotes));
     if (savedFavorites) setFavorites(JSON.parse(savedFavorites));
     if (savedDarkMode === 'true') setDarkMode(true);
+    
+    // Load tools list
+    loadTools();
   }, []);
   
   useEffect(() => {
@@ -57,6 +62,16 @@ export default function Home() {
   useEffect(() => {
     localStorage.setItem('leviathan-darkmode', darkMode.toString());
   }, [darkMode]);
+  
+  const loadTools = async () => {
+    try {
+      const res = await fetch('/api/tools');
+      const data = await res.json();
+      setTools(data.tools || []);
+    } catch (error) {
+      console.error('Error loading tools:', error);
+    }
+  };
   
   const loadFiles = useCallback(async (folderId) => {
     setLoading(true);
@@ -74,6 +89,7 @@ export default function Home() {
   const openFolder = (folderId) => {
     setCurrentFolder(folderId);
     setCurrentFile(null);
+    setCurrentTool(null);
     setShowNotes(false);
     loadFiles(folderId);
   };
@@ -84,6 +100,16 @@ export default function Home() {
     setFiles([]);
     setHistory([]);
     setHistoryIndex(-1);
+  };
+  
+  const openTool = (tool) => {
+    setCurrentTool(tool);
+    setCurrentFolder(null);
+    setCurrentFile(null);
+  };
+  
+  const closeTool = () => {
+    setCurrentTool(null);
   };
   
   const openFile = (file, fromNav = false) => {
@@ -164,7 +190,7 @@ export default function Home() {
   
   return (
     <div style={{...styles.desktop, ...theme.desktop}}>
-      {/* Desktop Icons */}
+      {/* Desktop Icons - Folders */}
       <div style={styles.iconsLeft}>
         {Object.entries(FOLDERS).map(([id, folder]) => (
           <div 
@@ -178,9 +204,26 @@ export default function Home() {
         ))}
       </div>
       
+      {/* Desktop Icons - Tools */}
+      {tools.length > 0 && (
+        <div style={styles.iconsRight}>
+          <div style={styles.toolsLabel}>🔧 Εργαλεία</div>
+          {tools.map((tool) => (
+            <div 
+              key={tool.file}
+              style={{...styles.icon, ...styles.toolIcon, ...theme.icon}}
+              onClick={() => openTool(tool)}
+            >
+              <div style={styles.glyph}>{tool.icon || '🔧'}</div>
+              <div style={{...styles.label, ...theme.text}}>{tool.name}</div>
+            </div>
+          ))}
+        </div>
+      )}
+      
       {/* Logo */}
       <div style={styles.logoArea}>
-  <img src="/logo.png" alt="ΛΕΒΙΑΘΑΝ" style={{width: '180px', height: 'auto'}} />
+        <img src="/logo.png" alt="ΛΕΒΙΑΘΑΝ" style={{width: '180px', height: 'auto'}} />
         <div style={styles.version}>Cloud Edition</div>
       </div>
       
@@ -198,7 +241,38 @@ export default function Home() {
         </button>
       </div>
       
-      {/* Window Overlay */}
+      {/* Tool Viewer Window */}
+      {currentTool && (
+        <div style={styles.overlay} onClick={(e) => e.target === e.currentTarget && closeTool()}>
+          <div style={{...styles.window, ...theme.window}}>
+            {/* Title Bar */}
+            <div style={{...styles.titlebar, ...theme.titlebar}}>
+              <div style={styles.titleLeft}>
+                <span style={styles.titleIcon}>{currentTool.icon || '🔧'}</span>
+                <span style={{...styles.titleText, ...theme.text}}>{currentTool.name}</span>
+              </div>
+              <div style={styles.controls}>
+                <button 
+                  onClick={() => window.open(`/tools/${currentTool.file}`, '_blank')} 
+                  style={{...styles.btn, ...theme.btn}}
+                  title="Άνοιγμα σε νέα καρτέλα"
+                >↗</button>
+                <button onClick={closeTool} style={{...styles.btn, ...theme.btn}}>✕</button>
+              </div>
+            </div>
+            {/* Tool Content */}
+            <div style={styles.toolBody}>
+              <iframe 
+                src={`/tools/${currentTool.file}`}
+                style={styles.toolFrame}
+                title={currentTool.name}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* File Manager Window */}
       {currentFolder && (
         <div style={styles.overlay} onClick={(e) => e.target === e.currentTarget && closeFolder()}>
           <div style={{...styles.window, ...theme.window}}>
@@ -390,6 +464,22 @@ const styles = {
     flexDirection: 'column',
     gap: '10px'
   },
+  iconsRight: {
+    position: 'absolute',
+    top: '28px',
+    right: '22px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px',
+    alignItems: 'center'
+  },
+  toolsLabel: {
+    fontSize: '13px',
+    fontWeight: '700',
+    color: '#475569',
+    marginBottom: '6px',
+    letterSpacing: '1px'
+  },
   icon: {
     width: '110px',
     height: '90px',
@@ -400,6 +490,9 @@ const styles = {
     borderRadius: '12px',
     cursor: 'pointer',
     transition: 'all .15s'
+  },
+  toolIcon: {
+    borderColor: 'rgba(37,99,235,.25)'
   },
   glyph: { fontSize: '32px' },
   label: { fontSize: '10px', marginTop: '4px', textAlign: 'center' },
@@ -459,7 +552,8 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: '18px'
+    padding: '18px',
+    zIndex: 100
   },
   window: {
     width: '95vw',
@@ -622,6 +716,16 @@ const styles = {
     outline: 'none',
     fontSize: '13px',
     lineHeight: '1.6'
+  },
+  toolBody: {
+    flex: 1,
+    position: 'relative',
+    overflow: 'hidden'
+  },
+  toolFrame: {
+    width: '100%',
+    height: '100%',
+    border: 'none'
   },
   loading: {
     minHeight: '100vh',
