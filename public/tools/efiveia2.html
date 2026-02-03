@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Κριτήριο – Εφηβεία</title>
+
+<style>
+:root{
+ --bg:#f4f4f4;
+ --card:#ffffff;
+ --primary:#6b4f3f;
+ --accent:#4a9d82;
+ --muted:#777;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+body{
+ font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+ background:var(--bg);
+ min-height:100vh;
+}
+
+.app{
+ display:grid;
+ grid-template-columns:300px 1fr;
+ min-height:100vh;
+}
+
+/* ΑΡΙΣΤΕΡΑ – ΚΑΡΤΕΣ ΘΕΜΑΤΩΝ */
+.sidebar{
+ background:#fff;
+ padding:24px;
+ border-right:1px solid #ddd;
+}
+
+.sidebar h1{
+ font-size:1.4rem;
+ color:var(--primary);
+ margin-bottom:20px;
+}
+
+.theme-card{
+ background:#f6f1ec;
+ border-radius:14px;
+ padding:18px;
+ margin-bottom:14px;
+ cursor:pointer;
+ transition:.25s;
+ border-left:6px solid transparent;
+}
+
+.theme-card:hover{transform:translateX(6px)}
+
+.theme-card.active{
+ background:#fff;
+ border-left-color:var(--accent);
+ box-shadow:0 6px 20px rgba(0,0,0,.1);
+}
+
+.theme-title{font-weight:700;color:var(--primary)}
+.theme-sub{font-size:.9rem;color:var(--muted)}
+
+/* ΔΕΞΙΑ – ΠΕΡΙΕΧΟΜΕΝΟ */
+.main{
+ padding:40px;
+}
+
+.card{
+ background:var(--card);
+ padding:28px;
+ border-radius:18px;
+ box-shadow:0 10px 30px rgba(0,0,0,.08);
+ margin-bottom:24px;
+}
+
+.card h3{
+ margin-bottom:14px;
+ color:var(--primary);
+}
+
+.btn{
+ padding:10px 18px;
+ border:none;
+ border-radius:10px;
+ background:var(--accent);
+ color:#fff;
+ font-weight:600;
+ cursor:pointer;
+}
+
+.answer{
+ margin-top:16px;
+ padding-top:14px;
+ border-top:1px solid #ddd;
+}
+
+.hidden{display:none}
+
+/* MOBILE */
+@media(max-width:900px){
+ .app{grid-template-columns:1fr}
+ .sidebar{border-right:none;border-bottom:1px solid #ddd}
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<!-- ΑΡΙΣΤΕΡΑ -->
+<aside class="sidebar">
+ <h1>📘 Κριτήριο – Εφηβεία</h1>
+
+ <div class="theme-card" onclick="openTheme('thema1',this)">
+   <div class="theme-title">ΘΕΜΑ 1</div>
+   <div class="theme-sub">Κατανόηση – 35 μον.</div>
+ </div>
+
+ <div class="theme-card" onclick="openTheme('thema2',this)">
+   <div class="theme-title">ΘΕΜΑ 2</div>
+   <div class="theme-sub">Παραγωγή λόγου – 30 μον.</div>
+ </div>
+
+ <div class="theme-card" onclick="openTheme('thema3',this)">
+   <div class="theme-title">ΘΕΜΑ 3</div>
+   <div class="theme-sub">Σχήματα λόγου – 20 μον.</div>
+ </div>
+
+ <div class="theme-card" onclick="openTheme('thema4',this)">
+   <div class="theme-title">ΘΕΜΑ 4</div>
+   <div class="theme-sub">Ανταπόκριση – 15 μον.</div>
+ </div>
+</aside>
+
+<!-- ΔΕΞΙΑ -->
+<main class="main">
+ <div id="content">
+   <h2>Καλώς ήρθες</h2>
+   <p style="color:#777">Επίλεξε θέμα από αριστερά</p>
+ </div>
+</main>
+
+</div>
+
+<script>
+const data = {
+
+thema1:{
+title:'ΘΕΜΑ 1 – Κατανόηση',
+questions:[
+{
+q:'1α. Να αποδώσεις συνοπτικά σε 70 λέξεις τι είναι η εφηβεία.',
+a:'Η εφηβεία είναι μεταβατική περίοδος από την παιδική ηλικία προς την ωριμότητα, με ασαφή όρια. Ο έφηβος καλείται να αποκοπεί σταδιακά από την προστασία των γονιών, γεγονός που τον καθιστά ευάλωτο. Η κατάσταση αυτή παραλληλίζεται με τη γέννηση και με τον αστακό που αλλάζει περίβλημα, καθώς και στις δύο περιπτώσεις η απώλεια προστασίας συνεπάγεται κινδύνους.'
+},
+{
+q:'1β. Να εντοπίσεις τις αναλογίες του κειμένου.',
+a:'Η εφηβεία παραλληλίζεται με τη γέννηση του μωρού και με την αλλαγή περιβλήματος του αστακού, ώστε να αναδειχθεί η ευαλωτότητα του εφήβου.'
+},
+{
+q:'1γ. Να σχολιάσεις τον ρόλο των σημείων στίξης.',
+a:'Το κόμμα δηλώνει επεξήγηση, το ερωτηματικό προβληματισμό, η διπλή παύλη παρένθεση απαραίτητης πληροφορίας, το θαυμαστικό έμφαση και τα εισαγωγικά μεταφορική χρήση.'
+}
+]
+},
+
+thema2:{
+title:'ΘΕΜΑ 2 – Παραγωγή Λόγου',
+questions:[
+{
+q:'Άρθρο 350–400 λέξεων: Τι σημαίνει για σένα η εφηβεία;',
+a:'Η εφηβεία αποτελεί περίοδο αναζήτησης, αμφισβήτησης και διαμόρφωσης ταυτότητας. Ο έφηβος έρχεται αντιμέτωπος με νέες εμπειρίες και συναισθήματα, προσπαθώντας να κατανοήσει τον εαυτό του και τον κόσμο. Παρά τις δυσκολίες, ιδιότητες όπως η αισιοδοξία, η τόλμη, η κριτική σκέψη και η πίστη σε αξίες αποτελούν εφόδια για τη μετάβαση στην ενήλικη ζωή.'
+}
+]
+},
+
+thema3:{
+title:'ΘΕΜΑ 3 – Σχήματα Λόγου',
+questions:[
+{
+q:'Να εντοπίσεις επανάληψη, μεταφορά και παρομοίωση.',
+a:'Η επανάληψη εντείνει τον πόνο, η μεταφορά αποδίδει πρωτόγνωρο συναίσθημα και η παρομοίωση παραστατικοποιεί την πτώση του ήρωα.'
+}
+]
+},
+
+thema4:{
+title:'ΘΕΜΑ 4 – Προσωπική Ανταπόκριση',
+questions:[
+{
+q:'Ποια συναισθήματα σου προκαλεί ο χαμός του εφήβου;',
+a:'Ο χαμός προκαλεί θλίψη αλλά και θαυμασμό. Η θυσία μπορεί να θεωρηθεί είτε δικαιολογημένη ως πράξη τόλμης είτε αδικαιολόγητη λόγω έλλειψης μέτρου.'
+}
+]
+}
+
+};
+
+function openTheme(key,card){
+ document.querySelectorAll('.theme-card')
+   .forEach(c=>c.classList.remove('active'));
+ card.classList.add('active');
+
+ const theme = data[key];
+ const content = document.getElementById('content');
+
+ content.innerHTML = `<h2>${theme.title}</h2>` +
+   theme.questions.map((x,i)=>`
+     <div class="card">
+       <h3>Ερώτηση ${i+1}</h3>
+       <p>${x.q}</p>
+       <button class="btn" onclick="this.nextElementSibling.classList.toggle('hidden')">
+         Εμφάνιση απάντησης
+       </button>
+       <div class="answer hidden">${x.a}</div>
+     </div>
+   `).join('');
+}
+</script>
+
+</body>
+</html>
