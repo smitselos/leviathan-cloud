@@ -1,4 +1,5 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
+
 <html lang="el">
 <head>
     <meta charset="UTF-8">
@@ -10,243 +11,389 @@
             padding: 0;
             box-sizing: border-box;
         }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            line-height: 1.6;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
+
+```
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        line-height: 1.6;
+        background: linear-gradient(135deg, #f5e6d3 0%, #ead5bb 50%, #e0c9a6 100%);
+        min-height: 100vh;
+        padding: 20px;
+    }
+    
+    .container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+    
+    .header {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        padding: 40px;
+        border-radius: 20px;
+        text-align: center;
+        margin-bottom: 30px;
+        box-shadow: 0 20px 60px rgba(156, 130, 96, 0.15);
+        border: 1px solid rgba(212, 165, 116, 0.2);
+    }
+    
+    .header h1 {
+        background: linear-gradient(135deg, #c9986a 0%, #a67c52 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-size: 2.8rem;
+        font-weight: 800;
+        margin-bottom: 10px;
+        letter-spacing: -1px;
+    }
+    
+    .header p {
+        color: #8b7355;
+        font-size: 1.1rem;
+        font-weight: 500;
+    }
+    
+    .main-grid {
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        gap: 30px;
+    }
+    
+    .sidebar {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        padding: 30px;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(156, 130, 96, 0.15);
+        border: 1px solid rgba(212, 165, 116, 0.2);
+        height: fit-content;
+        position: sticky;
+        top: 20px;
+    }
+    
+    .sidebar h2 {
+        color: #6d5843;
+        margin-bottom: 20px;
+        font-size: 1.3rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    /* ΚΡΙΤΗΡΙΟ - Ανοιχτό κεχριμπαρένιο theme */
+    .theme-btn {
+        width: 100%;
+        padding: 16px 20px;
+        margin-bottom: 12px;
+        background: #fffbf5;
+        border: 2px solid #f5e6d3;
+        border-radius: 12px;
+        cursor: pointer;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #8b7355;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        text-align: left;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .theme-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: linear-gradient(135deg, #c9986a 0%, #a67c52 100%);
+        transform: scaleY(0);
+        transition: transform 0.3s;
+    }
+    
+    .theme-btn:hover {
+        background: #fff8f0;
+        border-color: #e8d4b8;
+        transform: translateX(8px);
+    }
+    
+    .theme-btn.active {
+        background: linear-gradient(135deg, #e8d4b8 0%, #d4c5a9 100%);
+        color: #6d5843;
+        border-color: transparent;
+        transform: translateX(12px);
+        box-shadow: 0 10px 30px rgba(201, 152, 106, 0.25);
+    }
+    
+    /* ΘΕΩΡΙΑ - Ανοιχτό πράσινο theme */
+    .sidebar h2:nth-of-type(2) {
+        color: #3d7a6b;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 2px solid #f5e6d3;
+    }
+    
+    .theme-btn[onclick*="theoria"] {
+        background: #f8fdfb;
+        border-color: #d9f0e8;
+        color: #3d7a6b;
+    }
+    
+    .theme-btn[onclick*="theoria"]::before {
+        background: linear-gradient(135deg, #5eb89a 0%, #4a9d82 100%);
+    }
+    
+    .theme-btn[onclick*="theoria"]:hover {
+        background: #f0faf6;
+        border-color: #c0e6d8;
+    }
+    
+    .theme-btn[onclick*="theoria"].active {
+        background: linear-gradient(135deg, #d9f0e8 0%, #c8e8dc 100%);
+        color: #3d7a6b;
+        box-shadow: 0 10px 30px rgba(94, 184, 154, 0.25);
+    }
+    
+    .content {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        padding: 40px;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(156, 130, 96, 0.15);
+        border: 1px solid rgba(212, 165, 116, 0.2);
+        min-height: 500px;
+    }
+    
+    .welcome {
+        text-align: center;
+        padding: 120px 40px;
+    }
+    
+    .welcome-icon {
+        font-size: 100px;
+        margin-bottom: 30px;
+        animation: float 3s ease-in-out infinite;
+    }
+    
+    @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-20px); }
+    }
+    
+    .welcome h2 {
+        color: #6d5843;
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin-bottom: 15px;
+    }
+    
+    .welcome p {
+        color: #8b7355;
+        font-size: 1.15rem;
+        font-weight: 500;
+    }
+    
+    .question-list h2 {
+        color: #6d5843;
+        margin-bottom: 30px;
+        font-size: 2rem;
+        font-weight: 700;
+    }
+    
+    .question-item {
+        background: linear-gradient(135deg, #fffbf5 0%, #fff8f0 100%);
+        padding: 24px;
+        margin-bottom: 16px;
+        border-radius: 16px;
+        cursor: pointer;
+        border: 2px solid #f5e6d3;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .question-item::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, rgba(232, 212, 184, 0.3) 0%, rgba(212, 197, 169, 0.3) 100%);
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    
+    .question-item:hover {
+        border-color: #e8d4b8;
+        transform: translateY(-4px);
+        box-shadow: 0 12px 40px rgba(201, 152, 106, 0.2);
+    }
+    
+    .question-item:hover::before {
+        opacity: 1;
+    }
+    
+    .question-item h3 {
+        color: #6d5843;
+        margin-bottom: 10px;
+        font-size: 1.15rem;
+        font-weight: 700;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .question-item p {
+        color: #8b7355;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .question-view h2 {
+        color: #6d5843;
+        margin-bottom: 30px;
+        font-size: 2rem;
+        font-weight: 700;
+    }
+    
+    .question-card {
+        background: linear-gradient(135deg, #fffbf5 0%, #fff8f0 100%);
+        padding: 30px;
+        border-radius: 16px;
+        margin-bottom: 24px;
+        border-left: 5px solid #c9986a;
+        box-shadow: 0 4px 20px rgba(201, 152, 106, 0.12);
+    }
+    
+    .question-card h3 {
+        color: #6d5843;
+        margin-bottom: 16px;
+        font-size: 1.2rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .question-card p {
+        color: #8b7355;
+        font-size: 1.05rem;
+        line-height: 1.8;
+    }
+    
+    .answer-card {
+        background: linear-gradient(135deg, #f8fdfb 0%, #f0faf6 100%);
+        padding: 30px;
+        border-radius: 16px;
+        border-left: 5px solid #5eb89a;
+        margin-bottom: 24px;
+        animation: slideIn 0.4s ease-out;
+        box-shadow: 0 4px 20px rgba(94, 184, 154, 0.15);
+    }
+    
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
         }
-        
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
+        to {
+            opacity: 1;
+            transform: translateY(0);
         }
-        
-        .header {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            text-align: center;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-        
-        .header h1 {
-            color: #2d3748;
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-        }
-        
-        .header p {
-            color: #718096;
-            font-size: 1.2rem;
-        }
-        
+    }
+    
+    .answer-card h3 {
+        color: #3d7a6b;
+        margin-bottom: 20px;
+        font-size: 1.2rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .answer-line {
+        color: #5a6f68;
+        padding: 10px 0;
+        font-size: 1rem;
+        line-height: 1.8;
+    }
+    
+    .answer-line.sub {
+        padding-left: 30px;
+        color: #6b8078;
+    }
+    
+    .answer-line.main {
+        font-weight: 700;
+        color: #3d7a6b;
+        margin-top: 8px;
+    }
+    
+    .btn {
+        padding: 16px 32px;
+        border: none;
+        border-radius: 12px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        margin-right: 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .btn-show {
+        background: linear-gradient(135deg, #5eb89a 0%, #4a9d82 100%);
+        color: white;
+        box-shadow: 0 4px 20px rgba(94, 184, 154, 0.3);
+    }
+    
+    .btn-show:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 30px rgba(94, 184, 154, 0.4);
+    }
+    
+    .btn-show:active {
+        transform: translateY(0);
+    }
+    
+    .btn-back {
+        background: #fff8f0;
+        color: #8b7355;
+        border: 2px solid #f5e6d3;
+    }
+    
+    .btn-back:hover {
+        background: #fff3e6;
+        border-color: #e8d4b8;
+    }
+    
+    .hidden {
+        display: none;
+    }
+    
+    @media (max-width: 1024px) {
         .main-grid {
-            display: grid;
-            grid-template-columns: 350px 1fr;
-            gap: 30px;
+            grid-template-columns: 1fr;
         }
         
         .sidebar {
-            background: white;
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            position: relative;
+            top: 0;
         }
         
-        .sidebar h2 {
-            color: #2d3748;
-            margin-bottom: 20px;
-            font-size: 1.5rem;
-        }
-        
-        .theme-btn {
-            width: 100%;
-            padding: 15px 20px;
-            margin-bottom: 10px;
-            background: #f7fafc;
-            border: 2px solid #e2e8f0;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 1rem;
-            font-weight: 600;
-            color: #2d3748;
-            transition: all 0.3s;
-            text-align: left;
-        }
-        
-        .theme-btn:hover {
-            background: #edf2f7;
-            border-color: #cbd5e0;
-        }
-        
-        .theme-btn.active {
-            background: #667eea;
-            color: white;
-            border-color: #667eea;
-            transform: translateX(5px);
-        }
-        
-        .content {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            min-height: 500px;
-        }
-        
-        .welcome {
-            text-align: center;
-            padding: 100px 20px;
-        }
-        
-        .welcome-icon {
-            font-size: 80px;
-            margin-bottom: 20px;
-        }
-        
-        .welcome h2 {
-            color: #2d3748;
+        .header h1 {
             font-size: 2rem;
-            margin-bottom: 10px;
         }
-        
-        .welcome p {
-            color: #718096;
-            font-size: 1.1rem;
-        }
-        
-        .question-list h2 {
-            color: #2d3748;
-            margin-bottom: 25px;
-            font-size: 1.8rem;
-        }
-        
-        .question-item {
-            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
-            padding: 20px;
-            margin-bottom: 15px;
-            border-radius: 10px;
-            cursor: pointer;
-            border: 2px solid transparent;
-            transition: all 0.3s;
-        }
-        
-        .question-item:hover {
-            border-color: #667eea;
-            transform: translateX(5px);
-        }
-        
-        .question-item h3 {
-            color: #2d3748;
-            margin-bottom: 8px;
-            font-size: 1.1rem;
-        }
-        
-        .question-item p {
-            color: #4a5568;
-            font-size: 0.95rem;
-        }
-        
-        .question-view h2 {
-            color: #2d3748;
-            margin-bottom: 25px;
-            font-size: 1.8rem;
-        }
-        
-        .question-card {
-            background: #f7fafc;
-            padding: 25px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            border-left: 5px solid #667eea;
-        }
-        
-        .question-card h3 {
-            color: #2d3748;
-            margin-bottom: 15px;
-            font-size: 1.2rem;
-        }
-        
-        .question-card p {
-            color: #4a5568;
-            font-size: 1.05rem;
-            line-height: 1.8;
-        }
-        
-        .answer-card {
-            background: linear-gradient(135deg, #48bb7815 0%, #38a16915 100%);
-            padding: 25px;
-            border-radius: 10px;
-            border-left: 5px solid #48bb78;
-            margin-bottom: 20px;
-        }
-        
-        .answer-card h3 {
-            color: #22543d;
-            margin-bottom: 15px;
-            font-size: 1.2rem;
-        }
-        
-        .answer-line {
-            color: #2d3748;
-            padding: 8px 0;
-            font-size: 1rem;
-            line-height: 1.7;
-        }
-        
-        .answer-line.sub {
-            padding-left: 25px;
-            color: #4a5568;
-        }
-        
-        .answer-line.main {
-            font-weight: 600;
-            color: #1a202c;
-        }
-        
-        .btn {
-            padding: 15px 30px;
-            border: none;
-            border-radius: 10px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin-right: 10px;
-        }
-        
-        .btn-show {
-            background: #48bb78;
-            color: white;
-        }
-        
-        .btn-show:hover {
-            background: #38a169;
-        }
-        
-        .btn-back {
-            background: #cbd5e0;
-            color: #2d3748;
-        }
-        
-        .btn-back:hover {
-            background: #a0aec0;
-        }
-        
-        .hidden {
-            display: none;
-        }
-        
-        @media (max-width: 1024px) {
-            .main-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+    }
+</style>
+```
+
 </head>
 <body>
     <div class="container">
@@ -254,517 +401,520 @@
             <h1>📚 Κριτήριο #2 - Εφηβεία</h1>
             <p>Νεοελληνική Γλώσσα - Α' Λυκείου</p>
         </div>
+
+```
+    <div class="main-grid">
+        <div class="sidebar">
+            <h2>📋 Επιλογή Θέματος</h2>
+            <button class="theme-btn" onclick="showTheme('thema1')">ΘΕΜΑ 1 (35 μον.)</button>
+            <button class="theme-btn" onclick="showTheme('thema2')">ΘΕΜΑ 2 (30 μον.)</button>
+            <button class="theme-btn" onclick="showTheme('thema3')">ΘΕΜΑ 3 (20 μον.)</button>
+            <button class="theme-btn" onclick="showTheme('thema4')">ΘΕΜΑ 4 (15 μον.)</button>
+            
+            <h2 style="margin-top: 30px;">📖 Θεωρία</h2>
+            <button class="theme-btn" onclick="showTheme('theoriaAnalogia')">ΑΝΑΛΟΓΙΑ (Γλώσσα)</button>
+            <button class="theme-btn" onclick="showTheme('theoriaParomoiosi')">ΠΑΡΟΜΟΙΩΣΗ (Λογοτεχνία)</button>
+        </div>
         
-        <div class="main-grid">
-            <div class="sidebar">
-                <h2>📋 Επιλογή Θέματος</h2>
-                <button class="theme-btn" onclick="showTheme('thema1')">ΘΕΜΑ 1 (35 μον.)</button>
-                <button class="theme-btn" onclick="showTheme('thema2')">ΘΕΜΑ 2 (30 μον.)</button>
-                <button class="theme-btn" onclick="showTheme('thema3')">ΘΕΜΑ 3 (20 μον.)</button>
-                <button class="theme-btn" onclick="showTheme('thema4')">ΘΕΜΑ 4 (15 μον.)</button>
-                
-                <h2 style="margin-top: 30px;">📖 Θεωρία</h2>
-                <button class="theme-btn" onclick="showTheme('theoriaAnalogia')">ΑΝΑΛΟΓΙΑ (Γλώσσα)</button>
-                <button class="theme-btn" onclick="showTheme('theoriaParomoiosi')">ΠΑΡΟΜΟΙΩΣΗ (Λογοτεχνία)</button>
+        <div class="content">
+            <div id="welcome" class="welcome">
+                <div class="welcome-icon">📝</div>
+                <h2>Καλώς ήρθατε!</h2>
+                <p>Επιλέξτε ένα θέμα από την αριστερή στήλη για να ξεκινήσετε</p>
             </div>
             
-            <div class="content">
-                <div id="welcome" class="welcome">
-                    <div class="welcome-icon">📝</div>
-                    <h2>Καλώς ήρθατε!</h2>
-                    <p>Επιλέξτε ένα θέμα από την αριστερή στήλη για να ξεκινήσετε</p>
-                </div>
-                
-                <div id="questionList" class="question-list hidden"></div>
-                <div id="questionView" class="question-view hidden"></div>
-            </div>
+            <div id="questionList" class="question-list hidden"></div>
+            <div id="questionView" class="question-view hidden"></div>
         </div>
     </div>
+</div>
 
-    <script>
-        const themata = {
-            thema1: {
-                title: 'ΘΕΜΑ 1 - Κατανόηση (35 μονάδες)',
-                questions: [
-                    {
-                        id: '1a',
-                        question: '1ο υποερώτημα (10 μον.): Συνοπτική απόδοση - Να αποδώσεις συνοπτικά σε 70 περίπου λέξεις την απάντηση που δίνουν οι συγγραφείς του Κειμένου 1 στο ερώτημα του τίτλου (Τι είναι εφηβεία;).',
-                        answer: [
-                            'Σύμφωνα με το κείμενο, η εφηβεία είναι μία μεταβατική περίοδος από την παιδική ηλικία προς την ώριμη, με ασαφή όμως όρια.',
-                            '',
-                            'Μοιάζει με την αποκοπή του μωρού από τον πλακούντα κατά τη γέννηση, καθώς ο έφηβος πρέπει να αποκοπεί σταδιακά από την προστασία των γονιών.',
-                            '',
-                            'Αυτή, ωστόσο, η αποκοπή από το οικογενειακό περιβάλλον καθιστά τον έφηβο ευάλωτο, σε απειλές, παρόμοιες με τους κινδύνους που αντιμετωπίζει ο αστακός από το μουγγρί στο διάστημα που αλλάζει περίβλημα.',
-                            '',
-                            '(75 λέξεις)'
-                        ]
-                    },
-                    {
-                        id: '1b',
-                        question: '2ο υποερώτημα (10 μον.): Αναλογίες - Στο Κείμενο 1 αξιοποιείται η μέθοδος της αναλογίας. Να καταγράψεις τα χωρία στα οποία εντοπίζονται οι δύο αναλογίες και τα μέρη από τα οποία αποτελούνται.',
-                        answer: [
-                            'Πρώτη αναλογία:',
-                            '• Χωρίο: «Αυτό με το οποίο μοιάζει … προστατευτικό πλακούντα»',
-                            '• Μέρη: Παραλληλίζεται η εφηβεία με τη γέννηση του μωρού',
-                            '• Η απομάκρυνση από το προστατευτικό πλαίσιο της οικογένειας παρομοιάζεται με την αποκοπή του μωρού από τον προστατευτικό πλακούντα',
-                            '',
-                            'Δεύτερη αναλογία:',
-                            '• Χωρίο: «Οι αστακοί, όταν αλλάζουν περίβλημα … ενήλικος εαυτός μας»',
-                            '• Μέρη: Παραλληλίζεται η περίοδος εφηβείας με την περίοδο που ο αστακός αλλάζει περίβλημα',
-                            '• Οι κίνδυνοι που αντιμετωπίζουν οι έφηβοι παρομοιάζονται με αυτούς που αντιμετωπίζει ο αστακός από το μουγγρί'
-                        ]
-                    },
-                    {
-                        id: '1c',
-                        question: '3ο υποερώτημα (15 μον.): Σημεία στίξης - Να σχολιάσεις τον ρόλο των σημείων στίξης στα δοσμένα χωρία.',
-                        answer: [
-                            'α. Κόμματα:',
-                            'Η χρήση του κόμματος πριν και μετά από τη λέξη «ο πλακούντας» δηλώνει ότι αυτή η λέξη είναι επεξήγηση/προσδιορισμός της φράσης «εξαιρετικό όργανο σύνδεσης».',
-                            '',
-                            'β. Ερωτηματικό:',
-                            'Το ερωτηματικό δηλώνει προβληματισμό ως προς το είδος της ζωής που θέλει να έχει ο έφηβος και τη σχέση της με αυτή των γονιών. Επικοινωνιακά, στοχεύει στην κινητοποίηση του ενδιαφέροντος του αναγνώστη.',
-                            '',
-                            'γ. Διπλή παύλη:',
-                            'Δηλώνει διακοπή της φυσικής ροής του λόγου για να προστεθεί μία απαραίτητη πληροφορία (χρονική προϋπόθεση). Στη συνέχεια, ο συγγραφέας επανέρχεται στην κανονική ροή.',
-                            '',
-                            'δ. Θαυμαστικό:',
-                            'Δηλώνει έμφαση/έκπληξη. Τονίζει τον παραλληλισμό ανάμεσα στο δράμα του αστακού και τους κινδύνους της εφηβείας και εκφράζει έκπληξη για το παράδοξο της αναλογίας.',
-                            '',
-                            'ε. Εισαγωγικά:',
-                            'Δηλώνουν μεταφορική χρήση της λέξης «μουγγρί».'
-                        ]
-                    }
-                ]
-            },
-            thema2: {
-                title: 'ΘΕΜΑ 2 - Παραγωγή Λόγου (30 μονάδες)',
-                questions: [
-                    {
-                        id: '2a',
-                        question: 'Άρθρο για προσωπικό ιστολόγιο (350-400 λέξεις): Τι σημαίνει για σένα η εφηβεία; Ποιες ιδιότητες της ηλικίας σου θα βοηθήσουν στη μετάβαση στην ενήλικη ζωή;',
-                        answer: [
-                            'Τίτλος: Τι σημαίνει να είσαι έφηβος;',
-                            '',
-                            'ΠΡΟΛΟΓΟΣ:',
-                            'Οι περισσότεροι δίνουν μια εύκολη απάντηση: η εφηβεία είναι δύσκολη περίοδος με αλλαγές, ψυχολογικές αναστατώσεις και κινδύνους. Για κάποιους είναι «ασθένεια» που πρέπει να περάσουμε. Προσωπικά δεν σκέφτομαι έτσι.',
-                            '',
-                            'ΤΙ ΣΗΜΑΙΝΕΙ ΓΙA ΜΕΝΑ Η ΕΦΗΒΕΙΑ:',
-                            '• Περίοδος περισυλλογής και αναζήτησης απαντήσεων σε ερωτήματα για τον κόσμο, τις σχέσεις, τις αξίες',
-                            '• Χρόνος ονειροπόλησης και κατάστρωσης σχεδίων - προετοιμασία για τον αγώνα της ενήλικης ζωής',
-                            '• Άνοιγμα σε πρωτόγνωρες εμπειρίες: πρώτος έρωτας, εφηβικές φιλίες',
-                            '• Μύηση στον πραγματικό κόσμο χωρίς την επιφανειακή παιδική όραση',
-                            '• Περίοδος ανεξαρτητοποίησης από το προστατευτικό πλαίσιο της οικογένειας',
-                            '',
-                            'ΙΔΙΟΤΗΤΕΣ ΠΟΥ ΒΟΗΘΟΥΝ:',
-                            '• Αισιοδοξία: Οπλίζει για να υπερβούμε δυσκολίες και ματαιώσεις',
-                            '• Δυναμισμός και τόλμη: Βοηθούν να σταθούμε στα πόδια μας',
-                            '• Αμφισβήτηση: Όπλο για διαμόρφωση άποψης και αποφυγή χειραγώγησης',
-                            '• Πίστη σε ιδανικά: Ενισχύει αγωνιστικότητα και αποτρέπει συμβιβασμό',
-                            '',
-                            'ΕΠΙΛΟΓΟΣ:',
-                            'Η εφηβεία είναι μια μαγική περίοδος - μαγεία του πρωτόγνωρου. «Είσαι νέος… Πιάσε το ΠΡΕΠΕΙ από το ιώτα και γδάρε το ίσα με το πι».'
-                        ]
-                    }
-                ]
-            },
-            thema3: {
-                title: 'ΘΕΜΑ 3 - Σχήματα Λόγου (20 μονάδες)',
-                questions: [
-                    {
-                        id: '3a',
-                        question: 'Να εντοπίσεις στο απόσπασμα του ποιήματος τρία σχήματα λόγου (επανάληψη, μεταφορά, παρομοίωση) και να εξηγήσεις το νόημά τους.',
-                        answer: [
-                            'ΕΠΑΝΑΛΗΨΗ:',
-                            '«Και συνταράζει αρίζωτους ανθρώπους στον πόνο, συνταράζει τις γυναίκες»',
-                            '• Τονίζεται εμφατικά ο μεγάλος πόνος και η ταραχή που προκάλεσε το τέλος του νέου',
-                            '• Ιδιαίτερα στις γυναίκες (ως φορείς συναισθημάτων και ευαισθησίας)',
-                            '',
-                            'ΜΕΤΑΦΟΡΑ:',
-                            '«αρίζωτους ανθρώπους στον πόνο»',
-                            '• Πρωτόγνωρο αίσθημα πόνου που ένιωσαν',
-                            '• Άνθρωποι που δεν γνώριζαν τον πόνο, δεν είχαν τραυματικές εμπειρίες',
-                            '',
-                            'ΠΑΡΟΜΟΙΩΣΗ:',
-                            '«σαν ένας γλάρος»',
-                            '• Παραλληλίζεται η απότομη πτώση του Ίκαρου με την πτώση γλάρου από δυνατό άνεμο',
-                            '• Αποδίδεται παραστατικά η πτώση: το σώμα αντιστέκεται στον άνεμο έως ότου η βαρύτητα το ωθεί σε κάθετη/βίαιη πτώση'
-                        ]
-                    }
-                ]
-            },
-            thema4: {
-                title: 'ΘΕΜΑ 4 - Προσωπική Ανταπόκριση (15 μονάδες)',
-                questions: [
-                    {
-                        id: '4a',
-                        question: 'Κείμενο 130-150 λέξεων: Ποια συναισθήματα σου δημιουργεί ο χαμός του εφήβου; Ποιες οι αντιδράσεις; Θεωρείς δικαιολογημένη τη θυσία του;',
-                        answer: [
-                            'ΣΥΝΑΙΣΘΗΜΑΤΑ:',
-                            'Η ανάγνωση του ποιήματος αφήνει ανάμεικτα συναισθήματα:',
-                            '• Πικρό και μελαγχολικό αίσθημα για τον άδικο χαμό',
-                            '• Θαυμασμό γιατί τόλμησε και ακολούθησε τον πόθο του για ελευθερία',
-                            '• Επιλογή που κόστισε την ίδια του τη ζωή',
-                            '',
-                            'ΑΝΤΙΔΡΑΣΕΙΣ:',
-                            '• Πρωτόγνωρη οδύνη ακόμα και σε όσους δεν είχαν γνωρίσει τέτοιο συναίσθημα',
-                            '• Συγκλονισμός των γυναικών από τη βίαιη πτώση',
-                            '• Η θάλασσα συμμετέχει στη θλίψη - φαντάζει σαν μεγάλο «δάκρυ»',
-                            '',
-                            'ΠΡΟΣΩΠΙΚΗ ΑΠΟΨΗ (Α΄ εκδοχή):',
-                            'Η θυσία είναι δικαιολογημένη. Ως έφηβος γοητεύεται από την ελευθερία και αψηφά τον κίνδυνο. Αυτές οι απώλειες είναι το τίμημα που πληρώνουν οι άνθρωποι στους αγώνες τους για ελευθερία.',
-                            '',
-                            'ΠΡΟΣΩΠΙΚΗ ΑΠΟΨΗ (Β΄ εκδοχή):',
-                            'Η θυσία είναι αδικαιολόγητη. Η υπέρβαση ορίων πρέπει να συνοδεύεται από ρεαλισμό. Αλλιώς καταλήγει επιπόλαιη και επικίνδυνη. Ο έφηβος πρέπει να τολμά, αλλά όχι αστόχαστα. Το μέτρο είναι ο καλύτερος οδηγός.'
-                        ]
-                    }
-                ]
-            },
-            theoriaAnalogia: {
-                title: 'ΘΕΩΡΙΑ: Αναλογία (Νεοελληνική Γλώσσα)',
-                questions: [
-                    {
-                        id: 'th_ana_1',
-                        question: 'Θεωρία - Τι είναι η ανάπτυξη παραγράφου με αναλογία;',
-                        answer: [
-                            '═══ ΟΡΙΣΜΟΣ ═══',
-                            'Η θεματική περίοδος έχει μορφή παρομοίωσης, ενώ στα σχόλια παρουσιάζονται εκτενείς αναλογίες/παραλληλισμοί που επεξηγούν και στηρίζουν την κεντρική παρομοίωση.',
-                            '',
-                            '═══ ΔΕΙΚΤΕΣ ΑΝΑΛΟΓΙΑΣ ═══',
-                            '• Διαρθρωτικές λέξεις: σαν, όπως... έτσι..., μοιάζει..., το ίδιο/παρόμοιο/ανάλογο συμβαίνει',
-                            '• Ρήματα παραλληλισμού: παρομοιάζω, παραβάλλω, παραλληλίζω, θυμίζει',
-                            '',
-                            '═══ ΕΙΔΗ ΑΝΑΛΟΓΙΑΣ ═══',
-                            '',
-                            '1. ΚΥΡΙΟΛΕΚΤΙΚΗ:',
-                            '• Τα παραλληλιζόμενα ανήκουν στο ίδιο γένος/κατηγορία',
-                            '• Οι ομοιότητες είναι βασικές και εμφανείς',
-                            '• Π.χ. δύο καθεστώτα, δύο αθλήματα',
-                            '',
-                            '2. ΜΕΤΑΦΟΡΙΚΗ:',
-                            '• Τα παραλληλιζόμενα ΔΕΝ ανήκουν στο ίδιο γένος',
-                            '• Δεν παρουσιάζουν εμφανείς ομοιότητες',
-                            '• Π.χ. ψυχή - θάλασσα, παιδεία - μάρμαρο',
-                            '',
-                            '═══ ΛΕΙΤΟΥΡΓΙΑ ═══',
-                            '1. Καθιστά κατανοητό ένα δυσνόητο φαινόμενο',
-                            '2. Προσδίδει παραστατικότητα και αισθητική αξία',
-                            '3. Κάνει το κείμενο ελκυστικό στον αναγνώστη'
-                        ]
-                    },
-                    {
-                        id: 'th_ana_2',
-                        question: 'Παράδειγμα - Ανάπτυξη με αναλογία',
-                        answer: [
-                            'ΠΑΡΑΔΕΙΓΜΑ (Μεταφορική αναλογία):',
-                            '',
-                            '«Μια ανθρώπινη ψυχή χωρίς την πρέπουσα παιδεία μοιάζει με ένα μάρμαρο λατομείου. (Θ.Π.)',
-                            '',
-                            'Όπως αυτό δεν αποκαλύπτει καμιά από τις ομορφιές του, ως τη στιγμή που η τέχνη του μαρμαρά αποκαλύψει τα χρώματα και φέρει στο φως κάθε απόχρωση, κηλίδα και φλέβα που περνά μέσα απ\' τον κορμό του, με τον ίδιο τρόπο και η παιδεία, όταν επενεργήσει πάνω σ\' ένα έξοχο πνεύμα, μας αποκαλύπτει όλες τις κρυφές αρετές και τα προτερήματά του, που χωρίς μια τέτοια βοήθεια δε θα μπορούσαν να βγουν στο φως.»',
-                            '',
-                            '═══ ΑΝΑΛΥΣΗ ═══',
-                            '',
-                            'ΜΕΛΗ ΑΝΑΛΟΓΙΑΣ:',
-                            '• Ψυχή χωρίς παιδεία ↔ Ακατέργαστο μάρμαρο',
-                            '• Παιδεία ↔ Τέχνη μαρμαρά',
-                            '• Αποκάλυψη αρετών ↔ Αποκάλυψη ομορφιάς μαρμάρου',
-                            '',
-                            'ΕΙΔΟΣ: Μεταφορική (ψυχή ≠ μάρμαρο)',
-                            '',
-                            'ΛΕΙΤΟΥΡΓΙΑ: Καθιστά κατανοητή την αξία της παιδείας μέσω της οικείας εικόνας του λατομείου'
-                        ]
-                    },
-                    {
-                        id: 'th_ana_3',
-                        question: 'ΑΣΚΗΣΗ 1: Εντόπισε τα μέλη της αναλογίας και δικαιολόγησε την επιλογή',
-                        answer: [
-                            'ΚΕΙΜΕΝΟ:',
-                            '«Η φιλία, όμως, είναι και εξαιρετικά ευαίσθητη. Όπως τα ευγενή ποτά αλλοιώνονται αμέσως με την παραμικρή πρόσμειξη ακάθαρτων ουσιών, έτσι και η φιλία δεν αντέχει στη νόθευση και διαλύεται πολύ εύκολα.»',
-                            '',
-                            '═══ ΑΠΑΝΤΗΣΗ ═══',
-                            '',
-                            'ΜΕΛΗ ΑΝΑΛΟΓΙΑΣ:',
-                            '• Φιλία ↔ Ευγενή ποτά',
-                            '• Νόθευση φιλίας ↔ Πρόσμειξη ακάθαρτων ουσιών',
-                            '• Διάλυση φιλίας ↔ Αλλοίωση ποτών',
-                            '',
-                            'ΕΙΔΟΣ: Μεταφορική',
-                            '',
-                            'ΔΙΚΑΙΟΛΟΓΗΣΗ:',
-                            'Ο συγγραφέας επιλέγει την αναλογία για να:',
-                            '1. Καταστήσει κατανοητή την ευαισθησία της φιλίας',
-                            '2. Προσδώσει παραστατικότητα στο κείμενο',
-                            '3. Αποδώσει με ζωντανό τρόπο πόσο εύκολα καταστρέφεται η φιλία από την ιδιοτέλεια'
-                        ]
-                    },
-                    {
-                        id: 'th_ana_4',
-                        question: 'ΑΣΚΗΣΗ 2: Χαρακτήρισε την αναλογία και εξήγησε τι πετυχαίνει',
-                        answer: [
-                            'ΚΕΙΜΕΝΟ:',
-                            '«Υπάρχει η άποψη ότι το ντύσιμο είναι η προετοιμασία μας, για να βγούμε στη σκηνή της ζωής. Όπως ακριβώς συμβαίνει στο θέατρο, όπου αλλάζουμε κοστούμια ανάλογα με το έργο, τη σκηνή ή τον ρόλο, το ίδιο γίνεται και με το ντύσιμό μας στην καθημερινή ζωή.»',
-                            '',
-                            '═══ ΑΠΑΝΤΗΣΗ ═══',
-                            '',
-                            'ΜΕΛΗ ΑΝΑΛΟΓΙΑΣ:',
-                            '• Καθημερινή ζωή ↔ Θεατρική σκηνή',
-                            '• Ντύσιμο ανάλογα με περιστάσεις ↔ Αλλαγή κοστουμιών ανάλογα με ρόλο',
-                            '• Ρούχα ως απεικόνιση εσωτερικού κόσμου ↔ Κοστούμι ως έκφραση χαρακτήρα',
-                            '',
-                            'ΕΙΔΟΣ: Μεταφορική',
-                            '',
-                            'ΤΙ ΠΕΤΥΧΑΙΝΕΙ:',
-                            '1. Καθιστά κατανοητή τη σχέση ντυσίματος-προσωπικότητας',
-                            '2. Προσδίδει παραστατικότητα με οικεία εικόνα (θέατρο)',
-                            '3. Υποστηρίζει τη θέση ότι τα ρούχα είναι «ρόλοι» που παίζουμε'
-                        ]
-                    },
-                    {
-                        id: 'th_ana_5',
-                        question: 'ΑΣΚΗΣΗ 3: Παρουσίασε την αναλογία και δικαιολόγησε την επιλογή',
-                        answer: [
-                            'ΚΕΙΜΕΝΟ:',
-                            '«Οι έφηβοι χρειάζονται όρια, τα οποία θα αποτελέσουν προστατευτικά πλαίσια για εκείνους. Η περίοδος της εφηβείας μοιάζει με άγνωστη διαδρομή. Όσο έχουν κοντά τους ένα χάρτη, τόσο πιο εύκολα θα τη διανύσουν.»',
-                            '',
-                            '═══ ΑΠΑΝΤΗΣΗ ═══',
-                            '',
-                            'ΜΕΛΗ ΑΝΑΛΟΓΙΑΣ:',
-                            '• Εφηβεία ↔ Άγνωστη διαδρομή',
-                            '• Όρια/προστατευτικά πλαίσια ↔ Χάρτης',
-                            '• Διανύση εφηβείας ↔ Διανύση διαδρομής',
-                            '',
-                            'ΕΙΔΟΣ: Μεταφορική',
-                            '',
-                            'ΔΙΚΑΙΟΛΟΓΗΣΗ (με κριτήριο το κύριο θέμα):',
-                            'Η αρθρογράφος επιλέγει την αναλογία για να:',
-                            '1. Καταστήσει κατανοητή την ανάγκη των εφήβων για όρια',
-                            '2. Αποδώσει παραστατικά ότι η εφηβεία είναι περίοδος αβεβαιότητας',
-                            '3. Εξηγήσει με οικεία εικόνα (χάρτης-ταξίδι) τη λειτουργία των ορίων ως καθοδήγησης'
-                        ]
-                    }
-                ]
-            },
-            theoriaParomoiosi: {
-                title: 'ΘΕΩΡΙΑ: Παρομοίωση (Λογοτεχνία)',
-                questions: [
-                    {
-                        id: 'th_par_1',
-                        question: 'Θεωρία - Τι είναι η παρομοίωση;',
-                        answer: [
-                            '═══ ΟΡΙΣΜΟΣ ═══',
-                            'Παραλληλισμός ενός προσώπου, πράγματος ή κατάστασης με κάποιο άλλο που έχει την ίδια ιδιότητα σε μεγαλύτερο βαθμό.',
-                            '',
-                            '═══ ΕΙΣΑΓΩΓΙΚΕΣ ΛΕΞΕΙΣ ═══',
-                            '• σαν',
-                            '• σαν να',
-                            '• λες και',
-                            '• όπως',
-                            '',
-                            '═══ ΛΕΙΤΟΥΡΓΙΑ ═══',
-                            'Ο συντάκτης χρησιμοποιεί την παρομοίωση για να φωτίσει ένα στοιχείο (πρόσωπο, πράγμα, κατάσταση), συνδέοντάς το με άλλες καταστάσεις που είναι οικείες στον αναγνώστη.',
-                            '',
-                            '═══ ΣΚΟΠΟΣ ═══',
-                            '1. Αισθητοποίηση εικόνας',
-                            '2. Παραστατικότητα',
-                            '3. Έμφαση σε συγκεκριμένη ιδιότητα',
-                            '4. Συναισθηματική φόρτιση'
-                        ]
-                    },
-                    {
-                        id: 'th_par_2',
-                        question: 'Παράδειγμα - Παρομοίωση στη λογοτεχνία',
-                        answer: [
-                            'ΠΑΡΑΔΕΙΓΜΑ 1 (Καβάφης):',
-                            '',
-                            '«Του μέλλοντος οι μέρες στέκοντ\' εμπροστά μας',
-                            'σα μια σειρά κεράκια αναμένα',
-                            '- χρυσά, ζεστά, και ζωηρά κεράκια»',
-                            '',
-                            '═══ ΑΝΑΛΥΣΗ ═══',
-                            '',
-                            'ΠΑΡΑΛΛΗΛΙΣΜΟΣ:',
-                            'Μέλλον ↔ Αναμμένα κεριά (χρυσά, ζεστά, ζωηρά)',
-                            '',
-                            'ΛΕΙΤΟΥΡΓΙΑ:',
-                            '• Το μέλλον συνδέεται με φως, ελπίδα, χαρά ζωής',
-                            '• Παραστατική απόδοση της αισιοδοξίας',
-                            '• Τα επίθετα (χρυσά, ζεστά, ζωηρά) εντείνουν τη θετική εικόνα',
-                            '',
-                            '---',
-                            '',
-                            'ΠΑΡΑΔΕΙΓΜΑ 2 (Neruda):',
-                            '',
-                            '«γιατί το γέλιο σου',
-                            'θα είναι για τα χέρια μου',
-                            'σαν δροσερό σπαθί»',
-                            '',
-                            '═══ ΑΝΑΛΥΣΗ ═══',
-                            '',
-                            'ΠΑΡΑΛΛΗΛΙΣΜΟΣ:',
-                            'Γέλιο αγαπημένου ↔ Δροσερό σπαθί',
-                            '',
-                            'ΛΕΙΤΟΥΡΓΙΑ:',
-                            'Τολμηρή παρομοίωση που αποδίδει τη δύναμη που δίνει το γέλιο ενός αγαπημένου προσώπου (σπαθί = όπλο, δύναμη)'
-                        ]
-                    },
-                    {
-                        id: 'th_par_3',
-                        question: 'ΑΣΚΗΣΗ: Εντόπισε τις παρομοιώσεις και εξήγησε τη λειτουργία τους',
-                        answer: [
-                            'ΚΕΙΜΕΝΟ (Μάνος Ελευθερίου - Αναμονή):',
-                            '',
-                            '«Έσβησα τα φώτα κι άναψα κεριά',
-                            'τράβηξα στην άκρη την κουρτίνα',
-                            'να \'ρθει αεράκι σαν παλιό τανγκό',
-                            'και πως δήθεν θα \'ρθεις σαν μια σερπαντίνα.',
-                            '[...]',
-                            'Έσβησαν οι ώρες μέσα στη σιωπή',
-                            'σαν ρολόι μόλις ανασαίνω',
-                            'πότε θα \'ρθεις πάλι σαν την αστραπή»',
-                            '',
-                            '═══ ΑΠΑΝΤΗΣΗ ═══',
-                            '',
-                            'ΠΑΡΟΜΟΙΩΣΕΙΣ:',
-                            '',
-                            '1. «αεράκι σαν παλιό τανγκό»',
-                            '→ Νοσταλγική, μελαγχολική ατμόσφαιρα αναμονής',
-                            '',
-                            '2. «θα \'ρθεις σαν μια σερπαντίνα»',
-                            '→ Χαρούμενη, γιορτινή εικόνα - ελπίδα για επανασύνδεση',
-                            '',
-                            '3. «σαν ρολόι μόλις ανασαίνω»',
-                            '→ Αγωνία, αναμονή που καθηλώνει - ο χρόνος κυλά βασανιστικά αργά',
-                            '',
-                            '4. «θα \'ρθεις πάλι σαν την αστραπή»',
-                            '→ Ξαφνικά, απρόσμενα, απροειδοποίητα - αλλά και με ένταση',
-                            '',
-                            'ΛΕΙΤΟΥΡΓΙΑ:',
-                            'Οι παρομοιώσεις αποδίδουν παραστατικά τα συναισθήματα αναμονής: νοσταλγία, ελπίδα, αγωνία, αβεβαιότητα'
-                        ]
-                    },
-                    {
-                        id: 'th_par_4',
-                        question: 'ΑΣΚΗΣΗ 2: Εντόπισε τις παρομοιώσεις και εξήγησε τη λειτουργία τους',
-                        answer: [
-                            'ΚΕΙΜΕΝΟ (Μάνος Ελευθερίου - Αναμονή):',
-                            '',
-                            '«Έσβησα τα φώτα κι άναψα κεριά',
-                            'τράβηξα στην άκρη την κουρτίνα',
-                            'να \'ρθει αεράκι σαν παλιό τανγκό',
-                            'και πως δήθεν θα \'ρθεις σαν μια σερπαντίνα.',
-                            '[...]',
-                            'Έσβησαν οι ώρες μέσα στη σιωπή',
-                            'σαν ρολόι μόλις ανασαίνω',
-                            'πότε θα \'ρθεις πάλι σαν την αστραπή',
-                            'μήπως δεν υπάρχεις και άδικα προσμένω;»',
-                            '',
-                            '═══ ΑΠΑΝΤΗΣΗ ═══',
-                            '',
-                            'ΠΑΡΟΜΟΙΩΣΕΙΣ:',
-                            '',
-                            '1. «αεράκι σαν παλιό τανγκό»',
-                            '→ Νοσταλγική, μελαγχολική ατμόσφαιρα αναμονής',
-                            '→ Το τανγκό συνδέεται με πάθος και λαχτάρα',
-                            '',
-                            '2. «θα \'ρθεις σαν μια σερπαντίνα»',
-                            '→ Χαρούμενη, γιορτινή εικόνα - ελπίδα για επανασύνδεση',
-                            '→ Η σερπαντίνα συμβολίζει χαρά, γιορτή, έκπληξη',
-                            '',
-                            '3. «σαν ρολόι μόλις ανασαίνω»',
-                            '→ Αγωνία, αναμονή που καθηλώνει',
-                            '→ Ο χρόνος κυλά βασανιστικά αργά, κάθε στιγμή μετριέται',
-                            '',
-                            '4. «θα \'ρθεις πάλι σαν την αστραπή»',
-                            '→ Ξαφνικά, απρόσμενα, απροειδοποίητα',
-                            '→ Η αστραπή: φωτεινή, βίαιη, ξαφνική εμφάνιση',
-                            '',
-                            'ΛΕΙΤΟΥΡΓΙΑ:',
-                            'Οι παρομοιώσεις αποδίδουν παραστατικά τα αντιφατικά συναισθήματα της αναμονής: νοσταλγία, ελπίδα, αγωνία, αβεβαιότητα, λαχτάρα'
-                        ]
-                    }
-                ]
-            }
-        };
-        
-        let currentTheme = null;
-        let currentQuestion = null;
-        let showingAnswer = false;
-        
-        function showTheme(themeKey) {
-            currentTheme = themeKey;
-            currentQuestion = null;
-            showingAnswer = false;
-            
-            document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-            
-            document.getElementById('welcome').classList.add('hidden');
-            document.getElementById('questionView').classList.add('hidden');
-            document.getElementById('questionList').classList.remove('hidden');
-            
-            const theme = themata[themeKey];
-            const listHtml = `
-                <h2>${theme.title}</h2>
-                ${theme.questions.map((q, i) => `
-                    <div class="question-item" onclick="showQuestion('${themeKey}', ${i})">
-                        <h3>Ερώτηση ${i + 1}</h3>
-                        <p>${q.question}</p>
-                    </div>
-                `).join('')}
-            `;
-            document.getElementById('questionList').innerHTML = listHtml;
+<script>
+    const themata = {
+        thema1: {
+            title: 'ΘΕΜΑ 1 - Κατανόηση (35 μονάδες)',
+            questions: [
+                {
+                    id: '1a',
+                    question: '1ο υποερώτημα (10 μον.): Συνοπτική απόδοση - Να αποδώσεις συνοπτικά σε 70 περίπου λέξεις την απάντηση που δίνουν οι συγγραφείς του Κειμένου 1 στο ερώτημα του τίτλου (Τι είναι εφηβεία;).',
+                    answer: [
+                        'Σύμφωνα με το κείμενο, η εφηβεία είναι μία μεταβατική περίοδος από την παιδική ηλικία προς την ώριμη, με ασαφή όμως όρια.',
+                        '',
+                        'Μοιάζει με την αποκοπή του μωρού από τον πλακούντα κατά τη γέννηση, καθώς ο έφηβος πρέπει να αποκοπεί σταδιακά από την προστασία των γονιών.',
+                        '',
+                        'Αυτή, ωστόσο, η αποκοπή από το οικογενειακό περιβάλλον καθιστά τον έφηβο ευάλωτο, σε απειλές, παρόμοιες με τους κινδύνους που αντιμετωπίζει ο αστακός από το μουγγρί στο διάστημα που αλλάζει περίβλημα.',
+                        '',
+                        '(75 λέξεις)'
+                    ]
+                },
+                {
+                    id: '1b',
+                    question: '2ο υποερώτημα (10 μον.): Αναλογίες - Στο Κείμενο 1 αξιοποιείται η μέθοδος της αναλογίας. Να καταγράψεις τα χωρία στα οποία εντοπίζονται οι δύο αναλογίες και τα μέρη από τα οποία αποτελούνται.',
+                    answer: [
+                        'Πρώτη αναλογία:',
+                        '• Χωρίο: «Αυτό με το οποίο μοιάζει … προστατευτικό πλακούντα»',
+                        '• Μέρη: Παραλληλίζεται η εφηβεία με τη γέννηση του μωρού',
+                        '• Η απομάκρυνση από το προστατευτικό πλαίσιο της οικογένειας παρομοιάζεται με την αποκοπή του μωρού από τον προστατευτικό πλακούντα',
+                        '',
+                        'Δεύτερη αναλογία:',
+                        '• Χωρίο: «Οι αστακοί, όταν αλλάζουν περίβλημα … ενήλικος εαυτός μας»',
+                        '• Μέρη: Παραλληλίζεται η περίοδος εφηβείας με την περίοδο που ο αστακός αλλάζει περίβλημα',
+                        '• Οι κίνδυνοι που αντιμετωπίζουν οι έφηβοι παρομοιάζονται με αυτούς που αντιμετωπίζει ο αστακός από το μουγγρί'
+                    ]
+                },
+                {
+                    id: '1c',
+                    question: '3ο υποερώτημα (15 μον.): Σημεία στίξης - Να σχολιάσεις τον ρόλο των σημείων στίξης στα δοσμένα χωρία.',
+                    answer: [
+                        'α. Κόμματα:',
+                        'Η χρήση του κόμματος πριν και μετά από τη λέξη «ο πλακούντας» δηλώνει ότι αυτή η λέξη είναι επεξήγηση/προσδιορισμός της φράσης «εξαιρετικό όργανο σύνδεσης».',
+                        '',
+                        'β. Ερωτηματικό:',
+                        'Το ερωτηματικό δηλώνει προβληματισμό ως προς το είδος της ζωής που θέλει να έχει ο έφηβος και τη σχέση της με αυτή των γονιών. Επικοινωνιακά, στοχεύει στην κινητοποίηση του ενδιαφέροντος του αναγνώστη.',
+                        '',
+                        'γ. Διπλή παύλη:',
+                        'Δηλώνει διακοπή της φυσικής ροής του λόγου για να προστεθεί μία απαραίτητη πληροφορία (χρονική προϋπόθεση). Στη συνέχεια, ο συγγραφέας επανέρχεται στην κανονική ροή.',
+                        '',
+                        'δ. Θαυμαστικό:',
+                        'Δηλώνει έμφαση/έκπληξη. Τονίζει τον παραλληλισμό ανάμεσα στο δράμα του αστακού και τους κινδύνους της εφηβείας και εκφράζει έκπληξη για το παράδοξο της αναλογίας.',
+                        '',
+                        'ε. Εισαγωγικά:',
+                        'Δηλώνουν μεταφορική χρήση της λέξης «μουγγρί».'
+                    ]
+                }
+            ]
+        },
+        thema2: {
+            title: 'ΘΕΜΑ 2 - Παραγωγή Λόγου (30 μονάδες)',
+            questions: [
+                {
+                    id: '2a',
+                    question: 'Άρθρο για προσωπικό ιστολόγιο (350-400 λέξεις): Τι σημαίνει για σένα η εφηβεία; Ποιες ιδιότητες της ηλικίας σου θα βοηθήσουν στη μετάβαση στην ενήλικη ζωή;',
+                    answer: [
+                        'Τίτλος: Τι σημαίνει να είσαι έφηβος;',
+                        '',
+                        'ΠΡΟΛΟΓΟΣ:',
+                        'Οι περισσότεροι δίνουν μια εύκολη απάντηση: η εφηβεία είναι δύσκολη περίοδος με αλλαγές, ψυχολογικές αναστατώσεις και κινδύνους. Για κάποιους είναι «ασθένεια» που πρέπει να περάσουμε. Προσωπικά δεν σκέφτομαι έτσι.',
+                        '',
+                        'ΤΙ ΣΗΜΑΙΝΕΙ ΓΙA ΜΕΝΑ Η ΕΦΗΒΕΙΑ:',
+                        '• Περίοδος περισυλλογής και αναζήτησης απαντήσεων σε ερωτήματα για τον κόσμο, τις σχέσεις, τις αξίες',
+                        '• Χρόνος ονειροπόλησης και κατάστρωσης σχεδίων - προετοιμασία για τον αγώνα της ενήλικης ζωής',
+                        '• Άνοιγμα σε πρωτόγνωρες εμπειρίες: πρώτος έρωτας, εφηβικές φιλίες',
+                        '• Μύηση στον πραγματικό κόσμο χωρίς την επιφανειακή παιδική όραση',
+                        '• Περίοδος ανεξαρτητοποίησης από το προστατευτικό πλαίσιο της οικογένειας',
+                        '',
+                        'ΙΔΙΟΤΗΤΕΣ ΠΟΥ ΒΟΗΘΟΥΝ:',
+                        '• Αισιοδοξία: Οπλίζει για να υπερβούμε δυσκολίες και ματαιώσεις',
+                        '• Δυναμισμός και τόλμη: Βοηθούν να σταθούμε στα πόδια μας',
+                        '• Αμφισβήτηση: Όπλο για διαμόρφωση άποψης και αποφυγή χειραγώγησης',
+                        '• Πίστη σε ιδανικά: Ενισχύει αγωνιστικότητα και αποτρέπει συμβιβασμό',
+                        '',
+                        'ΕΠΙΛΟΓΟΣ:',
+                        'Η εφηβεία είναι μια μαγική περίοδος - μαγεία του πρωτόγνωρου. «Είσαι νέος… Πιάσε το ΠΡΕΠΕΙ από το ιώτα και γδάρε το ίσα με το πι».'
+                    ]
+                }
+            ]
+        },
+        thema3: {
+            title: 'ΘΕΜΑ 3 - Σχήματα Λόγου (20 μονάδες)',
+            questions: [
+                {
+                    id: '3a',
+                    question: 'Να εντοπίσεις στο απόσπασμα του ποιήματος τρία σχήματα λόγου (επανάληψη, μεταφορά, παρομοίωση) και να εξηγήσεις το νόημά τους.',
+                    answer: [
+                        'ΕΠΑΝΑΛΗΨΗ:',
+                        '«Και συνταράζει αρίζωτους ανθρώπους στον πόνο, συνταράζει τις γυναίκες»',
+                        '• Τονίζεται εμφατικά ο μεγάλος πόνος και η ταραχή που προκάλεσε το τέλος του νέου',
+                        '• Ιδιαίτερα στις γυναίκες (ως φορείς συναισθημάτων και ευαισθησίας)',
+                        '',
+                        'ΜΕΤΑΦΟΡΑ:',
+                        '«αρίζωτους ανθρώπους στον πόνο»',
+                        '• Πρωτόγνωρο αίσθημα πόνου που ένιωσαν',
+                        '• Άνθρωποι που δεν γνώριζαν τον πόνο, δεν είχαν τραυματικές εμπειρίες',
+                        '',
+                        'ΠΑΡΟΜΟΙΩΣΗ:',
+                        '«σαν ένας γλάρος»',
+                        '• Παραλληλίζεται η απότομη πτώση του Ίκαρου με την πτώση γλάρου από δυνατό άνεμο',
+                        '• Αποδίδεται παραστατικά η πτώση: το σώμα αντιστέκεται στον άνεμο έως ότου η βαρύτητα το ωθεί σε κάθετη/βίαιη πτώση'
+                    ]
+                }
+            ]
+        },
+        thema4: {
+            title: 'ΘΕΜΑ 4 - Προσωπική Ανταπόκριση (15 μονάδες)',
+            questions: [
+                {
+                    id: '4a',
+                    question: 'Κείμενο 130-150 λέξεων: Ποια συναισθήματα σου δημιουργεί ο χαμός του εφήβου; Ποιες οι αντιδράσεις; Θεωρείς δικαιολογημένη τη θυσία του;',
+                    answer: [
+                        'ΣΥΝΑΙΣΘΗΜΑΤΑ:',
+                        'Η ανάγνωση του ποιήματος αφήνει ανάμεικτα συναισθήματα:',
+                        '• Πικρό και μελαγχολικό αίσθημα για τον άδικο χαμό',
+                        '• Θαυμασμό γιατί τόλμησε και ακολούθησε τον πόθο του για ελευθερία',
+                        '• Επιλογή που κόστισε την ίδια του τη ζωή',
+                        '',
+                        'ΑΝΤΙΔΡΑΣΕΙΣ:',
+                        '• Πρωτόγνωρη οδύνη ακόμα και σε όσους δεν είχαν γνωρίσει τέτοιο συναίσθημα',
+                        '• Συγκλονισμός των γυναικών από τη βίαιη πτώση',
+                        '• Η θάλασσα συμμετέχει στη θλίψη - φαντάζει σαν μεγάλο «δάκρυ»',
+                        '',
+                        'ΠΡΟΣΩΠΙΚΗ ΑΠΟΨΗ (Α΄ εκδοχή):',
+                        'Η θυσία είναι δικαιολογημένη. Ως έφηβος γοητεύεται από την ελευθερία και αψηφά τον κίνδυνο. Αυτές οι απώλειες είναι το τίμημα που πληρώνουν οι άνθρωποι στους αγώνες τους για ελευθερία.',
+                        '',
+                        'ΠΡΟΣΩΠΙΚΗ ΑΠΟΨΗ (Β΄ εκδοχή):',
+                        'Η θυσία είναι αδικαιολόγητη. Η υπέρβαση ορίων πρέπει να συνοδεύεται από ρεαλισμό. Αλλιώς καταλήγει επιπόλαιη και επικίνδυνη. Ο έφηβος πρέπει να τολμά, αλλά όχι αστόχαστα. Το μέτρο είναι ο καλύτερος οδηγός.'
+                    ]
+                }
+            ]
+        },
+        theoriaAnalogia: {
+            title: 'ΘΕΩΡΙΑ: Αναλογία (Νεοελληνική Γλώσσα)',
+            questions: [
+                {
+                    id: 'th_ana_1',
+                    question: 'Θεωρία - Τι είναι η ανάπτυξη παραγράφου με αναλογία;',
+                    answer: [
+                        '═══ ΟΡΙΣΜΟΣ ═══',
+                        'Η θεματική περίοδος έχει μορφή παρομοίωσης, ενώ στα σχόλια παρουσιάζονται εκτενείς αναλογίες/παραλληλισμοί που επεξηγούν και στηρίζουν την κεντρική παρομοίωση.',
+                        '',
+                        '═══ ΔΕΙΚΤΕΣ ΑΝΑΛΟΓΙΑΣ ═══',
+                        '• Διαρθρωτικές λέξεις: σαν, όπως... έτσι..., μοιάζει..., το ίδιο/παρόμοιο/ανάλογο συμβαίνει',
+                        '• Ρήματα παραλληλισμού: παρομοιάζω, παραβάλλω, παραλληλίζω, θυμίζει',
+                        '',
+                        '═══ ΕΙΔΗ ΑΝΑΛΟΓΙΑΣ ═══',
+                        '',
+                        '1. ΚΥΡΙΟΛΕΚΤΙΚΗ:',
+                        '• Τα παραλληλιζόμενα ανήκουν στο ίδιο γένος/κατηγορία',
+                        '• Οι ομοιότητες είναι βασικές και εμφανείς',
+                        '• Π.χ. δύο καθεστώτα, δύο αθλήματα',
+                        '',
+                        '2. ΜΕΤΑΦΟΡΙΚΗ:',
+                        '• Τα παραλληλιζόμενα ΔΕΝ ανήκουν στο ίδιο γένος',
+                        '• Δεν παρουσιάζουν εμφανείς ομοιότητες',
+                        '• Π.χ. ψυχή - θάλασσα, παιδεία - μάρμαρο',
+                        '',
+                        '═══ ΛΕΙΤΟΥΡΓΙΑ ═══',
+                        '1. Καθιστά κατανοητό ένα δυσνόητο φαινόμενο',
+                        '2. Προσδίδει παραστατικότητα και αισθητική αξία',
+                        '3. Κάνει το κείμενο ελκυστικό στον αναγνώστη'
+                    ]
+                },
+                {
+                    id: 'th_ana_2',
+                    question: 'Παράδειγμα - Ανάπτυξη με αναλογία',
+                    answer: [
+                        'ΠΑΡΑΔΕΙΓΜΑ (Μεταφορική αναλογία):',
+                        '',
+                        '«Μια ανθρώπινη ψυχή χωρίς την πρέπουσα παιδεία μοιάζει με ένα μάρμαρο λατομείου. (Θ.Π.)',
+                        '',
+                        'Όπως αυτό δεν αποκαλύπτει καμιά από τις ομορφιές του, ως τη στιγμή που η τέχνη του μαρμαρά αποκαλύψει τα χρώματα και φέρει στο φως κάθε απόχρωση, κηλίδα και φλέβα που περνά μέσα απ\' τον κορμό του, με τον ίδιο τρόπο και η παιδεία, όταν επενεργήσει πάνω σ\' ένα έξοχο πνεύμα, μας αποκαλύπτει όλες τις κρυφές αρετές και τα προτερήματά του, που χωρίς μια τέτοια βοήθεια δε θα μπορούσαν να βγουν στο φως.»',
+                        '',
+                        '═══ ΑΝΑΛΥΣΗ ═══',
+                        '',
+                        'ΜΕΛΗ ΑΝΑΛΟΓΙΑΣ:',
+                        '• Ψυχή χωρίς παιδεία ↔ Ακατέργαστο μάρμαρο',
+                        '• Παιδεία ↔ Τέχνη μαρμαρά',
+                        '• Αποκάλυψη αρετών ↔ Αποκάλυψη ομορφιάς μαρμάρου',
+                        '',
+                        'ΕΙΔΟΣ: Μεταφορική (ψυχή ≠ μάρμαρο)',
+                        '',
+                        'ΛΕΙΤΟΥΡΓΙΑ: Καθιστά κατανοητή την αξία της παιδείας μέσω της οικείας εικόνας του λατομείου'
+                    ]
+                },
+                {
+                    id: 'th_ana_3',
+                    question: 'ΑΣΚΗΣΗ 1: Εντόπισε τα μέλη της αναλογίας και δικαιολόγησε την επιλογή',
+                    answer: [
+                        'ΚΕΙΜΕΝΟ:',
+                        '«Η φιλία, όμως, είναι και εξαιρετικά ευαίσθητη. Όπως τα ευγενή ποτά αλλοιώνονται αμέσως με την παραμικρή πρόσμειξη ακάθαρτων ουσιών, έτσι και η φιλία δεν αντέχει στη νόθευση και διαλύεται πολύ εύκολα.»',
+                        '',
+                        '═══ ΑΠΑΝΤΗΣΗ ═══',
+                        '',
+                        'ΜΕΛΗ ΑΝΑΛΟΓΙΑΣ:',
+                        '• Φιλία ↔ Ευγενή ποτά',
+                        '• Νόθευση φιλίας ↔ Πρόσμειξη ακάθαρτων ουσιών',
+                        '• Διάλυση φιλίας ↔ Αλλοίωση ποτών',
+                        '',
+                        'ΕΙΔΟΣ: Μεταφορική',
+                        '',
+                        'ΔΙΚΑΙΟΛΟΓΗΣΗ:',
+                        'Ο συγγραφέας επιλέγει την αναλογία για να:',
+                        '1. Καταστήσει κατανοητή την ευαισθησία της φιλίας',
+                        '2. Προσδώσει παραστατικότητα στο κείμενο',
+                        '3. Αποδώσει με ζωντανό τρόπο πόσο εύκολα καταστρέφεται η φιλία από την ιδιοτέλεια'
+                    ]
+                },
+                {
+                    id: 'th_ana_4',
+                    question: 'ΑΣΚΗΣΗ 2: Χαρακτήρισε την αναλογία και εξήγησε τι πετυχαίνει',
+                    answer: [
+                        'ΚΕΙΜΕΝΟ:',
+                        '«Υπάρχει η άποψη ότι το ντύσιμο είναι η προετοιμασία μας, για να βγούμε στη σκηνή της ζωής. Όπως ακριβώς συμβαίνει στο θέατρο, όπου αλλάζουμε κοστούμια ανάλογα με το έργο, τη σκηνή ή τον ρόλο, το ίδιο γίνεται και με το ντύσιμό μας στην καθημερινή ζωή.»',
+                        '',
+                        '═══ ΑΠΑΝΤΗΣΗ ═══',
+                        '',
+                        'ΜΕΛΗ ΑΝΑΛΟΓΙΑΣ:',
+                        '• Καθημερινή ζωή ↔ Θεατρική σκηνή',
+                        '• Ντύσιμο ανάλογα με περιστάσεις ↔ Αλλαγή κοστουμιών ανάλογα με ρόλο',
+                        '• Ρούχα ως απεικόνιση εσωτερικού κόσμου ↔ Κοστούμι ως έκφραση χαρακτήρα',
+                        '',
+                        'ΕΙΔΟΣ: Μεταφορική',
+                        '',
+                        'ΤΙ ΠΕΤΥΧΑΙΝΕΙ:',
+                        '1. Καθιστά κατανοητή τη σχέση ντυσίματος-προσωπικότητας',
+                        '2. Προσδίδει παραστατικότητα με οικεία εικόνα (θέατρο)',
+                        '3. Υποστηρίζει τη θέση ότι τα ρούχα είναι «ρόλοι» που παίζουμε'
+                    ]
+                },
+                {
+                    id: 'th_ana_5',
+                    question: 'ΑΣΚΗΣΗ 3: Παρουσίασε την αναλογία και δικαιολόγησε την επιλογή',
+                    answer: [
+                        'ΚΕΙΜΕΝΟ:',
+                        '«Οι έφηβοι χρειάζονται όρια, τα οποία θα αποτελέσουν προστατευτικά πλαίσια για εκείνους. Η περίοδος της εφηβείας μοιάζει με άγνωστη διαδρομή. Όσο έχουν κοντά τους ένα χάρτη, τόσο πιο εύκολα θα τη διανύσουν.»',
+                        '',
+                        '═══ ΑΠΑΝΤΗΣΗ ═══',
+                        '',
+                        'ΜΕΛΗ ΑΝΑΛΟΓΙΑΣ:',
+                        '• Εφηβεία ↔ Άγνωστη διαδρομή',
+                        '• Όρια/προστατευτικά πλαίσια ↔ Χάρτης',
+                        '• Διανύση εφηβείας ↔ Διανύση διαδρομής',
+                        '',
+                        'ΕΙΔΟΣ: Μεταφορική',
+                        '',
+                        'ΔΙΚΑΙΟΛΟΓΗΣΗ (με κριτήριο το κύριο θέμα):',
+                        'Η αρθρογράφος επιλέγει την αναλογία για να:',
+                        '1. Καταστήσει κατανοητή την ανάγκη των εφήβων για όρια',
+                        '2. Αποδώσει παραστατικά ότι η εφηβεία είναι περίοδος αβεβαιότητας',
+                        '3. Εξηγήσει με οικεία εικόνα (χάρτης-ταξίδι) τη λειτουργία των ορίων ως καθοδήγησης'
+                    ]
+                }
+            ]
+        },
+        theoriaParomoiosi: {
+            title: 'ΘΕΩΡΙΑ: Παρομοίωση (Λογοτεχνία)',
+            questions: [
+                {
+                    id: 'th_par_1',
+                    question: 'Θεωρία - Τι είναι η παρομοίωση;',
+                    answer: [
+                        '═══ ΟΡΙΣΜΟΣ ═══',
+                        'Παραλληλισμός ενός προσώπου, πράγματος ή κατάστασης με κάποιο άλλο που έχει την ίδια ιδιότητα σε μεγαλύτερο βαθμό.',
+                        '',
+                        '═══ ΕΙΣΑΓΩΓΙΚΕΣ ΛΕΞΕΙΣ ═══',
+                        '• σαν',
+                        '• σαν να',
+                        '• λες και',
+                        '• όπως',
+                        '',
+                        '═══ ΛΕΙΤΟΥΡΓΙΑ ═══',
+                        'Ο συντάκτης χρησιμοποιεί την παρομοίωση για να φωτίσει ένα στοιχείο (πρόσωπο, πράγμα, κατάσταση), συνδέοντάς το με άλλες καταστάσεις που είναι οικείες στον αναγνώστη.',
+                        '',
+                        '═══ ΣΚΟΠΟΣ ═══',
+                        '1. Αισθητοποίηση εικόνας',
+                        '2. Παραστατικότητα',
+                        '3. Έμφαση σε συγκεκριμένη ιδιότητα',
+                        '4. Συναισθηματική φόρτιση'
+                    ]
+                },
+                {
+                    id: 'th_par_2',
+                    question: 'Παράδειγμα - Παρομοίωση στη λογοτεχνία',
+                    answer: [
+                        'ΠΑΡΑΔΕΙΓΜΑ 1 (Καβάφης):',
+                        '',
+                        '«Του μέλλοντος οι μέρες στέκοντ\' εμπροστά μας',
+                        'σα μια σειρά κεράκια αναμένα',
+                        '- χρυσά, ζεστά, και ζωηρά κεράκια»',
+                        '',
+                        '═══ ΑΝΑΛΥΣΗ ═══',
+                        '',
+                        'ΠΑΡΑΛΛΗΛΙΣΜΟΣ:',
+                        'Μέλλον ↔ Αναμμένα κεριά (χρυσά, ζεστά, ζωηρά)',
+                        '',
+                        'ΛΕΙΤΟΥΡΓΙΑ:',
+                        '• Το μέλλον συνδέεται με φως, ελπίδα, χαρά ζωής',
+                        '• Παραστατική απόδοση της αισιοδοξίας',
+                        '• Τα επίθετα (χρυσά, ζεστά, ζωηρά) εντείνουν τη θετική εικόνα',
+                        '',
+                        '---',
+                        '',
+                        'ΠΑΡΑΔΕΙΓΜΑ 2 (Neruda):',
+                        '',
+                        '«γιατί το γέλιο σου',
+                        'θα είναι για τα χέρια μου',
+                        'σαν δροσερό σπαθί»',
+                        '',
+                        '═══ ΑΝΑΛΥΣΗ ═══',
+                        '',
+                        'ΠΑΡΑΛΛΗΛΙΣΜΟΣ:',
+                        'Γέλιο αγαπημένου ↔ Δροσερό σπαθί',
+                        '',
+                        'ΛΕΙΤΟΥΡΓΙΑ:',
+                        'Τολμηρή παρομοίωση που αποδίδει τη δύναμη που δίνει το γέλιο ενός αγαπημένου προσώπου (σπαθί = όπλο, δύναμη)'
+                    ]
+                },
+                {
+                    id: 'th_par_3',
+                    question: 'ΑΣΚΗΣΗ: Εντόπισε τις παρομοιώσεις και εξήγησε τη λειτουργία τους',
+                    answer: [
+                        'ΚΕΙΜΕΝΟ (Μάνος Ελευθερίου - Αναμονή):',
+                        '',
+                        '«Έσβησα τα φώτα κι άναψα κεριά',
+                        'τράβηξα στην άκρη την κουρτίνα',
+                        'να \'ρθει αεράκι σαν παλιό τανγκό',
+                        'και πως δήθεν θα \'ρθεις σαν μια σερπαντίνα.',
+                        '[...]',
+                        'Έσβησαν οι ώρες μέσα στη σιωπή',
+                        'σαν ρολόι μόλις ανασαίνω',
+                        'πότε θα \'ρθεις πάλι σαν την αστραπή»',
+                        '',
+                        '═══ ΑΠΑΝΤΗΣΗ ═══',
+                        '',
+                        'ΠΑΡΟΜΟΙΩΣΕΙΣ:',
+                        '',
+                        '1. «αεράκι σαν παλιό τανγκό»',
+                        '→ Νοσταλγική, μελαγχολική ατμόσφαιρα αναμονής',
+                        '',
+                        '2. «θα \'ρθεις σαν μια σερπαντίνα»',
+                        '→ Χαρούμενη, γιορτινή εικόνα - ελπίδα για επανασύνδεση',
+                        '',
+                        '3. «σαν ρολόι μόλις ανασαίνω»',
+                        '→ Αγωνία, αναμονή που καθηλώνει - ο χρόνος κυλά βασανιστικά αργά',
+                        '',
+                        '4. «θα \'ρθεις πάλι σαν την αστραπή»',
+                        '→ Ξαφνικά, απρόσμενα, απροειδοποίητα - αλλά και με ένταση',
+                        '',
+                        'ΛΕΙΤΟΥΡΓΙΑ:',
+                        'Οι παρομοιώσεις αποδίδουν παραστατικά τα συναισθήματα αναμονής: νοσταλγία, ελπίδα, αγωνία, αβεβαιότητα'
+                    ]
+                },
+                {
+                    id: 'th_par_4',
+                    question: 'ΑΣΚΗΣΗ 2: Εντόπισε τις παρομοιώσεις και εξήγησε τη λειτουργία τους',
+                    answer: [
+                        'ΚΕΙΜΕΝΟ (Μάνος Ελευθερίου - Αναμονή):',
+                        '',
+                        '«Έσβησα τα φώτα κι άναψα κεριά',
+                        'τράβηξα στην άκρη την κουρτίνα',
+                        'να \'ρθει αεράκι σαν παλιό τανγκό',
+                        'και πως δήθεν θα \'ρθεις σαν μια σερπαντίνα.',
+                        '[...]',
+                        'Έσβησαν οι ώρες μέσα στη σιωπή',
+                        'σαν ρολόι μόλις ανασαίνω',
+                        'πότε θα \'ρθεις πάλι σαν την αστραπή',
+                        'μήπως δεν υπάρχεις και άδικα προσμένω;»',
+                        '',
+                        '═══ ΑΠΑΝΤΗΣΗ ═══',
+                        '',
+                        'ΠΑΡΟΜΟΙΩΣΕΙΣ:',
+                        '',
+                        '1. «αεράκι σαν παλιό τανγκό»',
+                        '→ Νοσταλγική, μελαγχολική ατμόσφαιρα αναμονής',
+                        '→ Το τανγκό συνδέεται με πάθος και λαχτάρα',
+                        '',
+                        '2. «θα \'ρθεις σαν μια σερπαντίνα»',
+                        '→ Χαρούμενη, γιορτινή εικόνα - ελπίδα για επανασύνδεση',
+                        '→ Η σερπαντίνα συμβολίζει χαρά, γιορτή, έκπληξη',
+                        '',
+                        '3. «σαν ρολόι μόλις ανασαίνω»',
+                        '→ Αγωνία, αναμονή που καθηλώνει',
+                        '→ Ο χρόνος κυλά βασανιστικά αργά, κάθε στιγμή μετριέται',
+                        '',
+                        '4. «θα \'ρθεις πάλι σαν την αστραπή»',
+                        '→ Ξαφνικά, απρόσμενα, απροειδοποίητα',
+                        '→ Η αστραπή: φωτεινή, βίαιη, ξαφνική εμφάνιση',
+                        '',
+                        'ΛΕΙΤΟΥΡΓΙΑ:',
+                        'Οι παρομοιώσεις αποδίδουν παραστατικά τα αντιφατικά συναισθήματα της αναμονής: νοσταλγία, ελπίδα, αγωνία, αβεβαιότητα, λαχτάρα'
+                    ]
+                }
+            ]
         }
+    };
+    
+    let currentTheme = null;
+    let currentQuestion = null;
+    let showingAnswer = false;
+    
+    function showTheme(themeKey) {
+        currentTheme = themeKey;
+        currentQuestion = null;
+        showingAnswer = false;
         
-        function showQuestion(themeKey, questionIndex) {
-            currentQuestion = questionIndex;
-            showingAnswer = false;
-            
-            const theme = themata[themeKey];
-            const question = theme.questions[questionIndex];
-            
-            document.getElementById('questionList').classList.add('hidden');
-            document.getElementById('questionView').classList.remove('hidden');
-            
-            const viewHtml = `
-                <h2>${theme.title}</h2>
-                <div class="question-card">
-                    <h3>📝 ΕΡΩΤΗΣΗ:</h3>
-                    <p>${question.question}</p>
+        document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+        
+        document.getElementById('welcome').classList.add('hidden');
+        document.getElementById('questionView').classList.add('hidden');
+        document.getElementById('questionList').classList.remove('hidden');
+        
+        const theme = themata[themeKey];
+        const listHtml = `
+            <h2>${theme.title}</h2>
+            ${theme.questions.map((q, i) => `
+                <div class="question-item" onclick="showQuestion('${themeKey}', ${i})">
+                    <h3>Ερώτηση ${i + 1}</h3>
+                    <p>${q.question}</p>
                 </div>
-                <button class="btn btn-show" onclick="toggleAnswer()">✅ Εμφάνιση Απάντησης</button>
-                <div id="answerSection" class="hidden">
-                    <div class="answer-card">
-                        <h3>✓ ΑΠΑΝΤΗΣΗ:</h3>
-                        ${question.answer.map(line => {
-                            const isSub = line.startsWith('  •') || line.startsWith('•');
-                            const isMain = line.match(/^[Α-Ω\s]+:$/) || line === '';
-                            return `<div class="answer-line ${isSub ? 'sub' : isMain ? 'main' : ''}">${line || '&nbsp;'}</div>`;
-                        }).join('')}
-                    </div>
+            `).join('')}
+        `;
+        document.getElementById('questionList').innerHTML = listHtml;
+    }
+    
+    function showQuestion(themeKey, questionIndex) {
+        currentQuestion = questionIndex;
+        showingAnswer = false;
+        
+        const theme = themata[themeKey];
+        const question = theme.questions[questionIndex];
+        
+        document.getElementById('questionList').classList.add('hidden');
+        document.getElementById('questionView').classList.remove('hidden');
+        
+        const viewHtml = `
+            <h2>${theme.title}</h2>
+            <div class="question-card">
+                <h3>📝 ΕΡΩΤΗΣΗ:</h3>
+                <p>${question.question}</p>
+            </div>
+            <button class="btn btn-show" onclick="toggleAnswer()">✅ Εμφάνιση Απάντησης</button>
+            <div id="answerSection" class="hidden">
+                <div class="answer-card">
+                    <h3>✓ ΑΠΑΝΤΗΣΗ:</h3>
+                    ${question.answer.map(line => {
+                        const isSub = line.startsWith('  •') || line.startsWith('•');
+                        const isMain = line.match(/^[Α-Ω\s]+:$/) || line === '';
+                        return `<div class="answer-line ${isSub ? 'sub' : isMain ? 'main' : ''}">${line || '&nbsp;'}</div>`;
+                    }).join('')}
                 </div>
-                <button class="btn btn-back" onclick="backToList()">← Επιστροφή</button>
-            `;
-            document.getElementById('questionView').innerHTML = viewHtml;
-        }
+            </div>
+            <button class="btn btn-back" onclick="backToList()">← Επιστροφή</button>
+        `;
+        document.getElementById('questionView').innerHTML = viewHtml;
+    }
+    
+    function toggleAnswer() {
+        showingAnswer = !showingAnswer;
+        const answerSection = document.getElementById('answerSection');
+        const btn = document.querySelector('.btn-show');
         
-        function toggleAnswer() {
-            showingAnswer = !showingAnswer;
-            const answerSection = document.getElementById('answerSection');
-            const btn = document.querySelector('.btn-show');
-            
-            if (showingAnswer) {
-                answerSection.classList.remove('hidden');
-                btn.textContent = '❌ Απόκρυψη Απάντησης';
-                btn.style.background = '#e53e3e';
-            } else {
-                answerSection.classList.add('hidden');
-                btn.textContent = '✅ Εμφάνιση Απάντησης';
-                btn.style.background = '#48bb78';
-            }
+        if (showingAnswer) {
+            answerSection.classList.remove('hidden');
+            btn.textContent = '❌ Απόκρυψη Απάντησης';
+            btn.style.background = '#e53e3e';
+        } else {
+            answerSection.classList.add('hidden');
+            btn.textContent = '✅ Εμφάνιση Απάντησης';
+            btn.style.background = '#48bb78';
         }
-        
-        function backToList() {
-            showTheme(currentTheme);
-        }
-    </script>
+    }
+    
+    function backToList() {
+        showTheme(currentTheme);
+    }
+</script>
+```
+
 </body>
 </html>
