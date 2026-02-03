@@ -33,7 +33,6 @@ export default function Home() {
   }, [status, router]);
   
   useEffect(() => {
-    // Load saved data from localStorage
     const savedNotes = localStorage.getItem('leviathan-notes');
     const savedFavorites = localStorage.getItem('leviathan-favorites');
     const savedDarkMode = localStorage.getItem('leviathan-darkmode');
@@ -42,7 +41,6 @@ export default function Home() {
     if (savedFavorites) setFavorites(JSON.parse(savedFavorites));
     if (savedDarkMode === 'true') setDarkMode(true);
     
-    // Load tools list
     loadTools();
   }, []);
   
@@ -110,7 +108,6 @@ export default function Home() {
   const openFile = (file, fromNav = false) => {
     setCurrentFile(file);
     setShowNotes(false);
-    
     if (!fromNav) {
       const newHistory = history.slice(0, historyIndex + 1);
       newHistory.push({ folder: currentFolder, file });
@@ -185,38 +182,43 @@ export default function Home() {
   
   return (
     <div style={{...styles.desktop, ...theme.desktop}}>
-      {/* Desktop Icons - Folders & Tools in left column */}
-      <div style={styles.iconsLeft}>
-        {Object.entries(FOLDERS).map(([id, folder]) => (
-          <div 
-            key={id}
-            style={{...styles.icon, ...theme.icon}}
-            onClick={() => openFolder(id)}
-          >
-            <div style={styles.glyph}>{folder.icon}</div>
-            <div style={{...styles.label, ...theme.text}}>{folder.name}</div>
-          </div>
-        ))}
+      {/* Main content area */}
+      <div style={styles.mainArea}>
+        {/* Folders row */}
+        <div style={styles.foldersRow}>
+          {Object.entries(FOLDERS).map(([id, folder]) => (
+            <div 
+              key={id}
+              style={{...styles.icon, ...theme.icon}}
+              onClick={() => openFolder(id)}
+            >
+              <div style={styles.glyph}>{folder.icon}</div>
+              <div style={{...styles.label, ...theme.text}}>{folder.name}</div>
+            </div>
+          ))}
+        </div>
         
-        {/* Tools separator and icons */}
+        {/* Tools section */}
         {tools.length > 0 && (
-          <>
-            <div style={{...styles.toolsDivider, ...theme.text}}>
+          <div style={styles.toolsSection}>
+            <div style={styles.toolsDividerWide}>
               <div style={styles.dividerLine}></div>
               <span style={styles.toolsLabel}>🔧 Εργαλεία</span>
               <div style={styles.dividerLine}></div>
             </div>
-            {tools.map((tool) => (
-              <div 
-                key={tool.file}
-                style={{...styles.icon, ...styles.toolIcon, ...theme.icon}}
-                onClick={() => openTool(tool)}
-              >
-                <div style={styles.glyph}>{tool.icon || '🔧'}</div>
-                <div style={{...styles.label, ...theme.text}}>{tool.name}</div>
-              </div>
-            ))}
-          </>
+            <div style={styles.toolsGrid}>
+              {tools.map((tool) => (
+                <div 
+                  key={tool.file}
+                  style={{...styles.icon, ...styles.toolIcon, ...theme.icon}}
+                  onClick={() => openTool(tool)}
+                >
+                  <div style={styles.glyph}>{tool.icon || '🔧'}</div>
+                  <div style={{...styles.label, ...theme.text}}>{tool.name}</div>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
       </div>
       
@@ -244,7 +246,6 @@ export default function Home() {
       {currentTool && (
         <div style={styles.overlay} onClick={(e) => e.target === e.currentTarget && closeTool()}>
           <div style={{...styles.window, ...theme.window}}>
-            {/* Title Bar */}
             <div style={{...styles.titlebar, ...theme.titlebar}}>
               <div style={styles.titleLeft}>
                 <span style={styles.titleIcon}>{currentTool.icon || '🔧'}</span>
@@ -259,7 +260,6 @@ export default function Home() {
                 <button onClick={closeTool} style={{...styles.btn, ...theme.btn}}>✕</button>
               </div>
             </div>
-            {/* Tool Content */}
             <div style={styles.toolBody}>
               <iframe 
                 src={`/tools/${currentTool.file}`}
@@ -275,7 +275,6 @@ export default function Home() {
       {currentFolder && (
         <div style={styles.overlay} onClick={(e) => e.target === e.currentTarget && closeFolder()}>
           <div style={{...styles.window, ...theme.window}}>
-            {/* Title Bar */}
             <div style={{...styles.titlebar, ...theme.titlebar}}>
               <div style={styles.titleLeft}>
                 <span style={styles.titleIcon}>{FOLDERS[currentFolder]?.icon}</span>
@@ -288,9 +287,7 @@ export default function Home() {
               </div>
             </div>
             
-            {/* Content */}
             <div style={styles.content}>
-              {/* File List */}
               <div style={{...styles.list, ...theme.panel}}>
                 <div style={{...styles.listHeader, ...theme.listHeader}}>
                   <input 
@@ -348,7 +345,6 @@ export default function Home() {
                 </div>
               </div>
               
-              {/* Preview */}
               <div style={{...styles.preview, ...theme.panel}}>
                 <div style={{...styles.previewHeader, ...theme.listHeader}}>
                   <div>
@@ -360,36 +356,16 @@ export default function Home() {
                     </div>
                   </div>
                   <div style={styles.previewBtns}>
-                    <button 
-                      onClick={goBack} 
-                      disabled={historyIndex <= 0}
-                      style={{...styles.btn, ...theme.btn}}
-                    >◀</button>
-                    <button 
-                      onClick={goForward} 
-                      disabled={historyIndex >= history.length - 1}
-                      style={{...styles.btn, ...theme.btn}}
-                    >▶</button>
-                    <button 
-                      onClick={() => setShowNotes(!showNotes)}
-                      disabled={!currentFile}
-                      style={{...styles.btn, ...theme.btn}}
-                    >📝</button>
-                    <button 
-                      onClick={() => currentFile && window.open(`/api/files/pdf/${currentFile.id}`, '_blank')}
-                      disabled={!currentFile}
-                      style={{...styles.btn, ...theme.btn, background: '#2563eb', color: '#fff'}}
-                    >🖨️</button>
+                    <button onClick={goBack} disabled={historyIndex <= 0} style={{...styles.btn, ...theme.btn}}>◀</button>
+                    <button onClick={goForward} disabled={historyIndex >= history.length - 1} style={{...styles.btn, ...theme.btn}}>▶</button>
+                    <button onClick={() => setShowNotes(!showNotes)} disabled={!currentFile} style={{...styles.btn, ...theme.btn}}>📝</button>
+                    <button onClick={() => currentFile && window.open(`/api/files/pdf/${currentFile.id}`, '_blank')} disabled={!currentFile} style={{...styles.btn, ...theme.btn, background: '#2563eb', color: '#fff'}}>🖨️</button>
                   </div>
                 </div>
                 
                 <div style={styles.previewBody}>
                   {currentFile ? (
-                    <iframe 
-                      src={`/api/files/pdf/${currentFile.id}`}
-                      style={styles.pdfFrame}
-                      title="PDF Viewer"
-                    />
+                    <iframe src={`/api/files/pdf/${currentFile.id}`} style={styles.pdfFrame} title="PDF Viewer" />
                   ) : (
                     <div style={styles.placeholder}>
                       <div style={{fontSize: '64px', marginBottom: '16px'}}>📄</div>
@@ -450,303 +426,71 @@ const darkTheme = {
 };
 
 const styles = {
-  desktop: {
-    minHeight: '100vh',
-    position: 'relative',
-    fontFamily: 'system-ui, -apple-system, sans-serif'
+  desktop: { minHeight: '100vh', position: 'relative', fontFamily: 'system-ui, -apple-system, sans-serif', paddingBottom: '55px' },
+  mainArea: { padding: '28px 30px', paddingRight: '220px' },
+  foldersRow: { display: 'flex', flexWrap: 'wrap', gap: '16px', marginBottom: '24px' },
+  toolsSection: { marginTop: '8px' },
+  toolsDividerWide: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', maxWidth: '500px' },
+  dividerLine: { flex: 1, height: '1px', background: 'rgba(100,116,139,.3)' },
+  toolsLabel: { fontSize: '13px', fontWeight: '600', color: '#64748b', whiteSpace: 'nowrap' },
+  toolsGrid: { display: 'flex', flexWrap: 'wrap', gap: '16px' },
+  icon: { 
+    width: '160px', 
+    height: '100px', 
+    display: 'flex', 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'flex-start',
+    gap: '12px',
+    padding: '16px',
+    borderRadius: '16px', 
+    cursor: 'pointer', 
+    transition: 'all .2s',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
   },
-  iconsLeft: {
-    position: 'absolute',
-    top: '28px',
-    left: '22px',
-    bottom: '55px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '10px',
-    overflowY: 'auto',
-    paddingRight: '8px'
-  },
-  toolsDivider: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    margin: '6px 0',
-    width: '110px'
-  },
-  dividerLine: {
-    flex: 1,
-    height: '1px',
-    background: 'rgba(100,116,139,.3)'
-  },
-  toolsLabel: {
-    fontSize: '10px',
-    fontWeight: '700',
-    color: '#64748b',
-    whiteSpace: 'nowrap'
-  },
-  icon: {
-    width: '110px',
-    height: '90px',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: '12px',
-    cursor: 'pointer',
-    transition: 'all .15s'
-  },
-  toolIcon: {
-    borderColor: 'rgba(37,99,235,.25)'
-  },
-  glyph: { fontSize: '32px' },
-  label: { fontSize: '10px', marginTop: '4px', textAlign: 'center' },
-  logoArea: {
-    position: 'absolute',
-    bottom: '70px',
-    right: '40px',
-    textAlign: 'center'
-  },
-  logoTitle: {
-    fontSize: '48px',
-    fontWeight: '900',
-    background: 'linear-gradient(180deg, #ef4444, #991b1b)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent'
-  },
-  logoSubtitle: {
-    fontSize: '16px',
-    letterSpacing: '10px',
-    color: '#1e40af'
-  },
-  version: {
-    fontSize: '11px',
-    color: 'rgba(71,85,105,.5)',
-    marginTop: '8px'
-  },
-  footer: {
-    position: 'fixed',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: '12px 20px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    fontSize: '12px',
-    borderTop: '1px solid rgba(15,23,42,.12)',
-    zIndex: 50
-  },
-  logoutBtn: {
-    marginLeft: '12px',
-    background: 'none',
-    border: 'none',
-    color: '#2563eb',
-    cursor: 'pointer',
-    textDecoration: 'underline'
-  },
-  darkModeBtn: {
-    background: 'none',
-    border: 'none',
-    fontSize: '20px',
-    cursor: 'pointer'
-  },
-  overlay: {
-    position: 'fixed',
-    inset: 0,
-    background: 'rgba(0,0,0,.35)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '18px',
-    zIndex: 100
-  },
-  window: {
-    width: '95vw',
-    maxWidth: '1400px',
-    height: '85vh',
-    borderRadius: '16px',
-    boxShadow: '0 20px 50px rgba(15,23,42,.25)',
-    display: 'flex',
-    flexDirection: 'column',
-    overflow: 'hidden'
-  },
-  titlebar: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '12px 14px',
-    borderBottom: '1px solid rgba(15,23,42,.12)'
-  },
+  toolIcon: { borderColor: 'rgba(37,99,235,.2)' },
+  glyph: { fontSize: '36px', flexShrink: 0 },
+  label: { fontSize: '13px', fontWeight: '600', textAlign: 'left', lineHeight: '1.3' },
+  logoArea: { position: 'fixed', bottom: '70px', right: '40px', textAlign: 'center', zIndex: 10 },
+  version: { fontSize: '11px', color: 'rgba(71,85,105,.5)', marginTop: '8px' },
+  footer: { position: 'fixed', bottom: 0, left: 0, right: 0, padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', borderTop: '1px solid rgba(15,23,42,.12)', zIndex: 50 },
+  logoutBtn: { marginLeft: '12px', background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', textDecoration: 'underline' },
+  darkModeBtn: { background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer' },
+  overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '18px', zIndex: 100 },
+  window: { width: '95vw', maxWidth: '1400px', height: '85vh', borderRadius: '16px', boxShadow: '0 20px 50px rgba(15,23,42,.25)', display: 'flex', flexDirection: 'column', overflow: 'hidden' },
+  titlebar: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', borderBottom: '1px solid rgba(15,23,42,.12)' },
   titleLeft: { display: 'flex', alignItems: 'center', gap: '10px' },
   titleIcon: { fontSize: '24px' },
   titleText: { fontWeight: '600', fontSize: '16px' },
   fileCount: { fontSize: '12px', color: '#94a3b8' },
   controls: { display: 'flex', gap: '8px' },
-  btn: {
-    padding: '8px 12px',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    fontSize: '14px',
-    transition: 'all .15s'
-  },
-  content: {
-    flex: 1,
-    display: 'flex',
-    gap: '12px',
-    padding: '14px',
-    overflow: 'hidden'
-  },
-  list: {
-    width: '280px',
-    flexShrink: 0,
-    borderRadius: '14px',
-    display: 'flex',
-    flexDirection: 'column',
-    overflow: 'hidden',
-    border: '1px solid rgba(15,23,42,.12)'
-  },
-  listHeader: {
-    padding: '12px',
-    display: 'flex',
-    gap: '8px',
-    borderBottom: '1px solid rgba(15,23,42,.12)'
-  },
-  search: {
-    flex: 1,
-    padding: '10px 12px',
-    borderRadius: '8px',
-    outline: 'none',
-    fontSize: '13px'
-  },
-  select: {
-    padding: '8px',
-    borderRadius: '8px',
-    fontSize: '12px',
-    cursor: 'pointer'
-  },
-  listArea: {
-    flex: 1,
-    overflowY: 'auto',
-    padding: '8px'
-  },
-  row: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    padding: '10px',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    marginBottom: '2px',
-    transition: 'all .15s'
-  },
-  rowActive: {
-    background: 'rgba(37,99,235,.15)'
-  },
-  starBtn: {
-    background: 'none',
-    border: 'none',
-    fontSize: '16px',
-    cursor: 'pointer'
-  },
+  btn: { padding: '8px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', transition: 'all .15s' },
+  content: { flex: 1, display: 'flex', gap: '12px', padding: '14px', overflow: 'hidden' },
+  list: { width: '280px', flexShrink: 0, borderRadius: '14px', display: 'flex', flexDirection: 'column', overflow: 'hidden', border: '1px solid rgba(15,23,42,.12)' },
+  listHeader: { padding: '12px', display: 'flex', gap: '8px', borderBottom: '1px solid rgba(15,23,42,.12)' },
+  search: { flex: 1, padding: '10px 12px', borderRadius: '8px', outline: 'none', fontSize: '13px' },
+  select: { padding: '8px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' },
+  listArea: { flex: 1, overflowY: 'auto', padding: '8px' },
+  row: { display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', borderRadius: '8px', cursor: 'pointer', marginBottom: '2px', transition: 'all .15s' },
+  rowActive: { background: 'rgba(37,99,235,.15)' },
+  starBtn: { background: 'none', border: 'none', fontSize: '16px', cursor: 'pointer' },
   fileInfo: { flex: 1, minWidth: 0 },
-  fileName: {
-    fontSize: '13px',
-    fontWeight: '500',
-    whiteSpace: 'nowrap',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis'
-  },
-  fileMeta: {
-    fontSize: '11px',
-    color: '#94a3b8',
-    whiteSpace: 'nowrap',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis'
-  },
-  preview: {
-    flex: 1,
-    borderRadius: '14px',
-    display: 'flex',
-    flexDirection: 'column',
-    overflow: 'hidden',
-    border: '1px solid rgba(15,23,42,.12)'
-  },
-  previewHeader: {
-    padding: '12px 14px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderBottom: '1px solid rgba(15,23,42,.12)'
-  },
+  fileName: { fontSize: '13px', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+  fileMeta: { fontSize: '11px', color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+  preview: { flex: 1, borderRadius: '14px', display: 'flex', flexDirection: 'column', overflow: 'hidden', border: '1px solid rgba(15,23,42,.12)' },
+  previewHeader: { padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(15,23,42,.12)' },
   previewTitle: { fontWeight: '600', fontSize: '14px' },
   previewSub: { fontSize: '12px', color: '#94a3b8' },
   previewBtns: { display: 'flex', gap: '6px' },
-  previewBody: {
-    flex: 1,
-    position: 'relative',
-    background: '#fff'
-  },
-  pdfFrame: {
-    width: '100%',
-    height: '100%',
-    border: 'none'
-  },
-  placeholder: {
-    position: 'absolute',
-    inset: 0,
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: '#94a3b8'
-  },
-  notesPanel: {
-    borderTop: '1px solid rgba(15,23,42,.12)',
-    height: '200px',
-    display: 'flex',
-    flexDirection: 'column'
-  },
-  notesHeader: {
-    padding: '10px 14px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderBottom: '1px solid rgba(15,23,42,.12)'
-  },
-  notesTextarea: {
-    flex: 1,
-    padding: '12px',
-    border: 'none',
-    resize: 'none',
-    outline: 'none',
-    fontSize: '13px',
-    lineHeight: '1.6'
-  },
-  toolBody: {
-    flex: 1,
-    position: 'relative',
-    overflow: 'hidden'
-  },
-  toolFrame: {
-    width: '100%',
-    height: '100%',
-    border: 'none'
-  },
-  loading: {
-    minHeight: '100vh',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '18px'
-  },
-  loadingSmall: {
-    padding: '20px',
-    textAlign: 'center',
-    color: '#94a3b8'
-  },
-  empty: {
-    padding: '30px 20px',
-    textAlign: 'center',
-    color: '#94a3b8'
-  }
+  previewBody: { flex: 1, position: 'relative', background: '#fff' },
+  pdfFrame: { width: '100%', height: '100%', border: 'none' },
+  placeholder: { position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' },
+  notesPanel: { borderTop: '1px solid rgba(15,23,42,.12)', height: '200px', display: 'flex', flexDirection: 'column' },
+  notesHeader: { padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(15,23,42,.12)' },
+  notesTextarea: { flex: 1, padding: '12px', border: 'none', resize: 'none', outline: 'none', fontSize: '13px', lineHeight: '1.6' },
+  toolBody: { flex: 1, position: 'relative', overflow: 'hidden' },
+  toolFrame: { width: '100%', height: '100%', border: 'none' },
+  loading: { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' },
+  loadingSmall: { padding: '20px', textAlign: 'center', color: '#94a3b8' },
+  empty: { padding: '30px 20px', textAlign: 'center', color: '#94a3b8' }
 };
