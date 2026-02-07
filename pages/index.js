@@ -25,6 +25,9 @@ export default function Home() {
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [tools, setTools] = useState([]);
   const [currentTool, setCurrentTool] = useState(null);
+  const [hoveredFolder, setHoveredFolder] = useState(null);
+  const [hoveredTool, setHoveredTool] = useState(null);
+  const [hoveredRow, setHoveredRow] = useState(null);
   
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -199,10 +202,14 @@ export default function Home() {
           {Object.entries(FOLDERS).map(([id, folder]) => (
             <div 
               key={id}
-              style={{...styles.folderCard, ...theme.card}}
+              style={{
+                ...styles.folderCard, 
+                ...theme.card,
+                ...(hoveredFolder === id ? styles.folderCardHover : {})
+              }}
               onClick={() => openFolder(id)}
-              onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-8px)'}
-              onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+              onMouseEnter={() => setHoveredFolder(id)}
+              onMouseLeave={() => setHoveredFolder(null)}
             >
               <div style={{...styles.cardIconBg, background: folder.color}}>
                 <div style={styles.cardIcon}>{folder.icon}</div>
@@ -228,10 +235,14 @@ export default function Home() {
               {tools.map((tool) => (
                 <div 
                   key={tool.file}
-                  style={{...styles.toolCard, ...theme.card}}
+                  style={{
+                    ...styles.toolCard, 
+                    ...theme.card,
+                    ...(hoveredTool === tool.file ? styles.toolCardHover : {})
+                  }}
                   onClick={() => openTool(tool)}
-                  onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
-                  onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                  onMouseEnter={() => setHoveredTool(tool.file)}
+                  onMouseLeave={() => setHoveredTool(null)}
                 >
                   <div style={styles.toolCardAccent}></div>
                   <div style={styles.toolCardContent}>
@@ -366,9 +377,12 @@ export default function Home() {
                         style={{
                           ...styles.row,
                           ...theme.row,
-                          ...(currentFile?.id === file.id ? styles.rowActive : {})
+                          ...(currentFile?.id === file.id ? styles.rowActive : {}),
+                          ...(hoveredRow === file.id && currentFile?.id !== file.id ? styles.rowHover : {})
                         }}
                         onClick={() => openFile(file)}
+                        onMouseEnter={() => setHoveredRow(file.id)}
+                        onMouseLeave={() => setHoveredRow(null)}
                       >
                         <button 
                           onClick={(e) => { e.stopPropagation(); toggleFavorite(file.id); }}
@@ -392,7 +406,7 @@ export default function Home() {
               
               <div style={{...styles.preview, ...theme.panel}}>
                 <div style={{...styles.previewHeader, ...theme.listHeader}}>
-                  <div>
+                  <div style={styles.previewTitleSection}>
                     <div style={{...styles.previewTitle, ...theme.text}}>
                       {currentFile?.title || 'Προβολή PDF'}
                     </div>
@@ -401,40 +415,48 @@ export default function Home() {
                     </div>
                   </div>
                   <div style={styles.previewBtns}>
-                    <button 
-                      onClick={goBack} 
-                      disabled={historyIndex <= 0} 
-                      style={{
-                        ...styles.navBtn, 
-                        ...theme.controlBtn,
-                        opacity: historyIndex <= 0 ? 0.3 : 1,
-                        cursor: historyIndex <= 0 ? 'not-allowed' : 'pointer'
-                      }}
-                      title="Προηγούμενο"
-                    >◀</button>
-                    <button 
-                      onClick={goForward} 
-                      disabled={historyIndex >= history.length - 1} 
-                      style={{
-                        ...styles.navBtn, 
-                        ...theme.controlBtn,
-                        opacity: historyIndex >= history.length - 1 ? 0.3 : 1,
-                        cursor: historyIndex >= history.length - 1 ? 'not-allowed' : 'pointer'
-                      }}
-                      title="Επόμενο"
-                    >▶</button>
+                    <div style={styles.navBtnGroup}>
+                      <button 
+                        onClick={goBack} 
+                        disabled={historyIndex <= 0} 
+                        style={{
+                          ...styles.navBtn, 
+                          ...theme.controlBtn,
+                          opacity: historyIndex <= 0 ? 0.3 : 1,
+                          cursor: historyIndex <= 0 ? 'not-allowed' : 'pointer',
+                          borderRadius: '10px 0 0 10px'
+                        }}
+                        title="Προηγούμενο"
+                      >◀</button>
+                      <button 
+                        onClick={goForward} 
+                        disabled={historyIndex >= history.length - 1} 
+                        style={{
+                          ...styles.navBtn, 
+                          ...theme.controlBtn,
+                          opacity: historyIndex >= history.length - 1 ? 0.3 : 1,
+                          cursor: historyIndex >= history.length - 1 ? 'not-allowed' : 'pointer',
+                          borderRadius: '0 10px 10px 0',
+                          borderLeft: 'none'
+                        }}
+                        title="Επόμενο"
+                      >▶</button>
+                    </div>
                     <button 
                       onClick={() => setShowNotes(!showNotes)} 
                       disabled={!currentFile} 
                       style={{
-                        ...styles.navBtn, 
+                        ...styles.actionBtn, 
                         ...theme.controlBtn,
-                        background: showNotes ? '#fbbf24' : undefined,
+                        background: showNotes ? 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)' : undefined,
+                        color: showNotes ? '#78350f' : undefined,
                         opacity: !currentFile ? 0.3 : 1,
                         cursor: !currentFile ? 'not-allowed' : 'pointer'
                       }}
                       title="Σημειώσεις"
-                    >📝</button>
+                    >
+                      📝 Σημειώσεις
+                    </button>
                     <button 
                       onClick={() => currentFile && window.open(`/api/files/pdf/${currentFile.id}`, '_blank')} 
                       disabled={!currentFile} 
@@ -443,19 +465,25 @@ export default function Home() {
                         opacity: !currentFile ? 0.3 : 1,
                         cursor: !currentFile ? 'not-allowed' : 'pointer'
                       }}
-                      title="Εκτύπωση / Νέα καρτέλα"
-                    >🖨️</button>
+                      title="Άνοιγμα σε νέα καρτέλα"
+                    >
+                      🖨️ Εκτύπωση
+                    </button>
                   </div>
                 </div>
                 
                 <div style={styles.previewBody}>
                   {currentFile ? (
-                    <iframe src={`/api/files/pdf/${currentFile.id}`} style={styles.pdfFrame} title="PDF Viewer" />
+                    <div style={styles.pdfContainer}>
+                      <iframe src={`/api/files/pdf/${currentFile.id}`} style={styles.pdfFrame} title="PDF Viewer" />
+                    </div>
                   ) : (
                     <div style={styles.placeholder}>
-                      <div style={styles.placeholderIcon}>📄</div>
-                      <div style={styles.placeholderText}>Επιλέξτε ένα αρχείο PDF</div>
-                      <div style={styles.placeholderHint}>Κάντε κλικ σε ένα αρχείο από τη λίστα για προβολή</div>
+                      <div style={styles.placeholderCard}>
+                        <div style={styles.placeholderIcon}>📄</div>
+                        <div style={styles.placeholderText}>Επιλέξτε ένα αρχείο PDF</div>
+                        <div style={styles.placeholderHint}>Κάντε κλικ σε ένα αρχείο από τη λίστα για προβολή</div>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -463,7 +491,10 @@ export default function Home() {
                 {showNotes && currentFile && (
                   <div style={{...styles.notesPanel, ...theme.panel}}>
                     <div style={{...styles.notesHeader, ...theme.listHeader}}>
-                      <span style={{...styles.notesTitle, ...theme.text}}>📝 Σημειώσεις</span>
+                      <div style={styles.notesHeaderLeft}>
+                        <span style={styles.notesIcon}>📝</span>
+                        <span style={{...styles.notesTitle, ...theme.text}}>Σημειώσεις</span>
+                      </div>
                       <button 
                         onClick={() => setShowNotes(false)} 
                         style={{...styles.controlBtn, ...theme.controlBtn}}
@@ -472,7 +503,7 @@ export default function Home() {
                     <textarea 
                       value={notes[currentFile.id] || ''}
                       onChange={(e) => updateNotes(currentFile.id, e.target.value)}
-                      placeholder="Προσθέστε τις σημειώσεις σας εδώ..."
+                      placeholder="Γράψτε τις σημειώσεις σας εδώ..."
                       style={{...styles.notesTextarea, ...theme.input}}
                     />
                   </div>
@@ -501,17 +532,17 @@ const lightTheme = {
 };
 
 const darkTheme = {
-  desktop: { background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)' },
-  window: { background: '#1e293b', boxShadow: '0 25px 50px rgba(0,0,0,0.5)' },
-  panel: { background: '#334155', border: '1px solid #475569' },
-  titlebar: { background: 'linear-gradient(180deg, #334155 0%, #1e293b 100%)', borderBottom: '1px solid #475569' },
-  listHeader: { background: '#475569', borderBottom: '1px solid #64748b' },
-  text: { color: '#f1f5f9' },
-  card: { background: '#1e293b', boxShadow: '0 4px 6px rgba(0,0,0,0.3), 0 10px 20px rgba(0,0,0,0.2)' },
-  controlBtn: { background: 'linear-gradient(180deg, #475569 0%, #334155 100%)', color: '#f1f5f9', border: '1px solid #64748b' },
-  input: { background: '#1e293b', color: '#f1f5f9', border: '1px solid #475569' },
+  desktop: { background: 'linear-gradient(135deg, #1a1f36 0%, #252b48 50%, #2d3561 100%)' },
+  window: { background: '#1e2642', boxShadow: '0 25px 50px rgba(0,0,0,0.5)' },
+  panel: { background: '#252d4a', border: '1px solid #374063' },
+  titlebar: { background: 'linear-gradient(180deg, #2a3354 0%, #1e2642 100%)', borderBottom: '1px solid #374063' },
+  listHeader: { background: '#2a3354', borderBottom: '1px solid #374063' },
+  text: { color: '#e2e8f0' },
+  card: { background: '#1e2642', boxShadow: '0 4px 6px rgba(0,0,0,0.3), 0 10px 20px rgba(0,0,0,0.2)', border: '1px solid #374063' },
+  controlBtn: { background: 'linear-gradient(180deg, #374063 0%, #2a3354 100%)', color: '#e2e8f0', border: '1px solid #4a5578' },
+  input: { background: '#1a1f36', color: '#e2e8f0', border: '1px solid #374063' },
   row: { },
-  footer: { background: 'rgba(30,41,59,0.95)', backdropFilter: 'blur(10px)', color: '#f1f5f9', borderTop: '1px solid #334155' }
+  footer: { background: 'rgba(30,38,66,0.95)', backdropFilter: 'blur(10px)', color: '#e2e8f0', borderTop: '1px solid #374063' }
 };
 
 const styles = {
@@ -558,7 +589,13 @@ const styles = {
     cursor: 'pointer',
     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
     overflow: 'hidden',
-    border: '2px solid transparent'
+    border: '2px solid transparent',
+    position: 'relative'
+  },
+  folderCardHover: {
+    transform: 'translateY(-8px)',
+    boxShadow: '0 12px 24px rgba(0,0,0,0.15)',
+    filter: 'brightness(0.95)'
   },
   cardIconBg: {
     height: '120px',
@@ -610,7 +647,13 @@ const styles = {
     overflow: 'hidden',
     cursor: 'pointer',
     transition: 'all 0.3s ease',
-    border: '2px solid transparent'
+    border: '2px solid transparent',
+    position: 'relative'
+  },
+  toolCardHover: {
+    transform: 'translateY(-4px)',
+    boxShadow: '0 8px 16px rgba(0,0,0,0.12)',
+    filter: 'brightness(0.95)'
   },
   toolCardAccent: {
     height: '6px',
@@ -842,11 +885,16 @@ const styles = {
     borderRadius: '12px', 
     cursor: 'pointer', 
     marginBottom: '4px', 
-    transition: 'all 0.15s'
+    transition: 'all 0.2s'
+  },
+  rowHover: {
+    background: 'rgba(148,163,184,0.1)',
+    transform: 'translateX(4px)'
   },
   rowActive: { 
     background: 'linear-gradient(135deg, rgba(102,126,234,0.2) 0%, rgba(118,75,162,0.15) 100%)',
-    boxShadow: '0 2px 8px rgba(102,126,234,0.2)'
+    boxShadow: '0 2px 8px rgba(102,126,234,0.2)',
+    border: '1px solid rgba(102,126,234,0.3)'
   },
   starBtn: { 
     background: 'none', 
@@ -887,46 +935,87 @@ const styles = {
     overflow: 'hidden'
   },
   previewHeader: { 
-    padding: '14px 16px', 
+    padding: '16px 20px', 
     display: 'flex', 
     justifyContent: 'space-between', 
-    alignItems: 'center'
+    alignItems: 'center',
+    gap: '20px'
+  },
+  previewTitleSection: {
+    flex: 1,
+    minWidth: 0
   },
   previewTitle: { 
     fontWeight: '700', 
-    fontSize: '16px',
-    marginBottom: '4px'
+    fontSize: '17px',
+    marginBottom: '6px',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis'
   },
   previewSub: { 
     fontSize: '13px', 
-    color: '#94a3b8' 
+    color: '#94a3b8',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis'
   },
   previewBtns: { 
     display: 'flex', 
-    gap: '8px' 
+    gap: '10px',
+    alignItems: 'center',
+    flexWrap: 'wrap'
+  },
+  navBtnGroup: {
+    display: 'flex'
   },
   navBtn: {
-    padding: '10px 14px',
-    borderRadius: '10px',
+    padding: '10px 16px',
     cursor: 'pointer',
     fontSize: '14px',
     transition: 'all 0.15s',
     fontWeight: '500'
   },
+  actionBtn: {
+    padding: '10px 18px',
+    borderRadius: '10px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    transition: 'all 0.15s',
+    fontWeight: '600',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    whiteSpace: 'nowrap'
+  },
   printBtn: {
     background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
     color: '#fff',
     border: 'none',
-    padding: '10px 16px',
+    padding: '10px 20px',
     borderRadius: '10px',
-    fontSize: '16px',
+    fontSize: '14px',
+    fontWeight: '600',
     cursor: 'pointer',
-    boxShadow: '0 4px 12px rgba(59,130,246,0.3)'
+    boxShadow: '0 4px 12px rgba(59,130,246,0.3)',
+    transition: 'all 0.2s',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    whiteSpace: 'nowrap'
   },
   previewBody: { 
     flex: 1, 
-    position: 'relative', 
-    background: '#fff' 
+    position: 'relative',
+    overflow: 'hidden'
+  },
+  pdfContainer: {
+    width: '100%',
+    height: '100%',
+    background: '#fff',
+    borderRadius: '12px',
+    overflow: 'hidden',
+    boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.05)'
   },
   pdfFrame: { 
     width: '100%', 
@@ -939,52 +1028,72 @@ const styles = {
     display: 'flex', 
     flexDirection: 'column', 
     alignItems: 'center', 
-    justifyContent: 'center', 
-    color: '#94a3b8',
-    textAlign: 'center',
+    justifyContent: 'center',
     padding: '40px'
+  },
+  placeholderCard: {
+    textAlign: 'center',
+    padding: '48px 40px',
+    borderRadius: '20px',
+    background: 'linear-gradient(135deg, rgba(248,250,252,0.8) 0%, rgba(241,245,249,0.6) 100%)',
+    backdropFilter: 'blur(10px)',
+    border: '2px dashed #cbd5e1',
+    maxWidth: '400px'
   },
   placeholderIcon: {
     fontSize: '80px',
-    marginBottom: '20px',
-    opacity: 0.6
+    marginBottom: '24px',
+    opacity: 0.4,
+    filter: 'grayscale(0.3)'
   },
   placeholderText: {
-    fontSize: '18px',
+    fontSize: '20px',
     fontWeight: '600',
-    marginBottom: '8px'
+    color: '#475569',
+    marginBottom: '10px'
   },
   placeholderHint: {
     fontSize: '14px',
-    opacity: 0.7
+    color: '#94a3b8',
+    lineHeight: '1.6'
   },
   
   // Notes Panel
   notesPanel: { 
     borderTop: '2px solid #e2e8f0', 
-    height: '220px', 
+    height: '240px', 
     display: 'flex', 
-    flexDirection: 'column' 
+    flexDirection: 'column',
+    background: 'linear-gradient(180deg, rgba(248,250,252,0.5) 0%, rgba(241,245,249,0.3) 100%)'
   },
   notesHeader: { 
-    padding: '12px 16px', 
+    padding: '14px 20px', 
     display: 'flex', 
     justifyContent: 'space-between', 
     alignItems: 'center'
   },
+  notesHeaderLeft: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px'
+  },
+  notesIcon: {
+    fontSize: '20px'
+  },
   notesTitle: {
-    fontWeight: '600',
+    fontWeight: '700',
     fontSize: '15px'
   },
   notesTextarea: { 
     flex: 1, 
-    padding: '16px', 
+    padding: '18px 20px', 
     border: 'none', 
     resize: 'none', 
     outline: 'none', 
     fontSize: '14px', 
-    lineHeight: '1.7',
-    fontFamily: 'inherit'
+    lineHeight: '1.8',
+    fontFamily: 'inherit',
+    background: 'transparent'
   },
   
   // Tool Body
