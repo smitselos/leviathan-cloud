@@ -91,6 +91,8 @@ export default function Home() {
   
   const openFile = (file) => {
     setCurrentFile(file);
+    // If we're in home view and don't have a folder open, we need to determine which folder this file belongs to
+    // For now, we'll just set the file - the modal will open in any view
     const updated = [file, ...recentFiles.filter(f => f.id !== file.id)].slice(0, 5);
     setRecentFiles(updated);
     localStorage.setItem('leviathan-recent', JSON.stringify(updated));
@@ -350,14 +352,16 @@ export default function Home() {
                       <div 
                         key={file.id}
                         style={styles.recentItem}
-                        onClick={() => openFile(file)}
                       >
                         <div style={styles.recentIcon}>📄</div>
                         <div style={styles.recentInfo}>
                           <div style={styles.recentTitle}>{file.title}</div>
                           <div style={styles.recentMeta}>{file.name}</div>
                         </div>
-                        <button style={styles.quickActionBtn}>
+                        <button 
+                          onClick={() => openFile(file)}
+                          style={styles.quickActionBtn}
+                        >
                           Άνοιγμα →
                         </button>
                       </div>
@@ -438,41 +442,6 @@ export default function Home() {
                   ))
                 )}
               </div>
-              
-              {/* File Preview Modal */}
-              {currentFile && (
-                <div style={styles.modal} onClick={() => setCurrentFile(null)}>
-                  <div 
-                    style={styles.modalContent}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div style={styles.modalHeader}>
-                      <h2 style={styles.modalTitle}>{currentFile.title}</h2>
-                      <button 
-                        onClick={() => setCurrentFile(null)}
-                        style={styles.modalClose}
-                      >
-                        ✕
-                      </button>
-                    </div>
-                    <div style={styles.modalBody}>
-                      <iframe 
-                        src={`/api/files/pdf/${currentFile.id}`}
-                        style={styles.pdfViewer}
-                        title="PDF Viewer"
-                      />
-                    </div>
-                    <div style={styles.modalFooter}>
-                      <button 
-                        onClick={() => window.open(`/api/files/pdf/${currentFile.id}`, '_blank')}
-                        style={styles.yellowBtn}
-                      >
-                        🖨️ Άνοιγμα σε νέα καρτέλα
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
             </>
           )}
           
@@ -502,6 +471,47 @@ export default function Home() {
           )}
         </div>
       </main>
+      
+      {/* File Preview Modal - Global */}
+      {currentFile && (
+        <div style={styles.modal} onClick={() => setCurrentFile(null)}>
+          <div 
+            style={styles.modalContent}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={styles.modalHeader}>
+              <h2 style={styles.modalTitle}>{currentFile.title}</h2>
+              <button 
+                onClick={() => setCurrentFile(null)}
+                style={styles.modalClose}
+              >
+                ✕
+              </button>
+            </div>
+            <div style={styles.modalBody}>
+              <iframe 
+                src={`/api/files/pdf/${currentFile.id}`}
+                style={styles.pdfViewer}
+                title="PDF Viewer"
+              />
+            </div>
+            <div style={styles.modalFooter}>
+              <button 
+                onClick={() => window.open(`/api/files/pdf/${currentFile.id}`, '_blank')}
+                style={styles.openBtn}
+              >
+                ↗ Άνοιγμα σε νέα καρτέλα
+              </button>
+              <button 
+                onClick={() => window.print()}
+                style={styles.yellowBtn}
+              >
+                🖨️ Εκτύπωση
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -909,6 +919,19 @@ const styles = {
     boxShadow: '0 4px 12px rgba(251,191,36,0.3)',
     width: '100%'
   },
+  openBtn: {
+    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+    color: '#fff',
+    border: 'none',
+    padding: '12px 24px',
+    borderRadius: '12px',
+    fontSize: '14px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    boxShadow: '0 4px 12px rgba(16,185,129,0.3)',
+    marginRight: '12px'
+  },
   yellowBtnSmall: {
     background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
     color: '#78350f',
@@ -1107,9 +1130,9 @@ const styles = {
   modalContent: {
     background: '#fff',
     borderRadius: '20px',
-    width: '100%',
-    maxWidth: '1200px',
-    maxHeight: '90vh',
+    width: '90vw',
+    maxWidth: '1400px',
+    height: '85vh',
     display: 'flex',
     flexDirection: 'column',
     overflow: 'hidden',
