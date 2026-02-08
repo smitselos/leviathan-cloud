@@ -23,6 +23,7 @@ export default function Home() {
   const [favorites, setFavorites] = useState([]);
   const [recentFiles, setRecentFiles] = useState([]);
   const [stats, setStats] = useState({ total: 0, completed: 0, inProgress: 0 });
+  const [toolsSearchQuery, setToolsSearchQuery] = useState('');
   
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -82,6 +83,12 @@ export default function Home() {
     setActiveView('tool');
   };
   
+  const openAllTools = () => {
+    setActiveView('allTools');
+    setCurrentFolder(null);
+    setCurrentFile(null);
+  };
+  
   const goHome = () => {
     setActiveView('home');
     setCurrentFolder(null);
@@ -111,6 +118,12 @@ export default function Home() {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return f.title.toLowerCase().includes(q) || f.name.toLowerCase().includes(q);
+  });
+  
+  const filteredTools = tools.filter(t => {
+    if (!toolsSearchQuery) return true;
+    const q = toolsSearchQuery.toLowerCase();
+    return t.name.toLowerCase().includes(q);
   });
   
   if (status === 'loading') {
@@ -339,6 +352,27 @@ export default function Home() {
                         </div>
                       </div>
                     ))}
+                    
+                    {/* All Tools Card */}
+                    {tools.length > 3 && (
+                      <div 
+                        style={styles.allToolsCard}
+                        onClick={openAllTools}
+                      >
+                        <div style={styles.allToolsCardContent}>
+                          <div style={styles.allToolsIcon}>🔧</div>
+                          <h3 style={styles.allToolsTitle}>
+                            Όλα τα Εργαλεία
+                          </h3>
+                          <p style={styles.allToolsDesc}>
+                            Δες όλα τα {tools.length} διαθέσιμα εργαλεία
+                          </p>
+                          <button style={styles.yellowBtn}>
+                            Προβολή Όλων →
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </section>
               )}
@@ -469,6 +503,67 @@ export default function Home() {
               </div>
             </>
           )}
+          
+          {/* All Tools View */}
+          {activeView === 'allTools' && (
+            <>
+              <div style={styles.pageHeader}>
+                <button onClick={goHome} style={styles.backBtn}>
+                  ← Πίσω
+                </button>
+                <div>
+                  <h1 style={styles.pageTitle}>
+                    🔧 Όλα τα Εργαλεία
+                  </h1>
+                  <p style={styles.pageSubtitle}>
+                    {filteredTools.length} {filteredTools.length === 1 ? 'εργαλείο' : 'εργαλεία'}
+                  </p>
+                </div>
+              </div>
+              
+              <div style={styles.searchBar}>
+                <input 
+                  type="search"
+                  placeholder="Αναζήτηση εργαλείων..."
+                  value={toolsSearchQuery}
+                  onChange={(e) => setToolsSearchQuery(e.target.value)}
+                  style={styles.searchInput}
+                />
+                <button style={styles.searchBtn}>🔍</button>
+              </div>
+              
+              <div style={styles.filesGrid}>
+                {filteredTools.length === 0 ? (
+                  <div style={styles.emptyState}>
+                    <div style={styles.emptyIcon}>🔍</div>
+                    <div style={styles.emptyText}>Δεν βρέθηκαν εργαλεία</div>
+                  </div>
+                ) : (
+                  filteredTools.map(tool => (
+                    <div 
+                      key={tool.file}
+                      style={styles.toolCard}
+                      onClick={() => openTool(tool)}
+                    >
+                      <div style={styles.toolCardAccent}></div>
+                      <div style={styles.toolCardContent}>
+                        <div style={styles.toolIconWrapper}>
+                          <span style={styles.toolIcon}>{tool.icon || '🔧'}</span>
+                        </div>
+                        <h3 style={styles.toolCardTitle}>{tool.name}</h3>
+                        <p style={styles.toolCardDesc}>
+                          Διαδραστικό εργαλείο για εκπαιδευτική χρήση
+                        </p>
+                        <button style={styles.yellowBtnSmall}>
+                          Εκκίνηση →
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </>
+          )}
         </div>
       </main>
       
@@ -503,7 +598,12 @@ export default function Home() {
                 ↗ Άνοιγμα σε νέα καρτέλα
               </button>
               <button 
-                onClick={() => window.print()}
+                onClick={() => {
+                  const printWindow = window.open(`/api/files/pdf/${currentFile.id}`, '_blank');
+                  if (printWindow) {
+                    printWindow.onload = () => printWindow.print();
+                  }
+                }}
                 style={styles.yellowBtn}
               >
                 🖨️ Εκτύπωση
@@ -903,6 +1003,38 @@ const styles = {
     color: '#64748b',
     lineHeight: '1.6',
     marginBottom: '20px'
+  },
+  
+  // All Tools Card
+  allToolsCard: {
+    position: 'relative',
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    borderRadius: '20px',
+    overflow: 'hidden',
+    boxShadow: '0 8px 16px rgba(102,126,234,0.3)',
+    transition: 'all 0.3s ease',
+    cursor: 'pointer'
+  },
+  allToolsCardContent: {
+    padding: '32px 24px',
+    textAlign: 'center',
+    color: '#fff'
+  },
+  allToolsIcon: {
+    fontSize: '48px',
+    marginBottom: '16px'
+  },
+  allToolsTitle: {
+    fontSize: '20px',
+    fontWeight: '700',
+    marginBottom: '8px',
+    color: '#fff'
+  },
+  allToolsDesc: {
+    fontSize: '14px',
+    opacity: 0.9,
+    marginBottom: '20px',
+    color: '#fff'
   },
   
   // Yellow Button
