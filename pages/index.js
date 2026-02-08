@@ -83,10 +83,12 @@ export default function Home() {
     setActiveView('tool');
   };
   
-  const openAllTools = () => {
+  const openAllTools = async () => {
     setActiveView('allTools');
     setCurrentFolder(null);
     setCurrentFile(null);
+    // Reload tools to get any new ones
+    await loadTools();
   };
   
   const goHome = () => {
@@ -212,6 +214,18 @@ export default function Home() {
                     {!sidebarCollapsed && <span>{tool.name}</span>}
                   </button>
                 ))}
+                {tools.length > 5 && (
+                  <button 
+                    onClick={openAllTools}
+                    style={{
+                      ...styles.navItem,
+                      ...(activeView === 'allTools' ? styles.navItemActive : {})
+                    }}
+                  >
+                    <span style={styles.navIcon}>📋</span>
+                    {!sidebarCollapsed && <span>Όλα τα Εργαλεία</span>}
+                  </button>
+                )}
               </div>
             </>
           )}
