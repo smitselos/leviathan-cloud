@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="el">
 <head>
     <meta charset="UTF-8">
@@ -13,334 +12,338 @@
             box-sizing: border-box;
         }
 
-```
-    :root {
-        --bg-dark: #0a0e1a;
-        --bg-card: #1a1f35;
-        --text-primary: #e8e6e3;
-        --text-secondary: #a8a6a3;
-        --accent-blue: #4a9eff;
-        --accent-gold: #d4af37;
-        --highlight: rgba(74, 158, 255, 0.15);
-        --border: rgba(212, 175, 55, 0.2);
-    }
-
-    body {
-        font-family: 'EB Garamond', serif;
-        background: linear-gradient(135deg, #0a0e1a 0%, #1a1430 50%, #0e1a2a 100%);
-        color: var(--text-primary);
-        line-height: 1.8;
-        min-height: 100vh;
-        padding: 2rem;
-        position: relative;
-        overflow-x: hidden;
-    }
-
-    /* Animated stars background */
-    body::before {
-        content: '';
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-image: 
-            radial-gradient(2px 2px at 20% 30%, white, transparent),
-            radial-gradient(2px 2px at 60% 70%, white, transparent),
-            radial-gradient(1px 1px at 50% 50%, white, transparent),
-            radial-gradient(1px 1px at 80% 10%, white, transparent),
-            radial-gradient(2px 2px at 90% 60%, white, transparent),
-            radial-gradient(1px 1px at 33% 80%, white, transparent);
-        background-size: 200% 200%;
-        animation: twinkle 8s ease-in-out infinite;
-        opacity: 0.4;
-        z-index: -1;
-    }
-
-    @keyframes twinkle {
-        0%, 100% { opacity: 0.3; }
-        50% { opacity: 0.6; }
-    }
-
-    .container {
-        max-width: 1400px;
-        margin: 0 auto;
-        position: relative;
-        z-index: 1;
-    }
-
-    header {
-        text-align: center;
-        margin-bottom: 3rem;
-        animation: fadeInDown 1s ease-out;
-    }
-
-    @keyframes fadeInDown {
-        from {
-            opacity: 0;
-            transform: translateY(-30px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    h1 {
-        font-family: 'Cormorant Garamond', serif;
-        font-size: 3.5rem;
-        font-weight: 600;
-        color: var(--accent-gold);
-        margin-bottom: 0.5rem;
-        letter-spacing: 2px;
-        text-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
-    }
-
-    .subtitle {
-        font-size: 1.2rem;
-        color: var(--text-secondary);
-        font-style: italic;
-    }
-
-    .instructions {
-        background: var(--bg-card);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        padding: 1.5rem;
-        margin-bottom: 2rem;
-        text-align: center;
-        animation: fadeIn 1s ease-out 0.3s backwards;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-    }
-
-    .instructions p {
-        color: var(--accent-blue);
-        font-size: 1.1rem;
-    }
-
-    .content-grid {
-        display: grid;
-        grid-template-columns: 1.3fr 1fr;
-        gap: 2rem;
-        animation: fadeIn 1s ease-out 0.5s backwards;
-    }
-
-    .poem-section {
-        background: var(--bg-card);
-        border: 1px solid var(--border);
-        border-radius: 16px;
-        padding: 2.5rem;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-        position: sticky;
-        top: 2rem;
-        max-height: calc(100vh - 4rem);
-        overflow-y: auto;
-    }
-
-    .poem-section h2 {
-        font-family: 'Cormorant Garamond', serif;
-        font-size: 2rem;
-        color: var(--accent-gold);
-        margin-bottom: 1.5rem;
-        text-align: center;
-        border-bottom: 2px solid var(--border);
-        padding-bottom: 1rem;
-    }
-
-    .stanza {
-        margin-bottom: 2rem;
-        padding: 1.5rem;
-        background: rgba(255, 255, 255, 0.02);
-        border-radius: 8px;
-        border-left: 3px solid transparent;
-        transition: all 0.3s ease;
-    }
-
-    .stanza:hover {
-        background: rgba(74, 158, 255, 0.05);
-        border-left-color: var(--accent-blue);
-    }
-
-    .stanza-number {
-        font-size: 0.9rem;
-        color: var(--accent-gold);
-        font-weight: 600;
-        margin-bottom: 0.8rem;
-        display: block;
-    }
-
-    .verse {
-        font-size: 1.15rem;
-        line-height: 2;
-        margin-bottom: 0.3rem;
-    }
-
-    .highlightable {
-        cursor: pointer;
-        transition: all 0.3s ease;
-        padding: 0.2rem 0.4rem;
-        border-radius: 4px;
-        display: inline-block;
-    }
-
-    .highlightable:hover {
-        background: var(--highlight);
-        color: var(--accent-blue);
-        transform: scale(1.05);
-    }
-
-    .highlightable.active {
-        background: linear-gradient(120deg, rgba(74, 158, 255, 0.3) 0%, rgba(212, 175, 55, 0.3) 100%);
-        color: #fff;
-        font-weight: 500;
-        box-shadow: 0 0 15px rgba(74, 158, 255, 0.4);
-    }
-
-    .analysis-section {
-        display: flex;
-        flex-direction: column;
-        gap: 1.5rem;
-    }
-
-    .analysis-card {
-        background: var(--bg-card);
-        border: 1px solid var(--border);
-        border-radius: 16px;
-        padding: 2rem;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-        opacity: 0;
-        transform: translateX(20px);
-        transition: all 0.5s ease;
-    }
-
-    .analysis-card.visible {
-        opacity: 1;
-        transform: translateX(0);
-    }
-
-    .analysis-card h3 {
-        font-family: 'Cormorant Garamond', serif;
-        font-size: 1.6rem;
-        color: var(--accent-gold);
-        margin-bottom: 1rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .analysis-card h3::before {
-        content: '◆';
-        color: var(--accent-blue);
-        font-size: 0.8rem;
-    }
-
-    .analysis-card .quote {
-        background: rgba(74, 158, 255, 0.1);
-        border-left: 3px solid var(--accent-blue);
-        padding: 1rem;
-        margin: 1rem 0;
-        font-style: italic;
-        border-radius: 4px;
-    }
-
-    .analysis-card p {
-        color: var(--text-secondary);
-        margin-bottom: 1rem;
-        font-size: 1.05rem;
-    }
-
-    .analysis-card strong {
-        color: var(--text-primary);
-    }
-
-    .tag {
-        display: inline-block;
-        background: rgba(74, 158, 255, 0.2);
-        color: var(--accent-blue);
-        padding: 0.3rem 0.8rem;
-        border-radius: 20px;
-        font-size: 0.9rem;
-        margin: 0.3rem;
-        border: 1px solid rgba(74, 158, 255, 0.3);
-    }
-
-    .summary-section {
-        background: linear-gradient(135deg, rgba(74, 158, 255, 0.1) 0%, rgba(212, 175, 55, 0.1) 100%);
-        border: 2px solid var(--accent-gold);
-        border-radius: 16px;
-        padding: 2.5rem;
-        margin-top: 2rem;
-        box-shadow: 0 12px 40px rgba(212, 175, 55, 0.2);
-    }
-
-    .summary-section h3 {
-        font-family: 'Cormorant Garamond', serif;
-        font-size: 2rem;
-        color: var(--accent-gold);
-        text-align: center;
-        margin-bottom: 1.5rem;
-    }
-
-    .summary-section p {
-        font-size: 1.1rem;
-        line-height: 2;
-        text-align: justify;
-    }
-
-    /* Scrollbar styling */
-    ::-webkit-scrollbar {
-        width: 8px;
-    }
-
-    ::-webkit-scrollbar-track {
-        background: var(--bg-dark);
-    }
-
-    ::-webkit-scrollbar-thumb {
-        background: var(--accent-gold);
-        border-radius: 4px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-        background: var(--accent-blue);
-    }
-
-    @media (max-width: 1024px) {
-        .content-grid {
-            grid-template-columns: 1fr;
+        :root {
+            --bg-dark: #e8ecf5;
+            --bg-card: #f8f9fc;
+            --text-primary: #1a1f35;
+            --text-secondary: #4a5568;
+            --accent-blue: #2563eb;
+            --accent-gold: #d97706;
+            --highlight: rgba(37, 99, 235, 0.15);
+            --border: rgba(217, 119, 6, 0.25);
         }
 
-        .poem-section {
+        body {
+            font-family: 'EB Garamond', serif;
+            background: linear-gradient(135deg, #f0f4ff 0%, #fff5f0 50%, #f0f9ff 100%);
+            color: var(--text-primary);
+            line-height: 1.8;
+            min-height: 100vh;
+            padding: 2rem;
             position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Animated stars background */
+        body::before {
+            content: '';
+            position: fixed;
             top: 0;
-            max-height: none;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(2px 2px at 20% 30%, rgba(37, 99, 235, 0.4), transparent),
+                radial-gradient(2px 2px at 60% 70%, rgba(217, 119, 6, 0.4), transparent),
+                radial-gradient(1px 1px at 50% 50%, rgba(37, 99, 235, 0.3), transparent),
+                radial-gradient(1px 1px at 80% 10%, rgba(217, 119, 6, 0.3), transparent),
+                radial-gradient(2px 2px at 90% 60%, rgba(37, 99, 235, 0.4), transparent),
+                radial-gradient(1px 1px at 33% 80%, rgba(217, 119, 6, 0.3), transparent);
+            background-size: 200% 200%;
+            animation: twinkle 8s ease-in-out infinite;
+            opacity: 0.4;
+            z-index: -1;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 0.8; }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: fadeInDown 1s ease-out;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         h1 {
-            font-size: 2.5rem;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: var(--accent-gold);
+            margin-bottom: 0.5rem;
+            letter-spacing: 2px;
+            text-shadow: 0 2px 4px rgba(217, 119, 6, 0.3);
         }
-    }
 
-    /* Pulse animation for active elements */
-    @keyframes pulse {
-        0%, 100% {
-            box-shadow: 0 0 15px rgba(74, 158, 255, 0.4);
+        .subtitle {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            font-style: italic;
         }
-        50% {
-            box-shadow: 0 0 25px rgba(74, 158, 255, 0.6);
+
+        .instructions {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            animation: fadeIn 1s ease-out 0.3s backwards;
         }
-    }
 
-    .highlightable.active {
-        animation: pulse 2s infinite;
-    }
-</style>
-```
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
 
+        .instructions p {
+            color: var(--accent-blue);
+            font-size: 1.1rem;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1.3fr 1fr;
+            gap: 2rem;
+            animation: fadeIn 1s ease-out 0.5s backwards;
+        }
+
+        .poem-section {
+            background: #ffffff;
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 2.5rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            position: sticky;
+            top: 2rem;
+            max-height: calc(100vh - 4rem);
+            overflow-y: auto;
+        }
+
+        .poem-section h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2rem;
+            color: var(--accent-blue);
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            border-bottom: 3px solid var(--border);
+            padding-bottom: 1rem;
+        }
+
+        .stanza {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: rgba(37, 99, 235, 0.03);
+            border-radius: 8px;
+            border-left: 4px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .stanza:hover {
+            background: rgba(37, 99, 235, 0.06);
+            border-left-color: var(--accent-blue);
+        }
+
+        .stanza-number {
+            font-size: 0.9rem;
+            color: var(--accent-blue);
+            font-weight: 700;
+            margin-bottom: 0.8rem;
+            display: block;
+        }
+
+        .verse {
+            font-size: 1.15rem;
+            line-height: 2;
+            margin-bottom: 0.3rem;
+        }
+
+        .highlightable {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .highlightable:hover {
+            background: var(--highlight);
+            color: var(--accent-blue);
+            transform: scale(1.05);
+            font-weight: 500;
+        }
+
+        .highlightable.active {
+            background: linear-gradient(120deg, rgba(37, 99, 235, 0.25) 0%, rgba(217, 119, 6, 0.25) 100%);
+            color: var(--accent-blue);
+            font-weight: 700;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.3);
+        }
+
+        .analysis-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .analysis-card {
+            background: #ffffff;
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            opacity: 0;
+            transform: translateX(20px);
+            transition: all 0.5s ease;
+        }
+
+        .analysis-card.visible {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .analysis-card h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.6rem;
+            color: var(--accent-blue);
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .analysis-card h3::before {
+            content: '◆';
+            color: var(--accent-gold);
+            font-size: 0.8rem;
+        }
+
+        .analysis-card .quote {
+            background: rgba(37, 99, 235, 0.08);
+            border-left: 4px solid var(--accent-blue);
+            padding: 1rem;
+            margin: 1rem 0;
+            font-style: italic;
+            border-radius: 4px;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .analysis-card p {
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            font-size: 1.05rem;
+        }
+
+        .analysis-card strong {
+            color: var(--text-primary);
+        }
+
+        .tag {
+            display: inline-block;
+            background: var(--accent-blue);
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin: 0.3rem;
+            border: none;
+        }
+
+        .summary-section {
+            background: #ffffff;
+            border: 3px solid var(--accent-gold);
+            border-radius: 16px;
+            padding: 2.5rem;
+            margin-top: 2rem;
+            box-shadow: 0 4px 20px rgba(217, 119, 6, 0.15);
+        }
+
+        .summary-section h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2rem;
+            color: var(--accent-gold);
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .summary-section p {
+            font-size: 1.1rem;
+            line-height: 2;
+            text-align: justify;
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-dark);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent-gold);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-blue);
+        }
+
+        @media (max-width: 1024px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .poem-section {
+                position: relative;
+                top: 0;
+                max-height: none;
+            }
+
+            h1 {
+                font-size: 2.5rem;
+            }
+        }
+
+        /* Pulse animation for active elements */
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.3);
+            }
+            50% {
+                box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.2);
+            }
+        }
+
+        .highlightable.active {
+            animation: pulse 2s infinite;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -349,283 +352,280 @@
             <p class="subtitle">Νίκος Γκάτσος</p>
         </header>
 
-```
-    <div class="instructions">
-        <p>✨ Κάντε κλικ πάνω στις υπογραμμισμένες λέξεις και φράσεις για να δείτε την ανάλυση ✨</p>
-    </div>
-
-    <div class="content-grid">
-        <!-- Poem Section -->
-        <div class="poem-section">
-            <h2>Το Ποίημα</h2>
-            
-            <div class="stanza">
-                <span class="stanza-number">ΤΙΤΛΟΣ</span>
-                <div class="verse"><span class="highlightable" data-analysis="titlos">Στον Σείριο</span></div>
-            </div>
-            
-            <!-- Α΄ Στροφή -->
-            <div class="stanza">
-                <span class="stanza-number">Α΄ ΣΤΡΟΦΗ - Η Αθωότητα</span>
-                <div class="verse">Στον Σείριο <span class="highlightable" data-analysis="seirios">υπάρχουνε παιδιά</span></div>
-                <div class="verse"><span class="highlightable" data-analysis="egnoeia">ποτέ δε βάλαν έγνοια στην καρδιά</span></div>
-                <div class="verse"><span class="highlightable" data-analysis="polemoi">δεν είδανε πολέμους και θανάτους</span></div>
-                <div class="verse">και πάνω απ' τη γαλάζια τους ποδιά</div>
-                <div class="verse">φοράν τις Κυριακές τα <span class="highlightable" data-analysis="giortina">γιορτινά τους</span>.</div>
-            </div>
-
-            <!-- Β΄ Στροφή -->
-            <div class="stanza">
-                <span class="stanza-number">Β΄ ΣΤΡΟΦΗ - Περιέργεια - Αναζήτηση</span>
-                <div class="verse">Τις νύχτες που κοιτάν τον ουρανό</div>
-                <div class="verse">έν' άστρο σα <span class="highlightable" data-analysis="ftero">φτερό θαλασσινό</span></div>
-                <div class="verse"><span class="highlightable" data-analysis="paraksenaPedeuei">παράξενα παιδεύει το μυαλό τους</span></div>
-                <div class="verse">τους φαίνεται καράβι μακρινό</div>
-                <div class="verse">και πάνε και <span class="highlightable" data-analysis="rotane">ρωτάν τον δάσκαλό τους</span>.</div>
-            </div>
-
-            <!-- Γ΄ Στροφή -->
-            <div class="stanza">
-                <span class="stanza-number">Γ΄ ΣΤΡΟΦΗ - Η Αποκάλυψη</span>
-                <div class="verse">Αυτή, τους λέει, παιδιά μου είναι <span class="highlightable" data-analysis="gh">η γη</span>,</div>
-                <div class="verse">του σύμπαντος <span class="highlightable" data-analysis="arrostia">αρρώστια και πληγή</span>:</div>
-                <div class="verse">εκεί <span class="highlightable" data-analysis="tragoudia">τραγούδια λένε, γράφουν στίχους</span>,</div>
-                <div class="verse">κι <span class="highlightable" data-analysis="kynigoi">ακούραστοι του ονείρου κυνηγοί</span></div>
-                <div class="verse"><span class="highlightable" data-analysis="synthimata">κεντάνε με συνθήματα τους τοίχους</span>.</div>
-            </div>
-
-            <!-- Δ΄ Στροφή -->
-            <div class="stanza">
-                <span class="stanza-number">Δ΄ ΣΤΡΟΦΗ - Η Μεταμόρφωση</span>
-                <div class="verse">Στον Σείριο <span class="highlightable" data-analysis="dakrysan">δακρύσαν τα παιδιά</span></div>
-                <div class="verse">και βάλαν από εκείνη τη βραδιά</div>
-                <div class="verse">μιαν <span class="highlightable" data-analysis="egnoeia2">έγνοια στη μικρούλα τους καρδιά</span>.</div>
-            </div>
+        <div class="instructions">
+            <p>✨ Κάντε κλικ πάνω στις υπογραμμισμένες λέξεις και φράσεις για να δείτε την ανάλυση ✨</p>
         </div>
 
-        <!-- Analysis Section -->
-        <div class="analysis-section" id="analysisSection">
-            <!-- Default message -->
-            <div class="analysis-card visible" id="defaultCard">
-                <h3>Καλώς ήρθατε στη διαδραστική ανάλυση</h3>
-                <p>Αυτή η εφαρμογή σας επιτρέπει να εξερευνήσετε το ποίημα «Στον Σείριο» του Νίκου Γκάτσου με διαδραστικό τρόπο.</p>
-                <p><strong>Οδηγίες:</strong> Κάντε κλικ πάνω στις υπογραμμισμένες λέξεις και φράσεις στο ποίημα για να δείτε αναλυτικά σχόλια για κάθε στοιχείο.</p>
-                <div style="margin-top: 1.5rem;">
-                    <span class="tag">Συμβολισμός</span>
-                    <span class="tag">Αντίθεση</span>
-                    <span class="tag">Μεταφορές</span>
-                    <span class="tag">Θέμα</span>
+        <div class="content-grid">
+            <!-- Poem Section -->
+            <div class="poem-section">
+                <h2>Το Ποίημα</h2>
+                
+                <div class="stanza">
+                    <span class="stanza-number">ΤΙΤΛΟΣ</span>
+                    <div class="verse"><span class="highlightable" data-analysis="titlos">Στον Σείριο</span></div>
+                </div>
+                
+                <!-- Α΄ Στροφή -->
+                <div class="stanza">
+                    <span class="stanza-number">Α΄ ΣΤΡΟΦΗ - Η Αθωότητα</span>
+                    <div class="verse">Στον Σείριο <span class="highlightable" data-analysis="seirios">υπάρχουνε παιδιά</span></div>
+                    <div class="verse"><span class="highlightable" data-analysis="egnoeia">ποτέ δε βάλαν έγνοια στην καρδιά</span></div>
+                    <div class="verse"><span class="highlightable" data-analysis="polemoi">δεν είδανε πολέμους και θανάτους</span></div>
+                    <div class="verse">και πάνω απ' τη γαλάζια τους ποδιά</div>
+                    <div class="verse">φοράν τις Κυριακές τα <span class="highlightable" data-analysis="giortina">γιορτινά τους</span>.</div>
+                </div>
+
+                <!-- Β΄ Στροφή -->
+                <div class="stanza">
+                    <span class="stanza-number">Β΄ ΣΤΡΟΦΗ - Περιέργεια - Αναζήτηση</span>
+                    <div class="verse">Τις νύχτες που κοιτάν τον ουρανό</div>
+                    <div class="verse">έν' άστρο σα <span class="highlightable" data-analysis="ftero">φτερό θαλασσινό</span></div>
+                    <div class="verse"><span class="highlightable" data-analysis="paraksenaPedeuei">παράξενα παιδεύει το μυαλό τους</span></div>
+                    <div class="verse">τους φαίνεται καράβι μακρινό</div>
+                    <div class="verse">και πάνε και <span class="highlightable" data-analysis="rotane">ρωτάν τον δάσκαλό τους</span>.</div>
+                </div>
+
+                <!-- Γ΄ Στροφή -->
+                <div class="stanza">
+                    <span class="stanza-number">Γ΄ ΣΤΡΟΦΗ - Η Αποκάλυψη</span>
+                    <div class="verse">Αυτή, τους λέει, παιδιά μου είναι <span class="highlightable" data-analysis="gh">η γη</span>,</div>
+                    <div class="verse">του σύμπαντος <span class="highlightable" data-analysis="arrostia">αρρώστια και πληγή</span>:</div>
+                    <div class="verse">εκεί <span class="highlightable" data-analysis="tragoudia">τραγούδια λένε, γράφουν στίχους</span>,</div>
+                    <div class="verse">κι <span class="highlightable" data-analysis="kynigoi">ακούραστοι του ονείρου κυνηγοί</span></div>
+                    <div class="verse"><span class="highlightable" data-analysis="synthimata">κεντάνε με συνθήματα τους τοίχους</span>.</div>
+                </div>
+
+                <!-- Δ΄ Στροφή -->
+                <div class="stanza">
+                    <span class="stanza-number">Δ΄ ΣΤΡΟΦΗ - Η Μεταμόρφωση</span>
+                    <div class="verse">Στον Σείριο <span class="highlightable" data-analysis="dakrysan">δακρύσαν τα παιδιά</span></div>
+                    <div class="verse">και βάλαν από εκείνη τη βραδιά</div>
+                    <div class="verse">μιαν <span class="highlightable" data-analysis="egnoeia2">έγνοια στη μικρούλα τους καρδιά</span>.</div>
+                </div>
+            </div>
+
+            <!-- Analysis Section -->
+            <div class="analysis-section" id="analysisSection">
+                <!-- Default message -->
+                <div class="analysis-card visible" id="defaultCard">
+                    <h3>Καλώς ήρθατε στη διαδραστική ανάλυση</h3>
+                    <p>Αυτή η εφαρμογή σας επιτρέπει να εξερευνήσετε το ποίημα «Στον Σείριο» του Νίκου Γκάτσου με διαδραστικό τρόπο.</p>
+                    <p><strong>Οδηγίες:</strong> Κάντε κλικ πάνω στις υπογραμμισμένες λέξεις και φράσεις στο ποίημα για να δείτε αναλυτικά σχόλια για κάθε στοιχείο.</p>
+                    <div style="margin-top: 1.5rem;">
+                        <span class="tag">Συμβολισμός</span>
+                        <span class="tag">Αντίθεση</span>
+                        <span class="tag">Μεταφορές</span>
+                        <span class="tag">Θέμα</span>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Summary Section -->
-    <div class="summary-section">
-        <h3>Ερμηνευτικό Ερώτημα</h3>
-        <div style="background: rgba(0,0,0,0.3); padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid var(--accent-blue);">
-            <p style="font-style: italic; font-size: 1.05rem;">
-                <strong>Ερώτημα:</strong> Γιατί, κατά τη γνώμη σας, «Στον Σείριο δακρύσαν τα παιδιά και βάλαν από εκείνη τη βραδιά μιαν έγνοια στη μικρούλα τους καρδιά»; Να απαντήσετε, αξιοποιώντας τρεις (3) διαφορετικούς κειμενικούς δείκτες του ποιήματος. Θα ήσαστε ικανοποιημένοι/ες ή δυσαρεστημένοι/ες, αν ζούσατε, όπως τα παιδιά στον Σείριο και γιατί; (150-200 λέξεις)
+        <!-- Summary Section -->
+        <div class="summary-section">
+            <h3>Ερμηνευτικό Ερώτημα</h3>
+            <div style="background: rgba(0,0,0,0.3); padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid var(--accent-blue);">
+                <p style="font-style: italic; font-size: 1.05rem;">
+                    <strong>Ερώτημα:</strong> Γιατί, κατά τη γνώμη σας, «Στον Σείριο δακρύσαν τα παιδιά και βάλαν από εκείνη τη βραδιά μιαν έγνοια στη μικρούλα τους καρδιά»; Να απαντήσετε, αξιοποιώντας τρεις (3) διαφορετικούς κειμενικούς δείκτες του ποιήματος. Θα ήσαστε ικανοποιημένοι/ες ή δυσαρεστημένοι/ες, αν ζούσατε, όπως τα παιδιά στον Σείριο και γιατί; (150-200 λέξεις)
+                </p>
+            </div>
+            
+            <p style="margin-bottom: 1.2rem;">
+                Τα παιδιά του Σείριου δάκρυσαν γιατί αντίκρισαν για πρώτη φορά την τραγική ομορφιά της ανθρώπινης ύπαρξης - ένα πλάσμα που, καταδικασμένο στον πόνο, αρνείται να παραδοθεί και δημιουργεί τέχνη και ελπίδα μέσα στη φθορά.
+            </p>
+            
+            <p style="margin-bottom: 1.2rem;">
+                <strong>Πρώτον,</strong> η <em>περιγραφή του Σείριου</em> («ποτέ δε βάλαν έγνοια», «δεν είδανε πολέμους και θανάτους») αποκαλύπτει έναν κόσμο στείρας τελειότητας - μια ύπαρξη χωρίς βάθος και νόημα. Όταν ανακαλύπτουν τη γη, καταλαβαίνουν ότι ο δικός τους κόσμος είναι κενός.
+            </p>
+            
+            <p style="margin-bottom: 1.2rem;">
+                <strong>Δεύτερον,</strong> η <em>μεταφορά</em> «του σύμπαντος αρρώστια και πληγή» παρουσιάζει τη γη ως τραυματισμένο οργανισμό. Ωστόσο, αυτή η «πληγή» παράγει «τραγούδια» και «στίχους». Τα παιδιά συνειδητοποίησαν ότι η τέχνη και η ελπίδα γεννιούνται εξαιτίας του πόνου - κάτι που ο Σείριος δεν μπορεί να προσφέρει.
+            </p>
+            
+            <p style="margin-bottom: 1.5rem;">
+                <strong>Τρίτον,</strong> το <em>σχήμα του κύκλου</em> (από «ποτέ δε βάλαν έγνοια» σε «βάλαν μιαν έγνοια») δείχνει μια οριστική μεταμόρφωση. Η «έγνοια» είναι η γέννηση της συνείδησης και της ευθύνης - έχασαν την αθωότητα, κέρδισαν την ανθρωπιά.
+            </p>
+            
+            <div style="border-top: 2px solid var(--border); padding-top: 1.5rem; margin-top: 1.5rem;">
+                <p style="margin-bottom: 1rem;"><strong>Προσωπική Τοποθέτηση:</strong></p>
+                
+                <p>
+                    Θα ήμουν βαθιά δυσαρεστημένος ζώντας στον Σείριο. Η ζωή χωρίς πόνο μπορεί να φαίνεται ιδανική, αλλά στην ουσία είναι νεκρή. Χωρίς προκλήσεις δεν υπάρχει υπέρβαση, χωρίς αγώνα δεν υπάρχει νίκη. Η ανθρώπινη φύση χρειάζεται τον αγώνα για να ανθίσει. Προτιμώ να ζω στη γη, όπου κάθε χαρά είναι κερδισμένη, κάθε ομορφιά είναι θαύμα μέσα στο χάος, κάθε στιγμή έχει βάρος. Χωρίς την «έγνοια», η ζωή θα ήταν κενή από βάθος και αληθινή σύνδεση με τον κόσμο.
+                </p>
+            </div>
+            
+            <p style="text-align: right; font-style: italic; color: var(--text-secondary); margin-top: 1rem; font-size: 0.95rem;">
+                (198 λέξεις)
             </p>
         </div>
-        
-        <p style="margin-bottom: 1.2rem;">
-            Τα παιδιά του Σείριου δάκρυσαν γιατί αντίκρισαν για πρώτη φορά την τραγική ομορφιά της ανθρώπινης ύπαρξης - ένα πλάσμα που, καταδικασμένο στον πόνο, αρνείται να παραδοθεί και δημιουργεί τέχνη και ελπίδα μέσα στη φθορά.
-        </p>
-        
-        <p style="margin-bottom: 1.2rem;">
-            <strong>Πρώτον,</strong> η <em>περιγραφή του Σείριου</em> («ποτέ δε βάλαν έγνοια», «δεν είδανε πολέμους και θανάτους») αποκαλύπτει έναν κόσμο στείρας τελειότητας - μια ύπαρξη χωρίς βάθος και νόημα. Όταν ανακαλύπτουν τη γη, καταλαβαίνουν ότι ο δικός τους κόσμος είναι κενός.
-        </p>
-        
-        <p style="margin-bottom: 1.2rem;">
-            <strong>Δεύτερον,</strong> η <em>μεταφορά</em> «του σύμπαντος αρρώστια και πληγή» παρουσιάζει τη γη ως τραυματισμένο οργανισμό. Ωστόσο, αυτή η «πληγή» παράγει «τραγούδια» και «στίχους». Τα παιδιά συνειδητοποίησαν ότι η τέχνη και η ελπίδα γεννιούνται εξαιτίας του πόνου - κάτι που ο Σείριος δεν μπορεί να προσφέρει.
-        </p>
-        
-        <p style="margin-bottom: 1.5rem;">
-            <strong>Τρίτον,</strong> το <em>σχήμα του κύκλου</em> (από «ποτέ δε βάλαν έγνοια» σε «βάλαν μιαν έγνοια») δείχνει μια οριστική μεταμόρφωση. Η «έγνοια» είναι η γέννηση της συνείδησης και της ευθύνης - έχασαν την αθωότητα, κέρδισαν την ανθρωπιά.
-        </p>
-        
-        <div style="border-top: 2px solid var(--border); padding-top: 1.5rem; margin-top: 1.5rem;">
-            <p style="margin-bottom: 1rem;"><strong>Προσωπική Τοποθέτηση:</strong></p>
-            
-            <p>
-                Θα ήμουν βαθιά δυσαρεστημένος ζώντας στον Σείριο. Η ζωή χωρίς πόνο μπορεί να φαίνεται ιδανική, αλλά στην ουσία είναι νεκρή. Χωρίς προκλήσεις δεν υπάρχει υπέρβαση, χωρίς αγώνα δεν υπάρχει νίκη. Η ανθρώπινη φύση χρειάζεται τον αγώνα για να ανθίσει. Προτιμώ να ζω στη γη, όπου κάθε χαρά είναι κερδισμένη, κάθε ομορφιά είναι θαύμα μέσα στο χάος, κάθε στιγμή έχει βάρος. Χωρίς την «έγνοια», η ζωή θα ήταν κενή από βάθος και αληθινή σύνδεση με τον κόσμο.
-            </p>
-        </div>
-        
-        <p style="text-align: right; font-style: italic; color: var(--text-secondary); margin-top: 1rem; font-size: 0.95rem;">
-            (198 λέξεις)
-        </p>
     </div>
-</div>
 
-<script>
-    const analyses = {
-        titlos: {
-            title: "«Στον Σείριο»",
-            content: `<p><strong>Συμβολισμός του τίτλου:</strong> Ο Σείριος είναι ο λαμπρότερος αστέρας του νυχτερινού ουρανού, ορατός από τη Γη.</p>
-            <p>Η επιλογή του συγκεκριμένου αστέρα δεν είναι τυχαία - ο Σείριος συμβολίζει κάτι <strong>απομακρυσμένο</strong>, <strong>λαμπερό</strong> και <strong>ιδανικό</strong>, έναν τόπο που υπερβαίνει τα όρια της γήινης εμπειρίας.</p>
-            <div class="quote">Η πρόθεση "στον" (και όχι "για τον" ή "προς τον") δηλώνει τοποθέτηση, παρουσία - τα γεγονότα διαδραματίζονται ΕΚΕΙπάνω, σε αυτόν τον μακρινό κόσμο.</div>
-            <p>Ο τίτλος λειτουργεί ως <strong>χωρικός προσδιορισμός</strong> που δημιουργεί από την αρχή την αντίθεση: "Εκεί πάνω" (Σείριος) vs "Εδώ κάτω" (Γη).</p>
-            <p>Επίσης, ο Σείριος ως <strong>παρατηρητήριο</strong> - από εκεί τα παιδιά κοιτούν τη γη και την ανακαλύπτουν. Είναι ο τόπος από όπου βλέπουμε τον εαυτό μας με νέα μάτια.</p>`,
-            tags: ['Τίτλος', 'Συμβολισμός', 'Χώρος', 'Αντίθεση']
-        },
-        seirios: {
-            title: "«υπάρχουνε παιδιά»",
-            content: `<p><strong>Συμβολισμός του Σείριου:</strong> Ο Σείριος είναι ο πιο λαμπερός αστέρας στον νυχτερινό ουρανό και λειτουργεί ως σύμβολο ενός παραδεισιακού κόσμου, απομακρυσμένου από τον πόνο και τις δυσκολίες της γης.</p>
-            <p>Τα «παιδιά» αντιπροσωπεύουν την αθωότητα, την καθαρότητα και την απουσία εμπειρίας του κακού.</p>
-            <div class="quote">"Υπάρχουνε" - Ο ενεστώτας δηλώνει διαχρονικότητα και συνέχεια</div>`,
-            tags: ['Συμβολισμός', 'Αθωότητα', 'Ενεστώτας']
-        },
-        egnoeia: {
-            title: "«ποτέ δε βάλαν έγνοια»",
-            content: `<p><strong>Κεντρική λέξη-κλειδί:</strong> Η «έγνοια» εμφανίζεται στην αρχή (απουσία) και στο τέλος (παρουσία), δημιουργώντας κυκλική σύνθεση.</p>
-            <p>Η φράση «ποτέ δε βάλαν» τονίζει την <strong>απόλυτη απουσία</strong> ανησυχίας, φόβου ή προβληματισμού. Είναι κατάσταση παντελούς ανεμελιάς.</p>
-            <div class="quote">Αόριστος χρόνος: Δηλώνει μία διαρκή κατάσταση που χαρακτήριζε το παρελθόν</div>`,
-            tags: ['Θέμα', 'Αντίθεση', 'Αόριστος']
-        },
-        polemoi: {
-            title: "«πολέμους και θανάτους»",
-            content: `<p><strong>Αντίθεση Σείριος-Γη:</strong> Τα παιδιά του Σείριου δεν έχουν γνωρίσει τα δύο μεγαλύτερα κακά της ανθρώπινης ύπαρξης.</p>
-            <p>«Πόλεμοι» = συλλογικό κακό, κοινωνική βία</p>
-            <p>«Θάνατοι» = ατομικό κακό, το τελικό όριο της ζωής</p>
-            <p>Η απουσία αυτών των εμπειριών καθιστά τον Σείριο <strong>παράδεισο άγνοιας</strong>.</p>`,
-            tags: ['Αντίθεση', 'Θάνατος', 'Πόλεμος']
-        },
-        giortina: {
-            title: "«γιορτινά»",
-            content: `<p><strong>Εορταστική διάσταση:</strong> «Τα γιορτινά τους» - τα καλά τους ρούχα που φορούν τις Κυριακές.</p>
-            <p>Υποδηλώνει μία ζωή όπου κάθε Κυριακή είναι γιορτή, κάθε μέρα έχει κάτι το ξεχωριστό να προσφέρει.</p>
-            <p>Αντίθεση με τη γη όπου η γιορτή είναι σπάνια και η καθημερινότητα βαριά.</p>`,
-            tags: ['Αντίθεση', 'Χαρά', 'Καθημερινότητα']
-        },
-        ftero: {
-            title: "«φτερό θαλασσινό»",
-            content: `<p><strong>Παρομοίωση:</strong> Η γη μοιάζει «σα φτερό θαλασσινό» - όμορφη, λεπτή, εύθραυστη.</p>
-            <p>Το «φτερό» συμβολίζει την <strong>ευαλωτότητα</strong> και την ομορφιά που μπορεί εύκολα να τραυματιστεί.</p>
-            <p>«Θαλασσινό» - προσθέτει στοιχείο νοσταλγίας και ρομαντισμού, αλλά και ταραχής (η θάλασσα δεν είναι πάντα ήρεμη).</p>`,
-            tags: ['Παρομοίωση', 'Εικόνα', 'Ευαλωτότητα']
-        },
-        paraksenaPedeuei: {
-            title: "«παράξενα παιδεύει»",
-            content: `<p><strong>Η γέννηση της περιέργειας:</strong> Το άστρο «παιδεύει το μυαλό» των παιδιών - τους δημιουργεί ερωτήματα, ανησυχία, περιέργεια.</p>
-            <p>Το επίρρημα «παράξενα» τονίζει ότι αυτή η αίσθηση είναι <strong>πρωτόγνωρη</strong> για τα παιδιά του Σείριου.</p>
-            <p>Είναι η αρχή της γνώσης - η στιγμή που αρχίζει να ραγίζει η αθωότητα.</p>`,
-            tags: ['Περιέργεια', 'Γνώση', 'Ρήξη']
-        },
-        rotane: {
-            title: "«ρωτάν τον δάσκαλό τους»",
-            content: `<p><strong>Η αναζήτηση απαντήσεων:</strong> Τα παιδιά στρέφονται στη γνώση, στον «δάσκαλο» για να κατανοήσουν.</p>
-            <p>Ο <strong>δάσκαλος</strong> είναι η φιγούρα της αυθεντίας, της σοφίας, αυτός που γνωρίζει και μπορεί να εξηγήσει.</p>
-            <p>Αυτή η ερώτηση είναι <strong>καθοριστική</strong> - θα οδηγήσει στην αποκάλυψη που θα αλλάξει τα παιδιά για πάντα.</p>`,
-            tags: ['Γνώση', 'Ερώτηση', 'Δάσκαλος']
-        },
-        gh: {
-            title: "«η γη»",
-            content: `<p><strong>Κεντρικό σύμβολο:</strong> Η γη είναι ο αντίθετος πόλος του Σείριου - ο τόπος του πόνου, της δυστυχίας, αλλά και της δημιουργίας.</p>
-            <p>Ο δάσκαλος την ονομάζει με σεβασμό αλλά και λύπη - «Αυτή είναι η γη».</p>
-            <p>Η γη δεν είναι απλώς ένας πλανήτης - είναι η <strong>ανθρώπινη κατάσταση</strong>.</p>`,
-            tags: ['Συμβολισμός', 'Αντίθεση', 'Ανθρωπότητα']
-        },
-        arrostia: {
-            title: "«αρρώστια και πληγή»",
-            content: `<p><strong>Ισχυρή μεταφορά:</strong> Η γη παρουσιάζεται ως «αρρώστια» και «πληγή» του σύμπαντος.</p>
-            <p>«Αρρώστια» = κάτι που διαβρώνει εσωτερικά, που αλλοιώνει την υγεία</p>
-            <p>«Πληγή» = εξωτερικό τραύμα, ορατός πόνος, σημάδι βίας</p>
-            <p>Η διπλή αυτή μεταφορά δημιουργεί εικόνα <strong>βαθιάς φθοράς</strong> - η γη πονάει και εσωτερικά και εξωτερικά.</p>`,
-            tags: ['Μεταφορά', 'Πόνος', 'Φθορά']
-        },
-        tragoudia: {
-            title: "«τραγούδια λένε, γράφουν στίχους»",
-            content: `<p><strong>Το παράδοξο της δημιουργίας:</strong> Παρά τον πόνο («αρρώστια και πληγή»), στη γη οι άνθρωποι δημιουργούν τέχνη.</p>
-            <p>«Τραγούδια» = προφορική τέχνη, συναισθηματική έκφραση</p>
-            <p>«Στίχους» = γραπτή τέχνη, πνευματική δημιουργία</p>
-            <p>Αυτό το <strong>οξύμωρο</strong> είναι το κλειδί του ποιήματος: Μέσα στη δυστυχία γεννιέται η ομορφιά.</p>`,
-            tags: ['Οξύμωρο', 'Τέχνη', 'Δημιουργία']
-        },
-        kynigoi: {
-            title: "«ακούραστοι του ονείρου κυνηγοί»",
-            content: `<p><strong>Η ανθρώπινη επιμονή:</strong> Παρά τον πόνο, οι άνθρωποι είναι «ακούραστοι κυνηγοί του ονείρου».</p>
-            <p>«Ακούραστοι» = αδιάκοπη προσπάθεια, άρνηση παραίτησης</p>
-            <p>«Κυνηγοί» = ενεργός αναζήτηση, αγώνας</p>
-            <p>«Του ονείρου» = της ελπίδας, του οράματος, του καλύτερου αύριο</p>
-            <p>Αυτή η φράση ορίζει την <strong>ουσία της ανθρωπότητας</strong>: ποτέ δεν σταματά να ονειρεύεται.</p>`,
-            tags: ['Ελπίδα', 'Αγώνας', 'Όνειρο']
-        },
-        synthimata: {
-            title: "«κεντάνε με συνθήματα τους τοίχους»",
-            content: `<p><strong>Πολιτική διάσταση:</strong> Τα «συνθήματα» αναφέρονται στον κοινωνικό και πολιτικό αγώνα.</p>
-            <p>«Κεντάνε» = εγχάραξη, μόνιμη σημάδεμα, δημιουργία ιχνών που μένουν</p>
-            <p>«Τοίχους» = δημόσιος χώρος, ορατότητα, διακήρυξη</p>
-            <p>Η εικόνα παραπέμπει σε επαναστατικά κινήματα, σε αγώνες για <strong>ελευθερία και δικαιοσύνη</strong>.</p>`,
-            tags: ['Πολιτική', 'Αγώνας', 'Αντίσταση']
-        },
-        dakrysan: {
-            title: "«δακρύσαν τα παιδιά»",
-            content: `<p><strong>Η στιγμή της μεταμόρφωσης:</strong> Τα δάκρυα δεν είναι φόβου αλλά <strong>συμπόνιας</strong>.</p>
-            <p>Ο αόριστος «δακρύσαν» σηματοδοτεί τη <strong>ρήξη</strong>, τη στιγμή που όλα άλλαξαν οριστικά.</p>
-            <p>Τα παιδιά δεν φοβήθηκαν - συγκινήθηκαν. Έκλαψαν για τον πόνο των άλλων, για τον αγώνα τους, για την ομορφιά που γεννιέται μέσα στη δυστυχία.</p>`,
-            tags: ['Συμπόνια', 'Μεταμόρφωση', 'Αόριστος']
-        },
-        egnoeia2: {
-            title: "«έγνοια στη μικρούλα τους καρδιά»",
-            content: `<p><strong>Κυκλική σύνθεση:</strong> Από «ποτέ δε βάλαν έγνοια» στην αρχή σε «βάλαν μιαν έγνοια» στο τέλος.</p>
-            <p>Η «έγνοια» τώρα δεν είναι φόβος - είναι <strong>ευθύνη</strong>, <strong>συνείδηση</strong>, <strong>συμμετοχή</strong> στον πόνο του κόσμου.</p>
-            <p>«Μικρούλα καρδιά» - το υποκοριστικό τονίζει την τρυφερότητα και την αθωότητα που χάνεται, καθιστώντας τη στιγμή πιο συγκινητική.</p>
-            <p>Αυτή η έγνοια είναι η <strong>γέννηση της ωριμότητας</strong>: τα παιδιά δεν είναι πια αδιάφορα - έχουν γίνει μέρος της ανθρωπότητας.</p>`,
-            tags: ['Θέμα', 'Ευθύνη', 'Ωριμότητα']
-        }
-    };
+    <script>
+        const analyses = {
+            titlos: {
+                title: "«Στον Σείριο»",
+                content: `<p><strong>Συμβολισμός του τίτλου:</strong> Ο Σείριος είναι ο λαμπρότερος αστέρας του νυχτερινού ουρανού, ορατός από τη Γη.</p>
+                <p>Η επιλογή του συγκεκριμένου αστέρα δεν είναι τυχαία - ο Σείριος συμβολίζει κάτι <strong>απομακρυσμένο</strong>, <strong>λαμπερό</strong> και <strong>ιδανικό</strong>, έναν τόπο που υπερβαίνει τα όρια της γήινης εμπειρίας.</p>
+                <div class="quote">Η πρόθεση "στον" (και όχι "για τον" ή "προς τον") δηλώνει τοποθέτηση, παρουσία - τα γεγονότα διαδραματίζονται ΕΚΕΙπάνω, σε αυτόν τον μακρινό κόσμο.</div>
+                <p>Ο τίτλος λειτουργεί ως <strong>χωρικός προσδιορισμός</strong> που δημιουργεί από την αρχή την αντίθεση: "Εκεί πάνω" (Σείριος) vs "Εδώ κάτω" (Γη).</p>
+                <p>Επίσης, ο Σείριος ως <strong>παρατηρητήριο</strong> - από εκεί τα παιδιά κοιτούν τη γη και την ανακαλύπτουν. Είναι ο τόπος από όπου βλέπουμε τον εαυτό μας με νέα μάτια.</p>`,
+                tags: ['Τίτλος', 'Συμβολισμός', 'Χώρος', 'Αντίθεση']
+            },
+            seirios: {
+                title: "«υπάρχουνε παιδιά»",
+                content: `<p><strong>Συμβολισμός του Σείριου:</strong> Ο Σείριος είναι ο πιο λαμπερός αστέρας στον νυχτερινό ουρανό και λειτουργεί ως σύμβολο ενός παραδεισιακού κόσμου, απομακρυσμένου από τον πόνο και τις δυσκολίες της γης.</p>
+                <p>Τα «παιδιά» αντιπροσωπεύουν την αθωότητα, την καθαρότητα και την απουσία εμπειρίας του κακού.</p>
+                <div class="quote">"Υπάρχουνε" - Ο ενεστώτας δηλώνει διαχρονικότητα και συνέχεια</div>`,
+                tags: ['Συμβολισμός', 'Αθωότητα', 'Ενεστώτας']
+            },
+            egnoeia: {
+                title: "«ποτέ δε βάλαν έγνοια»",
+                content: `<p><strong>Κεντρική λέξη-κλειδί:</strong> Η «έγνοια» εμφανίζεται στην αρχή (απουσία) και στο τέλος (παρουσία), δημιουργώντας κυκλική σύνθεση.</p>
+                <p>Η φράση «ποτέ δε βάλαν» τονίζει την <strong>απόλυτη απουσία</strong> ανησυχίας, φόβου ή προβληματισμού. Είναι κατάσταση παντελούς ανεμελιάς.</p>
+                <div class="quote">Αόριστος χρόνος: Δηλώνει μία διαρκή κατάσταση που χαρακτήριζε το παρελθόν</div>`,
+                tags: ['Θέμα', 'Αντίθεση', 'Αόριστος']
+            },
+            polemoi: {
+                title: "«πολέμους και θανάτους»",
+                content: `<p><strong>Αντίθεση Σείριος-Γη:</strong> Τα παιδιά του Σείριου δεν έχουν γνωρίσει τα δύο μεγαλύτερα κακά της ανθρώπινης ύπαρξης.</p>
+                <p>«Πόλεμοι» = συλλογικό κακό, κοινωνική βία</p>
+                <p>«Θάνατοι» = ατομικό κακό, το τελικό όριο της ζωής</p>
+                <p>Η απουσία αυτών των εμπειριών καθιστά τον Σείριο <strong>παράδεισο άγνοιας</strong>.</p>`,
+                tags: ['Αντίθεση', 'Θάνατος', 'Πόλεμος']
+            },
+            giortina: {
+                title: "«γιορτινά»",
+                content: `<p><strong>Εορταστική διάσταση:</strong> «Τα γιορτινά τους» - τα καλά τους ρούχα που φορούν τις Κυριακές.</p>
+                <p>Υποδηλώνει μία ζωή όπου κάθε Κυριακή είναι γιορτή, κάθε μέρα έχει κάτι το ξεχωριστό να προσφέρει.</p>
+                <p>Αντίθεση με τη γη όπου η γιορτή είναι σπάνια και η καθημερινότητα βαριά.</p>`,
+                tags: ['Αντίθεση', 'Χαρά', 'Καθημερινότητα']
+            },
+            ftero: {
+                title: "«φτερό θαλασσινό»",
+                content: `<p><strong>Παρομοίωση:</strong> Η γη μοιάζει «σα φτερό θαλασσινό» - όμορφη, λεπτή, εύθραυστη.</p>
+                <p>Το «φτερό» συμβολίζει την <strong>ευαλωτότητα</strong> και την ομορφιά που μπορεί εύκολα να τραυματιστεί.</p>
+                <p>«Θαλασσινό» - προσθέτει στοιχείο νοσταλγίας και ρομαντισμού, αλλά και ταραχής (η θάλασσα δεν είναι πάντα ήρεμη).</p>`,
+                tags: ['Παρομοίωση', 'Εικόνα', 'Ευαλωτότητα']
+            },
+            paraksenaPedeuei: {
+                title: "«παράξενα παιδεύει»",
+                content: `<p><strong>Η γέννηση της περιέργειας:</strong> Το άστρο «παιδεύει το μυαλό» των παιδιών - τους δημιουργεί ερωτήματα, ανησυχία, περιέργεια.</p>
+                <p>Το επίρρημα «παράξενα» τονίζει ότι αυτή η αίσθηση είναι <strong>πρωτόγνωρη</strong> για τα παιδιά του Σείριου.</p>
+                <p>Είναι η αρχή της γνώσης - η στιγμή που αρχίζει να ραγίζει η αθωότητα.</p>`,
+                tags: ['Περιέργεια', 'Γνώση', 'Ρήξη']
+            },
+            rotane: {
+                title: "«ρωτάν τον δάσκαλό τους»",
+                content: `<p><strong>Η αναζήτηση απαντήσεων:</strong> Τα παιδιά στρέφονται στη γνώση, στον «δάσκαλο» για να κατανοήσουν.</p>
+                <p>Ο <strong>δάσκαλος</strong> είναι η φιγούρα της αυθεντίας, της σοφίας, αυτός που γνωρίζει και μπορεί να εξηγήσει.</p>
+                <p>Αυτή η ερώτηση είναι <strong>καθοριστική</strong> - θα οδηγήσει στην αποκάλυψη που θα αλλάξει τα παιδιά για πάντα.</p>`,
+                tags: ['Γνώση', 'Ερώτηση', 'Δάσκαλος']
+            },
+            gh: {
+                title: "«η γη»",
+                content: `<p><strong>Κεντρικό σύμβολο:</strong> Η γη είναι ο αντίθετος πόλος του Σείριου - ο τόπος του πόνου, της δυστυχίας, αλλά και της δημιουργίας.</p>
+                <p>Ο δάσκαλος την ονομάζει με σεβασμό αλλά και λύπη - «Αυτή είναι η γη».</p>
+                <p>Η γη δεν είναι απλώς ένας πλανήτης - είναι η <strong>ανθρώπινη κατάσταση</strong>.</p>`,
+                tags: ['Συμβολισμός', 'Αντίθεση', 'Ανθρωπότητα']
+            },
+            arrostia: {
+                title: "«αρρώστια και πληγή»",
+                content: `<p><strong>Ισχυρή μεταφορά:</strong> Η γη παρουσιάζεται ως «αρρώστια» και «πληγή» του σύμπαντος.</p>
+                <p>«Αρρώστια» = κάτι που διαβρώνει εσωτερικά, που αλλοιώνει την υγεία</p>
+                <p>«Πληγή» = εξωτερικό τραύμα, ορατός πόνος, σημάδι βίας</p>
+                <p>Η διπλή αυτή μεταφορά δημιουργεί εικόνα <strong>βαθιάς φθοράς</strong> - η γη πονάει και εσωτερικά και εξωτερικά.</p>`,
+                tags: ['Μεταφορά', 'Πόνος', 'Φθορά']
+            },
+            tragoudia: {
+                title: "«τραγούδια λένε, γράφουν στίχους»",
+                content: `<p><strong>Το παράδοξο της δημιουργίας:</strong> Παρά τον πόνο («αρρώστια και πληγή»), στη γη οι άνθρωποι δημιουργούν τέχνη.</p>
+                <p>«Τραγούδια» = προφορική τέχνη, συναισθηματική έκφραση</p>
+                <p>«Στίχους» = γραπτή τέχνη, πνευματική δημιουργία</p>
+                <p>Αυτό το <strong>οξύμωρο</strong> είναι το κλειδί του ποιήματος: Μέσα στη δυστυχία γεννιέται η ομορφιά.</p>`,
+                tags: ['Οξύμωρο', 'Τέχνη', 'Δημιουργία']
+            },
+            kynigoi: {
+                title: "«ακούραστοι του ονείρου κυνηγοί»",
+                content: `<p><strong>Η ανθρώπινη επιμονή:</strong> Παρά τον πόνο, οι άνθρωποι είναι «ακούραστοι κυνηγοί του ονείρου».</p>
+                <p>«Ακούραστοι» = αδιάκοπη προσπάθεια, άρνηση παραίτησης</p>
+                <p>«Κυνηγοί» = ενεργός αναζήτηση, αγώνας</p>
+                <p>«Του ονείρου» = της ελπίδας, του οράματος, του καλύτερου αύριο</p>
+                <p>Αυτή η φράση ορίζει την <strong>ουσία της ανθρωπότητας</strong>: ποτέ δεν σταματά να ονειρεύεται.</p>`,
+                tags: ['Ελπίδα', 'Αγώνας', 'Όνειρο']
+            },
+            synthimata: {
+                title: "«κεντάνε με συνθήματα τους τοίχους»",
+                content: `<p><strong>Πολιτική διάσταση:</strong> Τα «συνθήματα» αναφέρονται στον κοινωνικό και πολιτικό αγώνα.</p>
+                <p>«Κεντάνε» = εγχάραξη, μόνιμη σημάδεμα, δημιουργία ιχνών που μένουν</p>
+                <p>«Τοίχους» = δημόσιος χώρος, ορατότητα, διακήρυξη</p>
+                <p>Η εικόνα παραπέμπει σε επαναστατικά κινήματα, σε αγώνες για <strong>ελευθερία και δικαιοσύνη</strong>.</p>`,
+                tags: ['Πολιτική', 'Αγώνας', 'Αντίσταση']
+            },
+            dakrysan: {
+                title: "«δακρύσαν τα παιδιά»",
+                content: `<p><strong>Η στιγμή της μεταμόρφωσης:</strong> Τα δάκρυα δεν είναι φόβου αλλά <strong>συμπόνιας</strong>.</p>
+                <p>Ο αόριστος «δακρύσαν» σηματοδοτεί τη <strong>ρήξη</strong>, τη στιγμή που όλα άλλαξαν οριστικά.</p>
+                <p>Τα παιδιά δεν φοβήθηκαν - συγκινήθηκαν. Έκλαψαν για τον πόνο των άλλων, για τον αγώνα τους, για την ομορφιά που γεννιέται μέσα στη δυστυχία.</p>`,
+                tags: ['Συμπόνια', 'Μεταμόρφωση', 'Αόριστος']
+            },
+            egnoeia2: {
+                title: "«έγνοια στη μικρούλα τους καρδιά»",
+                content: `<p><strong>Κυκλική σύνθεση:</strong> Από «ποτέ δε βάλαν έγνοια» στην αρχή σε «βάλαν μιαν έγνοια» στο τέλος.</p>
+                <p>Η «έγνοια» τώρα δεν είναι φόβος - είναι <strong>ευθύνη</strong>, <strong>συνείδηση</strong>, <strong>συμμετοχή</strong> στον πόνο του κόσμου.</p>
+                <p>«Μικρούλα καρδιά» - το υποκοριστικό τονίζει την τρυφερότητα και την αθωότητα που χάνεται, καθιστώντας τη στιγμή πιο συγκινητική.</p>
+                <p>Αυτή η έγνοια είναι η <strong>γέννηση της ωριμότητας</strong>: τα παιδιά δεν είναι πια αδιάφορα - έχουν γίνει μέρος της ανθρωπότητας.</p>`,
+                tags: ['Θέμα', 'Ευθύνη', 'Ωριμότητα']
+            }
+        };
 
-    const highlightables = document.querySelectorAll('.highlightable');
-    const analysisSection = document.getElementById('analysisSection');
-    const defaultCard = document.getElementById('defaultCard');
+        const highlightables = document.querySelectorAll('.highlightable');
+        const analysisSection = document.getElementById('analysisSection');
+        const defaultCard = document.getElementById('defaultCard');
 
-    highlightables.forEach(element => {
-        element.addEventListener('click', function() {
-            const analysisKey = this.dataset.analysis;
-            const analysis = analyses[analysisKey];
+        highlightables.forEach(element => {
+            element.addEventListener('click', function() {
+                const analysisKey = this.dataset.analysis;
+                const analysis = analyses[analysisKey];
 
-            if (!analysis) return;
+                if (!analysis) return;
 
-            // Remove active class from all elements
-            highlightables.forEach(el => el.classList.remove('active'));
-            
-            // Add active class to clicked element
-            this.classList.add('active');
+                // Remove active class from all elements
+                highlightables.forEach(el => el.classList.remove('active'));
+                
+                // Add active class to clicked element
+                this.classList.add('active');
 
-            // Hide default card
-            defaultCard.style.display = 'none';
+                // Hide default card
+                defaultCard.style.display = 'none';
 
-            // Create new analysis card
-            const card = document.createElement('div');
-            card.className = 'analysis-card';
-            card.innerHTML = `
-                <h3>${analysis.title}</h3>
-                ${analysis.content}
-                <div style="margin-top: 1.5rem;">
-                    ${analysis.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
-                </div>
-            `;
+                // Create new analysis card
+                const card = document.createElement('div');
+                card.className = 'analysis-card';
+                card.innerHTML = `
+                    <h3>${analysis.title}</h3>
+                    ${analysis.content}
+                    <div style="margin-top: 1.5rem;">
+                        ${analysis.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                    </div>
+                `;
 
-            // Clear previous analysis cards (except default)
-            const existingCards = analysisSection.querySelectorAll('.analysis-card:not(#defaultCard)');
-            existingCards.forEach(c => c.remove());
+                // Clear previous analysis cards (except default)
+                const existingCards = analysisSection.querySelectorAll('.analysis-card:not(#defaultCard)');
+                existingCards.forEach(c => c.remove());
 
-            // Add new card
-            analysisSection.appendChild(card);
+                // Add new card
+                analysisSection.appendChild(card);
 
-            // Trigger animation
-            setTimeout(() => {
-                card.classList.add('visible');
-            }, 10);
+                // Trigger animation
+                setTimeout(() => {
+                    card.classList.add('visible');
+                }, 10);
 
-            // Scroll to analysis
-            card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                // Scroll to analysis
+                card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            });
         });
-    });
-</script>
-```
-
+    </script>
 </body>
 </html>
