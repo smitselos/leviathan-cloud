@@ -167,16 +167,6 @@ export default function Home() {
             {!sidebarCollapsed && <span>Αρχική</span>}
           </button>
           
-          <button 
-            style={{...styles.navItem, ...(favorites.length > 0 ? {} : {opacity: 0.5})}}
-          >
-            <span style={styles.navIcon}>⭐</span>
-            {!sidebarCollapsed && <span>Αγαπημένα</span>}
-            {!sidebarCollapsed && favorites.length > 0 && (
-              <span style={styles.badge}>{favorites.length}</span>
-            )}
-          </button>
-          
           <div style={styles.navDivider}></div>
           
           <div style={styles.navSection}>
@@ -201,31 +191,16 @@ export default function Home() {
               <div style={styles.navDivider}></div>
               <div style={styles.navSection}>
                 {!sidebarCollapsed && <div style={styles.navSectionTitle}>ΕΡΓΑΛΕΙΑ</div>}
-                {tools.slice(0, 5).map((tool) => (
-                  <button 
-                    key={tool.file}
-                    onClick={() => openTool(tool)}
-                    style={{
-                      ...styles.navItem,
-                      ...(currentTool?.file === tool.file ? styles.navItemActive : {})
-                    }}
-                  >
-                    <span style={styles.navIcon}>{tool.icon || '🔧'}</span>
-                    {!sidebarCollapsed && <span>{tool.name}</span>}
-                  </button>
-                ))}
-                {tools.length > 5 && (
-                  <button 
-                    onClick={openAllTools}
-                    style={{
-                      ...styles.navItem,
-                      ...(activeView === 'allTools' ? styles.navItemActive : {})
-                    }}
-                  >
-                    <span style={styles.navIcon}>📋</span>
-                    {!sidebarCollapsed && <span>Όλα τα Εργαλεία</span>}
-                  </button>
-                )}
+                <button 
+                  onClick={openAllTools}
+                  style={{
+                    ...styles.navItem,
+                    ...(activeView === 'allTools' ? styles.navItemActive : {})
+                  }}
+                >
+                  <span style={styles.navIcon}>🔧</span>
+                  {!sidebarCollapsed && <span>Εργαλεία ({tools.length})</span>}
+                </button>
               </div>
             </>
           )}
@@ -267,43 +242,55 @@ export default function Home() {
                 </div>
               </div>
               
-              {/* Stats Cards */}
+              {/* Functional Cards */}
               <div style={styles.statsGrid}>
-                <div style={styles.statCard}>
+                {/* Favorites Card */}
+                <div 
+                  style={{...styles.statCard, cursor: 'pointer'}}
+                  onClick={() => setActiveView('favorites')}
+                >
                   <div style={styles.statCardContent}>
                     <div>
-                      <div style={styles.statLabel}>Συνολικά Αρχεία</div>
-                      <div style={styles.statValue}>{stats.total}</div>
-                      <div style={styles.statSubtext}>Σε όλους τους φακέλους</div>
+                      <div style={styles.statLabel}>Αγαπημένα</div>
+                      <div style={styles.statValue}>{favorites.length}</div>
+                      <div style={styles.statSubtext}>Επιλεγμένα αρχεία</div>
                     </div>
-                    <div style={{...styles.statIcon, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'}}>
-                      📊
+                    <div style={{...styles.statIcon, background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'}}>
+                      ⭐
                     </div>
                   </div>
                 </div>
                 
-                <div style={styles.statCard}>
+                {/* Recent Files Card */}
+                <div 
+                  style={{...styles.statCard, cursor: 'pointer'}}
+                  onClick={() => setActiveView('recent')}
+                >
                   <div style={styles.statCardContent}>
                     <div>
-                      <div style={styles.statLabel}>Ολοκληρωμένα</div>
-                      <div style={styles.statValue}>{stats.completed}</div>
-                      <div style={styles.statSubtext}>Επεξεργασμένα αρχεία</div>
+                      <div style={styles.statLabel}>Πρόσφατα</div>
+                      <div style={styles.statValue}>{recentFiles.length}</div>
+                      <div style={styles.statSubtext}>Τελευταία αρχεία</div>
                     </div>
                     <div style={{...styles.statIcon, background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'}}>
-                      ✅
+                      📄
                     </div>
                   </div>
                 </div>
                 
-                <div style={styles.statCard}>
+                {/* Tools Card - Dark */}
+                <div 
+                  style={{...styles.statCard, ...styles.darkStatCard, cursor: 'pointer'}}
+                  onClick={openAllTools}
+                >
                   <div style={styles.statCardContent}>
                     <div>
-                      <div style={styles.statLabel}>Σε Εξέλιξη</div>
-                      <div style={styles.statValue}>{stats.inProgress}</div>
-                      <div style={styles.statSubtext}>Ενεργά έργα</div>
+                      <div style={{...styles.statLabel, color: '#e2e8f0'}}>Εργαλεία</div>
+                      <div style={{...styles.statValue, color: '#fff'}}>{tools.length}</div>
+                      <div style={{...styles.statSubtext, color: '#cbd5e1'}}>Διαθέσιμα εργαλεία</div>
                     </div>
-                    <div style={{...styles.statIcon, background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'}}>
-                      ⏳
+                    <div style={{...styles.statIcon, background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)'}}>
+                      🔧
                     </div>
                   </div>
                 </div>
@@ -547,6 +534,120 @@ export default function Home() {
                         </p>
                         <button style={styles.yellowBtnSmall}>
                           Εκκίνηση →
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </>
+          )}
+          
+          {/* Favorites View */}
+          {activeView === 'favorites' && (
+            <>
+              <div style={styles.pageHeader}>
+                <button onClick={goHome} style={styles.backBtn}>
+                  ← Πίσω
+                </button>
+                <div>
+                  <h1 style={styles.pageTitle}>
+                    ⭐ Αγαπημένα
+                  </h1>
+                  <p style={styles.pageSubtitle}>
+                    {favorites.length} {favorites.length === 1 ? 'αγαπημένο' : 'αγαπημένα'}
+                  </p>
+                </div>
+              </div>
+              
+              <div style={styles.filesGrid}>
+                {favorites.length === 0 ? (
+                  <div style={styles.emptyState}>
+                    <div style={styles.emptyIcon}>⭐</div>
+                    <div style={styles.emptyText}>Δεν έχεις αγαπημένα ακόμα</div>
+                  </div>
+                ) : (
+                  favorites.map(file => (
+                    <div 
+                      key={file.id}
+                      style={styles.fileCard}
+                      onClick={() => openFile(file)}
+                    >
+                      <div style={styles.fileCardHeader}>
+                        <div style={styles.filePreview}>
+                          <span style={styles.filePreviewIcon}>📄</span>
+                        </div>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); toggleFavorite(file); }}
+                          style={styles.favBtn}
+                        >
+                          ⭐
+                        </button>
+                      </div>
+                      <div style={styles.fileCardBody}>
+                        <h3 style={styles.fileCardTitle}>{file.title}</h3>
+                        <p style={styles.fileCardMeta}>{file.name}</p>
+                      </div>
+                      <div style={styles.fileCardFooter}>
+                        <button style={styles.yellowBtnSmall}>
+                          Προβολή →
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </>
+          )}
+          
+          {/* Recent View */}
+          {activeView === 'recent' && (
+            <>
+              <div style={styles.pageHeader}>
+                <button onClick={goHome} style={styles.backBtn}>
+                  ← Πίσω
+                </button>
+                <div>
+                  <h1 style={styles.pageTitle}>
+                    📄 Πρόσφατα Αρχεία
+                  </h1>
+                  <p style={styles.pageSubtitle}>
+                    {recentFiles.length} {recentFiles.length === 1 ? 'αρχείο' : 'αρχεία'}
+                  </p>
+                </div>
+              </div>
+              
+              <div style={styles.filesGrid}>
+                {recentFiles.length === 0 ? (
+                  <div style={styles.emptyState}>
+                    <div style={styles.emptyIcon}>📄</div>
+                    <div style={styles.emptyText}>Δεν έχεις ανοίξει αρχεία ακόμα</div>
+                  </div>
+                ) : (
+                  recentFiles.map(file => (
+                    <div 
+                      key={file.id}
+                      style={styles.fileCard}
+                      onClick={() => openFile(file)}
+                    >
+                      <div style={styles.fileCardHeader}>
+                        <div style={styles.filePreview}>
+                          <span style={styles.filePreviewIcon}>📄</span>
+                        </div>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); toggleFavorite(file); }}
+                          style={styles.favBtn}
+                        >
+                          {favorites.some(f => f.id === file.id) ? '⭐' : '☆'}
+                        </button>
+                      </div>
+                      <div style={styles.fileCardBody}>
+                        <h3 style={styles.fileCardTitle}>{file.title}</h3>
+                        <p style={styles.fileCardMeta}>{file.name}</p>
+                      </div>
+                      <div style={styles.fileCardFooter}>
+                        <button style={styles.yellowBtnSmall}>
+                          Προβολή →
                         </button>
                       </div>
                     </div>
@@ -876,6 +977,10 @@ const styles = {
     padding: '24px',
     boxShadow: '0 4px 6px rgba(0,0,0,0.05), 0 2px 4px rgba(0,0,0,0.02)',
     transition: 'all 0.3s ease'
+  },
+  darkStatCard: {
+    background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
+    boxShadow: '0 8px 16px rgba(0,0,0,0.2), 0 4px 8px rgba(0,0,0,0.1)'
   },
   statCardContent: {
     display: 'flex',
