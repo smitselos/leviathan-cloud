@@ -1,4 +1,3 @@
-
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import { useState, useEffect, useCallback } from 'react';
@@ -568,38 +567,41 @@ export default function Home() {
           >
             <div style={styles.modalHeader}>
               <h2 style={styles.modalTitle}>{currentFile.title}</h2>
-              <button 
-                onClick={() => setCurrentFile(null)}
-                style={styles.modalClose}
-              >
-                ✕
-              </button>
+              <div style={styles.modalHeaderButtons}>
+                <button 
+                  onClick={() => window.open(`/api/files/pdf/${currentFile.id}`, '_blank')}
+                  style={styles.iconBtn}
+                  title="Άνοιγμα σε νέα καρτέλα"
+                >
+                  ↗
+                </button>
+                <button 
+                  onClick={() => {
+                    const printWindow = window.open(`/api/files/pdf/${currentFile.id}`, '_blank');
+                    if (printWindow) {
+                      printWindow.onload = () => printWindow.print();
+                    }
+                  }}
+                  style={styles.iconBtn}
+                  title="Εκτύπωση"
+                >
+                  🖨️
+                </button>
+                <button 
+                  onClick={() => setCurrentFile(null)}
+                  style={styles.modalClose}
+                  title="Κλείσιμο"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
-            <div style={styles.modalBody}>
+            <div style={{...styles.modalBody, borderRadius: '0 0 20px 20px'}}>
               <iframe 
                 src={`/api/files/pdf/${currentFile.id}`}
                 style={styles.pdfViewer}
                 title="PDF Viewer"
               />
-            </div>
-            <div style={styles.modalFooter}>
-              <button 
-                onClick={() => window.open(`/api/files/pdf/${currentFile.id}`, '_blank')}
-                style={styles.openBtn}
-              >
-                ↗ Άνοιγμα σε νέα καρτέλα
-              </button>
-              <button 
-                onClick={() => {
-                  const printWindow = window.open(`/api/files/pdf/${currentFile.id}`, '_blank');
-                  if (printWindow) {
-                    printWindow.onload = () => printWindow.print();
-                  }
-                }}
-                style={styles.yellowBtn}
-              >
-                🖨️ Εκτύπωση
-              </button>
             </div>
           </div>
         </div>
@@ -616,27 +618,29 @@ export default function Home() {
               <h2 style={styles.modalTitle}>
                 {currentTool.icon || '🔧'} {currentTool.name}
               </h2>
-              <button 
-                onClick={() => setCurrentTool(null)}
-                style={styles.modalClose}
-              >
-                ✕
-              </button>
+              <div style={styles.modalHeaderButtons}>
+                <button 
+                  onClick={() => window.open(`/tools/${currentTool.file}`, '_blank')}
+                  style={styles.iconBtn}
+                  title="Άνοιγμα σε νέα σελίδα"
+                >
+                  ↗
+                </button>
+                <button 
+                  onClick={() => setCurrentTool(null)}
+                  style={styles.modalClose}
+                  title="Κλείσιμο"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
-            <div style={styles.modalBody}>
+            <div style={{...styles.modalBody, borderRadius: '0 0 20px 20px'}}>
               <iframe 
                 src={`/tools/${currentTool.file}`}
                 style={styles.pdfViewer}
                 title={currentTool.name}
               />
-            </div>
-            <div style={styles.modalFooter}>
-              <button 
-                onClick={() => window.open(`/tools/${currentTool.file}`, '_blank')}
-                style={styles.openBtn}
-              >
-                ↗ Άνοιγμα σε νέα σελίδα
-              </button>
             </div>
           </div>
         </div>
@@ -1094,6 +1098,21 @@ const styles = {
     boxShadow: '0 4px 12px rgba(16,185,129,0.3)',
     marginRight: '12px'
   },
+  openBtnCompact: {
+    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+    color: '#fff',
+    border: 'none',
+    padding: '8px 16px',
+    borderRadius: '8px',
+    fontSize: '13px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    boxShadow: '0 2px 8px rgba(16,185,129,0.25)',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px'
+  },
   yellowBtnSmall: {
     background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
     color: '#78350f',
@@ -1304,24 +1323,53 @@ const styles = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: '20px 24px',
-    borderBottom: '1px solid #e2e8f0'
+    padding: '12px 16px',
+    borderBottom: '1px solid #e2e8f0',
+    minHeight: '50px'
   },
   modalTitle: {
-    fontSize: '20px',
+    fontSize: '16px',
     fontWeight: '600',
-    color: '#0f172a'
+    color: '#0f172a',
+    flex: 1,
+    marginRight: '16px',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis'
+  },
+  modalHeaderButtons: {
+    display: 'flex',
+    gap: '8px',
+    alignItems: 'center'
+  },
+  iconBtn: {
+    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+    color: '#fff',
+    border: 'none',
+    width: '32px',
+    height: '32px',
+    borderRadius: '8px',
+    fontSize: '16px',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    boxShadow: '0 2px 6px rgba(16,185,129,0.25)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
   },
   modalClose: {
     background: 'transparent',
     border: 'none',
-    fontSize: '24px',
+    fontSize: '20px',
     color: '#94a3b8',
     cursor: 'pointer',
-    width: '36px',
-    height: '36px',
+    width: '32px',
+    height: '32px',
     borderRadius: '8px',
-    transition: 'all 0.2s'
+    transition: 'all 0.2s',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
   },
   modalBody: {
     flex: 1,
@@ -1333,10 +1381,12 @@ const styles = {
     border: 'none'
   },
   modalFooter: {
-    padding: '20px 24px',
+    padding: '10px 16px',
     borderTop: '1px solid #e2e8f0',
     display: 'flex',
-    justifyContent: 'flex-end'
+    justifyContent: 'flex-end',
+    minHeight: '50px',
+    alignItems: 'center'
   },
   
   // Tool Container
