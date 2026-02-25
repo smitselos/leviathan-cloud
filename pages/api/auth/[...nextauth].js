@@ -16,9 +16,16 @@ export const authOptions = {
       }
     })
   ],
+  // Session 30 ημερών — δεν ζητά ξανά login
+  session: {
+    strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60, // 30 μέρες σε seconds
+  },
+  jwt: {
+    maxAge: 30 * 24 * 60 * 60, // 30 μέρες σε seconds
+  },
   callbacks: {
     async signIn({ user }) {
-      // Check if user email is in allowed list
       const email = user.email?.toLowerCase();
       if (ALLOWED_EMAILS.includes(email)) {
         return true;
@@ -26,7 +33,6 @@ export const authOptions = {
       return false;
     },
     async jwt({ token, account }) {
-      // Save access token for Google Drive API
       if (account) {
         token.accessToken = account.access_token;
         token.refreshToken = account.refresh_token;
