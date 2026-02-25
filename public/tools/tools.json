@@ -1,0 +1,44 @@
+[
+  {
+    "file": "quiz-connectors.html",
+    "name": "Κουίζ Συνδέσμων",
+    "icon": "🔗",
+    "category": "Γλώσσα",
+    "addedAt": "2026-02-20"
+  },
+  {
+    "file": "paragraph-analysis.html",
+    "name": "Ανάλυση Παραγράφου",
+    "icon": "🔍",
+    "category": "Γλώσσα",
+    "addedAt": "2026-02-22"
+  },
+  {
+    "file": "cohesion-quiz.html",
+    "name": "Κουίζ Συνοχής",
+    "icon": "🎯",
+    "category": "Γλώσσα",
+    "addedAt": "2026-02-23"
+  },
+  {
+    "file": "latin-quiz.html",
+    "name": "Κουίζ Λατινικών",
+    "icon": "📜",
+    "category": "Λατινικά",
+    "addedAt": "2026-02-24"
+  },
+  {
+    "file": "history-timeline.html",
+    "name": "Χρονολόγιο Ιστορίας",
+    "icon": "🏛️",
+    "category": "Ιστορία",
+    "addedAt": "2026-02-25"
+  },
+  {
+    "file": "literature-analysis.html",
+    "name": "Ανάλυση Λογοτεχνικού Κειμένου",
+    "icon": "📚",
+    "category": "Λογοτεχνία",
+    "addedAt": "2026-02-25"
+  }
+]
