@@ -24,6 +24,8 @@ export default function Home() {
   const [recentFiles, setRecentFiles] = useState([]);
   const [stats, setStats] = useState({ total: 0, completed: 0, inProgress: 0 });
   const [toolsSearchQuery, setToolsSearchQuery] = useState('');
+  // NEW: για την επιλεγμένη κατηγορία εργαλείων
+  const [currentToolCategory, setCurrentToolCategory] = useState(null);
   
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -50,6 +52,17 @@ export default function Home() {
       console.error('Error loading tools:', error);
     }
   };
+
+  // Ομαδοποίηση εργαλείων ανά κατηγορία (category field ή 'Γενικά' default)
+  const getToolCategories = () => {
+    const cats = {};
+    tools.forEach(tool => {
+      const cat = tool.category || 'Γενικά';
+      if (!cats[cat]) cats[cat] = [];
+      cats[cat].push(tool);
+    });
+    return cats;
+  };
   
   const loadFiles = useCallback(async (folderId) => {
     setLoading(true);
@@ -58,7 +71,6 @@ export default function Home() {
       const data = await res.json();
       setFiles(data.files || []);
       
-      // Update stats
       setStats({
         total: data.files?.length || 0,
         completed: Math.floor((data.files?.length || 0) * 0.6),
@@ -80,15 +92,22 @@ export default function Home() {
   
   const openTool = (tool) => {
     setCurrentTool(tool);
-    // Don't change view, just open the modal
   };
   
   const openAllTools = async () => {
     setActiveView('allTools');
     setCurrentFolder(null);
     setCurrentFile(null);
-    // Reload tools to get any new ones
+    setCurrentToolCategory(null);
     await loadTools();
+  };
+
+  // NEW: άνοιγμα συγκεκριμένης κατηγορίας εργαλείων
+  const openToolCategory = (categoryName) => {
+    setCurrentToolCategory(categoryName);
+    setActiveView('toolCategory');
+    setCurrentFolder(null);
+    setCurrentFile(null);
   };
   
   const goHome = () => {
@@ -96,12 +115,11 @@ export default function Home() {
     setCurrentFolder(null);
     setCurrentFile(null);
     setCurrentTool(null);
+    setCurrentToolCategory(null);
   };
   
   const openFile = (file) => {
     setCurrentFile(file);
-    // If we're in home view and don't have a folder open, we need to determine which folder this file belongs to
-    // For now, we'll just set the file - the modal will open in any view
     const updated = [file, ...recentFiles.filter(f => f.id !== file.id)].slice(0, 5);
     setRecentFiles(updated);
     localStorage.setItem('leviathan-recent', JSON.stringify(updated));
@@ -127,6 +145,16 @@ export default function Home() {
     const q = toolsSearchQuery.toLowerCase();
     return t.name.toLowerCase().includes(q);
   });
+
+  // Εργαλεία της επιλεγμένης κατηγορίας, φιλτραρισμένα με αναζήτηση
+  const filteredCategoryTools = currentToolCategory
+    ? tools
+        .filter(t => (t.category || 'Γενικά') === currentToolCategory)
+        .filter(t => {
+          if (!toolsSearchQuery) return true;
+          return t.name.toLowerCase().includes(toolsSearchQuery.toLowerCase());
+        })
+    : [];
   
   if (status === 'loading') {
     return (
@@ -138,6 +166,8 @@ export default function Home() {
   }
   
   if (!session) return null;
+
+  const toolCategories = getToolCategories();
   
   return (
     <div style={styles.app}>
@@ -146,7 +176,7 @@ export default function Home() {
         <div style={styles.sidebarHeader}>
           {!sidebarCollapsed && (
             <div style={styles.logo}>
-              <span style={styles.logoIcon}>🐋</span>
+              {/* ΑΛΛΑΓΗ 3: Αφαίρεση εικονιδίου 🐋 */}
               <span style={styles.logoText}>ΛΕΒΙΑΘΑΝ</span>
             </div>
           )}
@@ -169,6 +199,7 @@ export default function Home() {
           
           <div style={styles.navDivider}></div>
           
+          {/* ΑΛΛΑΓΗ 1: Περιεχόμενο πρώτα */}
           <div style={styles.navSection}>
             {!sidebarCollapsed && <div style={styles.navSectionTitle}>ΠΕΡΙΕΧΟΜΕΝΟ</div>}
             {Object.entries(FOLDERS).map(([id, folder]) => (
@@ -185,12 +216,14 @@ export default function Home() {
               </button>
             ))}
           </div>
-          
+
+          {/* ΑΛΛΑΓΗ 1: Εργαλεία μετά, με υποφακέλους */}
           {tools.length > 0 && (
             <>
               <div style={styles.navDivider}></div>
               <div style={styles.navSection}>
                 {!sidebarCollapsed && <div style={styles.navSectionTitle}>ΕΡΓΑΛΕΙΑ</div>}
+                {/* Κουμπί "Όλα τα Εργαλεία" */}
                 <button 
                   onClick={openAllTools}
                   style={{
@@ -199,8 +232,24 @@ export default function Home() {
                   }}
                 >
                   <span style={styles.navIcon}>🔧</span>
-                  {!sidebarCollapsed && <span>Εργαλεία ({tools.length})</span>}
+                  {!sidebarCollapsed && <span>Όλα ({tools.length})</span>}
                 </button>
+                {/* Κατηγορίες εργαλείων ως υποφάκελοι */}
+                {!sidebarCollapsed && Object.entries(toolCategories).map(([catName, catTools]) => (
+                  <button
+                    key={catName}
+                    onClick={() => openToolCategory(catName)}
+                    style={{
+                      ...styles.navItem,
+                      ...styles.navSubItem,
+                      ...(currentToolCategory === catName && activeView === 'toolCategory' ? styles.navItemActive : {})
+                    }}
+                  >
+                    <span style={styles.navIcon}>{getCategoryIcon(catName)}</span>
+                    <span style={{flex:1, textAlign:'left'}}>{catName}</span>
+                    <span style={styles.catCount}>{catTools.length}</span>
+                  </button>
+                ))}
               </div>
             </>
           )}
@@ -228,6 +277,7 @@ export default function Home() {
       {/* Main Content */}
       <main style={{...styles.main, marginLeft: sidebarCollapsed ? '70px' : '260px'}}>
         <div style={styles.container}>
+
           {/* Home View */}
           {activeView === 'home' && (
             <>
@@ -242,9 +292,7 @@ export default function Home() {
                 </div>
               </div>
               
-              {/* Functional Cards */}
               <div style={styles.statsGrid}>
-                {/* Favorites Card */}
                 <div 
                   style={{...styles.statCard, cursor: 'pointer'}}
                   onClick={() => setActiveView('favorites')}
@@ -261,7 +309,6 @@ export default function Home() {
                   </div>
                 </div>
                 
-                {/* Recent Files Card */}
                 <div 
                   style={{...styles.statCard, cursor: 'pointer'}}
                   onClick={() => setActiveView('recent')}
@@ -278,7 +325,6 @@ export default function Home() {
                   </div>
                 </div>
                 
-                {/* Tools Card - Dark */}
                 <div 
                   style={{...styles.statCard, ...styles.darkStatCard, cursor: 'pointer'}}
                   onClick={openAllTools}
@@ -296,7 +342,6 @@ export default function Home() {
                 </div>
               </div>
               
-              {/* Folders Section */}
               <section style={styles.section}>
                 <h2 style={styles.sectionTitle}>Φάκελοι Περιεχομένου</h2>
                 <div style={styles.cardsGrid}>
@@ -326,47 +371,43 @@ export default function Home() {
                   ))}
                 </div>
               </section>
-              
-              {/* Popular Tools */}
+
+              {/* NEW: Κατηγορίες Εργαλείων στην αρχική */}
               {tools.length > 0 && (
                 <section style={styles.section}>
-                  <h2 style={styles.sectionTitle}>Δημοφιλή Εργαλεία</h2>
+                  <h2 style={styles.sectionTitle}>Κατηγορίες Εργαλείων</h2>
                   <div style={styles.cardsGrid}>
-                    {tools.slice(0, 3).map((tool) => (
-                      <div 
-                        key={tool.file}
-                        style={styles.toolCard}
-                        onClick={() => openTool(tool)}
+                    {Object.entries(toolCategories).map(([catName, catTools]) => (
+                      <div
+                        key={catName}
+                        style={styles.categoryCard}
+                        onClick={() => openToolCategory(catName)}
                       >
-                        <div style={styles.toolCardAccent}></div>
-                        <div style={styles.toolCardContent}>
-                          <div style={styles.toolIconWrapper}>
-                            <span style={styles.toolIcon}>{tool.icon || '🔧'}</span>
+                        <div style={styles.categoryCardAccent}></div>
+                        <div style={styles.categoryCardContent}>
+                          <div style={styles.categoryIconWrapper}>
+                            <span style={styles.categoryIcon}>{getCategoryIcon(catName)}</span>
                           </div>
-                          <h3 style={styles.toolCardTitle}>{tool.name}</h3>
-                          <p style={styles.toolCardDesc}>
-                            Διαδραστικό εργαλείο για εκπαιδευτική χρήση
+                          <h3 style={styles.categoryCardTitle}>{catName}</h3>
+                          <p style={styles.categoryCardDesc}>
+                            {catTools.length} {catTools.length === 1 ? 'εργαλείο' : 'εργαλεία'}
                           </p>
-                          <button style={styles.yellowBtn}>
-                            Εκκίνηση →
+                          <button style={styles.yellowBtnSmall}>
+                            Άνοιγμα →
                           </button>
                         </div>
                       </div>
                     ))}
-                    
-                    {/* All Tools Card */}
-                    {tools.length > 3 && (
+                    {tools.length > 0 && (
                       <div 
                         style={styles.allToolsCard}
                         onClick={openAllTools}
                       >
                         <div style={styles.allToolsCardContent}>
                           <div style={styles.allToolsIcon}>🔧</div>
-                          <h3 style={styles.allToolsTitle}>
-                            Όλα τα Εργαλεία
-                          </h3>
+                          <h3 style={styles.allToolsTitle}>Όλα τα Εργαλεία</h3>
                           <p style={styles.allToolsDesc}>
-                            Δες όλα τα {tools.length} διαθέσιμα εργαλεία
+                            {tools.length} διαθέσιμα εργαλεία
                           </p>
                           <button style={styles.yellowBtn}>
                             Προβολή Όλων →
@@ -378,7 +419,6 @@ export default function Home() {
                 </section>
               )}
               
-              {/* Recent Files */}
               {recentFiles.length > 0 && (
                 <section style={styles.section}>
                   <h2 style={styles.sectionTitle}>Πρόσφατα Αρχεία</h2>
@@ -411,9 +451,7 @@ export default function Home() {
           {activeView === 'folder' && currentFolder && (
             <>
               <div style={styles.pageHeader}>
-                <button onClick={goHome} style={styles.backBtn}>
-                  ← Πίσω
-                </button>
+                <button onClick={goHome} style={styles.backBtn}>← Πίσω</button>
                 <div>
                   <h1 style={styles.pageTitle}>
                     {FOLDERS[currentFolder].icon} {FOLDERS[currentFolder].name}
@@ -469,9 +507,7 @@ export default function Home() {
                         <p style={styles.fileCardMeta}>{file.name}</p>
                       </div>
                       <div style={styles.fileCardFooter}>
-                        <button style={styles.yellowBtnSmall}>
-                          Προβολή →
-                        </button>
+                        <button style={styles.yellowBtnSmall}>Προβολή →</button>
                       </div>
                     </div>
                   ))
@@ -480,19 +516,13 @@ export default function Home() {
             </>
           )}
           
-          {/* Tool View - Removed, tools now open in modal */}
-          
           {/* All Tools View */}
           {activeView === 'allTools' && (
             <>
               <div style={styles.pageHeader}>
-                <button onClick={goHome} style={styles.backBtn}>
-                  ← Πίσω
-                </button>
+                <button onClick={goHome} style={styles.backBtn}>← Πίσω</button>
                 <div>
-                  <h1 style={styles.pageTitle}>
-                    🔧 Όλα τα Εργαλεία
-                  </h1>
+                  <h1 style={styles.pageTitle}>🔧 Όλα τα Εργαλεία</h1>
                   <p style={styles.pageSubtitle}>
                     {filteredTools.length} {filteredTools.length === 1 ? 'εργαλείο' : 'εργαλεία'}
                   </p>
@@ -509,15 +539,86 @@ export default function Home() {
                 />
                 <button style={styles.searchBtn}>🔍</button>
               </div>
+
+              {/* Εμφάνιση ανά κατηγορία */}
+              {Object.entries(toolCategories).map(([catName, catTools]) => {
+                const visible = catTools.filter(t =>
+                  !toolsSearchQuery || t.name.toLowerCase().includes(toolsSearchQuery.toLowerCase())
+                );
+                if (visible.length === 0) return null;
+                return (
+                  <section key={catName} style={styles.section}>
+                    <div style={styles.catSectionHeader}>
+                      <span style={styles.catSectionIcon}>{getCategoryIcon(catName)}</span>
+                      <h2 style={styles.catSectionTitle}>{catName}</h2>
+                      <span style={styles.catSectionCount}>{visible.length}</span>
+                    </div>
+                    <div style={styles.filesGrid}>
+                      {visible.map(tool => (
+                        <div 
+                          key={tool.file}
+                          style={styles.toolCard}
+                          onClick={() => openTool(tool)}
+                        >
+                          <div style={styles.toolCardAccent}></div>
+                          <div style={styles.toolCardContent}>
+                            <div style={styles.toolIconWrapper}>
+                              <span style={styles.toolIcon}>{tool.icon || '🔧'}</span>
+                            </div>
+                            <h3 style={styles.toolCardTitle}>{tool.name}</h3>
+                            <p style={styles.toolCardDesc}>Διαδραστικό εργαλείο για εκπαιδευτική χρήση</p>
+                            <button style={styles.yellowBtnSmall}>Εκκίνηση →</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                );
+              })}
+
+              {filteredTools.length === 0 && (
+                <div style={styles.emptyState}>
+                  <div style={styles.emptyIcon}>🔍</div>
+                  <div style={styles.emptyText}>Δεν βρέθηκαν εργαλεία</div>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* NEW: Tool Category View */}
+          {activeView === 'toolCategory' && currentToolCategory && (
+            <>
+              <div style={styles.pageHeader}>
+                <button onClick={openAllTools} style={styles.backBtn}>← Πίσω στα Εργαλεία</button>
+                <div>
+                  <h1 style={styles.pageTitle}>
+                    {getCategoryIcon(currentToolCategory)} {currentToolCategory}
+                  </h1>
+                  <p style={styles.pageSubtitle}>
+                    {filteredCategoryTools.length} {filteredCategoryTools.length === 1 ? 'εργαλείο' : 'εργαλεία'}
+                  </p>
+                </div>
+              </div>
               
+              <div style={styles.searchBar}>
+                <input 
+                  type="search"
+                  placeholder="Αναζήτηση εργαλείων..."
+                  value={toolsSearchQuery}
+                  onChange={(e) => setToolsSearchQuery(e.target.value)}
+                  style={styles.searchInput}
+                />
+                <button style={styles.searchBtn}>🔍</button>
+              </div>
+
               <div style={styles.filesGrid}>
-                {filteredTools.length === 0 ? (
+                {filteredCategoryTools.length === 0 ? (
                   <div style={styles.emptyState}>
                     <div style={styles.emptyIcon}>🔍</div>
                     <div style={styles.emptyText}>Δεν βρέθηκαν εργαλεία</div>
                   </div>
                 ) : (
-                  filteredTools.map(tool => (
+                  filteredCategoryTools.map(tool => (
                     <div 
                       key={tool.file}
                       style={styles.toolCard}
@@ -529,12 +630,8 @@ export default function Home() {
                           <span style={styles.toolIcon}>{tool.icon || '🔧'}</span>
                         </div>
                         <h3 style={styles.toolCardTitle}>{tool.name}</h3>
-                        <p style={styles.toolCardDesc}>
-                          Διαδραστικό εργαλείο για εκπαιδευτική χρήση
-                        </p>
-                        <button style={styles.yellowBtnSmall}>
-                          Εκκίνηση →
-                        </button>
+                        <p style={styles.toolCardDesc}>Διαδραστικό εργαλείο για εκπαιδευτική χρήση</p>
+                        <button style={styles.yellowBtnSmall}>Εκκίνηση →</button>
                       </div>
                     </div>
                   ))
@@ -547,19 +644,14 @@ export default function Home() {
           {activeView === 'favorites' && (
             <>
               <div style={styles.pageHeader}>
-                <button onClick={goHome} style={styles.backBtn}>
-                  ← Πίσω
-                </button>
+                <button onClick={goHome} style={styles.backBtn}>← Πίσω</button>
                 <div>
-                  <h1 style={styles.pageTitle}>
-                    ⭐ Αγαπημένα
-                  </h1>
+                  <h1 style={styles.pageTitle}>⭐ Αγαπημένα</h1>
                   <p style={styles.pageSubtitle}>
                     {favorites.length} {favorites.length === 1 ? 'αγαπημένο' : 'αγαπημένα'}
                   </p>
                 </div>
               </div>
-              
               <div style={styles.filesGrid}>
                 {favorites.length === 0 ? (
                   <div style={styles.emptyState}>
@@ -568,30 +660,19 @@ export default function Home() {
                   </div>
                 ) : (
                   favorites.map(file => (
-                    <div 
-                      key={file.id}
-                      style={styles.fileCard}
-                      onClick={() => openFile(file)}
-                    >
+                    <div key={file.id} style={styles.fileCard} onClick={() => openFile(file)}>
                       <div style={styles.fileCardHeader}>
                         <div style={styles.filePreview}>
                           <span style={styles.filePreviewIcon}>📄</span>
                         </div>
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); toggleFavorite(file); }}
-                          style={styles.favBtn}
-                        >
-                          ⭐
-                        </button>
+                        <button onClick={(e) => { e.stopPropagation(); toggleFavorite(file); }} style={styles.favBtn}>⭐</button>
                       </div>
                       <div style={styles.fileCardBody}>
                         <h3 style={styles.fileCardTitle}>{file.title}</h3>
                         <p style={styles.fileCardMeta}>{file.name}</p>
                       </div>
                       <div style={styles.fileCardFooter}>
-                        <button style={styles.yellowBtnSmall}>
-                          Προβολή →
-                        </button>
+                        <button style={styles.yellowBtnSmall}>Προβολή →</button>
                       </div>
                     </div>
                   ))
@@ -604,19 +685,14 @@ export default function Home() {
           {activeView === 'recent' && (
             <>
               <div style={styles.pageHeader}>
-                <button onClick={goHome} style={styles.backBtn}>
-                  ← Πίσω
-                </button>
+                <button onClick={goHome} style={styles.backBtn}>← Πίσω</button>
                 <div>
-                  <h1 style={styles.pageTitle}>
-                    📄 Πρόσφατα Αρχεία
-                  </h1>
+                  <h1 style={styles.pageTitle}>📄 Πρόσφατα Αρχεία</h1>
                   <p style={styles.pageSubtitle}>
                     {recentFiles.length} {recentFiles.length === 1 ? 'αρχείο' : 'αρχεία'}
                   </p>
                 </div>
               </div>
-              
               <div style={styles.filesGrid}>
                 {recentFiles.length === 0 ? (
                   <div style={styles.emptyState}>
@@ -625,19 +701,12 @@ export default function Home() {
                   </div>
                 ) : (
                   recentFiles.map(file => (
-                    <div 
-                      key={file.id}
-                      style={styles.fileCard}
-                      onClick={() => openFile(file)}
-                    >
+                    <div key={file.id} style={styles.fileCard} onClick={() => openFile(file)}>
                       <div style={styles.fileCardHeader}>
                         <div style={styles.filePreview}>
                           <span style={styles.filePreviewIcon}>📄</span>
                         </div>
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); toggleFavorite(file); }}
-                          style={styles.favBtn}
-                        >
+                        <button onClick={(e) => { e.stopPropagation(); toggleFavorite(file); }} style={styles.favBtn}>
                           {favorites.some(f => f.id === file.id) ? '⭐' : '☆'}
                         </button>
                       </div>
@@ -646,9 +715,7 @@ export default function Home() {
                         <p style={styles.fileCardMeta}>{file.name}</p>
                       </div>
                       <div style={styles.fileCardFooter}>
-                        <button style={styles.yellowBtnSmall}>
-                          Προβολή →
-                        </button>
+                        <button style={styles.yellowBtnSmall}>Προβολή →</button>
                       </div>
                     </div>
                   ))
@@ -659,89 +726,38 @@ export default function Home() {
         </div>
       </main>
       
-      {/* File Preview Modal - Global */}
+      {/* File Preview Modal */}
       {currentFile && (
         <div style={styles.modal} onClick={() => setCurrentFile(null)}>
-          <div 
-            style={styles.modalContent}
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
             <div style={styles.modalHeader}>
               <h2 style={styles.modalTitle}>{currentFile.title}</h2>
               <div style={styles.modalHeaderButtons}>
-                <button 
-                  onClick={() => window.open(`/api/files/pdf/${currentFile.id}`, '_blank')}
-                  style={styles.iconBtn}
-                  title="Άνοιγμα σε νέα καρτέλα"
-                >
-                  ↗
-                </button>
-                <button 
-                  onClick={() => {
-                    const printWindow = window.open(`/api/files/pdf/${currentFile.id}`, '_blank');
-                    if (printWindow) {
-                      printWindow.onload = () => printWindow.print();
-                    }
-                  }}
-                  style={styles.iconBtn}
-                  title="Εκτύπωση"
-                >
-                  🖨️
-                </button>
-                <button 
-                  onClick={() => setCurrentFile(null)}
-                  style={styles.modalClose}
-                  title="Κλείσιμο"
-                >
-                  ✕
-                </button>
+                <button onClick={() => window.open(`/api/files/pdf/${currentFile.id}`, '_blank')} style={styles.iconBtn} title="Άνοιγμα σε νέα καρτέλα">↗</button>
+                <button onClick={() => { const w = window.open(`/api/files/pdf/${currentFile.id}`, '_blank'); if (w) w.onload = () => w.print(); }} style={styles.iconBtn} title="Εκτύπωση">🖨️</button>
+                <button onClick={() => setCurrentFile(null)} style={styles.modalClose} title="Κλείσιμο">✕</button>
               </div>
             </div>
             <div style={{...styles.modalBody, borderRadius: '0 0 20px 20px'}}>
-              <iframe 
-                src={`/api/files/pdf/${currentFile.id}`}
-                style={styles.pdfViewer}
-                title="PDF Viewer"
-              />
+              <iframe src={`/api/files/pdf/${currentFile.id}`} style={styles.pdfViewer} title="PDF Viewer" />
             </div>
           </div>
         </div>
       )}
       
-      {/* Tool Viewer Modal - Global */}
+      {/* Tool Viewer Modal */}
       {currentTool && !currentFile && (
         <div style={styles.modal} onClick={() => setCurrentTool(null)}>
-          <div 
-            style={styles.modalContent}
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
             <div style={styles.modalHeader}>
-              <h2 style={styles.modalTitle}>
-                {currentTool.icon || '🔧'} {currentTool.name}
-              </h2>
+              <h2 style={styles.modalTitle}>{currentTool.icon || '🔧'} {currentTool.name}</h2>
               <div style={styles.modalHeaderButtons}>
-                <button 
-                  onClick={() => window.open(`/tools/${currentTool.file}`, '_blank')}
-                  style={styles.iconBtn}
-                  title="Άνοιγμα σε νέα σελίδα"
-                >
-                  ↗
-                </button>
-                <button 
-                  onClick={() => setCurrentTool(null)}
-                  style={styles.modalClose}
-                  title="Κλείσιμο"
-                >
-                  ✕
-                </button>
+                <button onClick={() => window.open(`/tools/${currentTool.file}`, '_blank')} style={styles.iconBtn} title="Άνοιγμα σε νέα σελίδα">↗</button>
+                <button onClick={() => setCurrentTool(null)} style={styles.modalClose} title="Κλείσιμο">✕</button>
               </div>
             </div>
             <div style={{...styles.modalBody, borderRadius: '0 0 20px 20px'}}>
-              <iframe 
-                src={`/tools/${currentTool.file}`}
-                style={styles.pdfViewer}
-                title={currentTool.name}
-              />
+              <iframe src={`/tools/${currentTool.file}`} style={styles.pdfViewer} title={currentTool.name} />
             </div>
           </div>
         </div>
@@ -750,8 +766,24 @@ export default function Home() {
   );
 }
 
+// Helper: εικονίδια κατηγοριών
+function getCategoryIcon(categoryName) {
+  const icons = {
+    'Γενικά': '🔧',
+    'Γραμματική': '📝',
+    'Λεξιλόγιο': '📖',
+    'Σύνταξη': '🔗',
+    'Κείμενο': '📄',
+    'Λογοτεχνία': '📚',
+    'Αξιολόγηση': '✅',
+    'Ασκήσεις': '✏️',
+    'Ανάλυση': '🔍',
+    'Παραγωγή Λόγου': '✍️',
+  };
+  return icons[categoryName] || '📁';
+}
+
 const styles = {
-  // Loading
   loadingScreen: {
     minHeight: '100vh',
     display: 'flex',
@@ -770,12 +802,8 @@ const styles = {
     animation: 'spin 1s linear infinite',
     marginBottom: '20px'
   },
-  loadingText: {
-    fontSize: '18px',
-    fontWeight: '500'
-  },
+  loadingText: { fontSize: '18px', fontWeight: '500' },
   
-  // App Layout
   app: {
     display: 'flex',
     minHeight: '100vh',
@@ -783,35 +811,29 @@ const styles = {
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
   },
   
-  // Sidebar
+  // ΑΛΛΑΓΗ 2: Πιο σκούρο, ματ sidebar (#0f172a αντί #1e293b)
   sidebar: {
     position: 'fixed',
     left: 0,
     top: 0,
     bottom: 0,
-    background: '#1e293b',
+    background: '#0a0f1a',
     color: '#e2e8f0',
     display: 'flex',
     flexDirection: 'column',
     transition: 'width 0.3s ease',
     zIndex: 100,
-    boxShadow: '4px 0 24px rgba(0,0,0,0.1)'
+    boxShadow: '4px 0 24px rgba(0,0,0,0.3)'
   },
   sidebarHeader: {
     padding: '20px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderBottom: '1px solid rgba(255,255,255,0.1)'
+    borderBottom: '1px solid rgba(255,255,255,0.07)'
   },
-  logo: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px'
-  },
-  logoIcon: {
-    fontSize: '28px'
-  },
+  logo: { display: 'flex', alignItems: 'center', gap: '12px' },
+  // ΑΛΛΑΓΗ 3: Αφαίρεση logoIcon — μόνο logoText
   logoText: {
     fontSize: '20px',
     fontWeight: '700',
@@ -820,7 +842,7 @@ const styles = {
     WebkitTextFillColor: 'transparent'
   },
   collapseBtn: {
-    background: 'rgba(255,255,255,0.1)',
+    background: 'rgba(255,255,255,0.07)',
     border: 'none',
     color: '#e2e8f0',
     width: '32px',
@@ -830,13 +852,7 @@ const styles = {
     fontSize: '14px',
     transition: 'all 0.2s'
   },
-  
-  // Navigation
-  nav: {
-    flex: 1,
-    padding: '16px',
-    overflowY: 'auto'
-  },
+  nav: { flex: 1, padding: '16px', overflowY: 'auto' },
   navItem: {
     width: '100%',
     display: 'flex',
@@ -854,45 +870,44 @@ const styles = {
     marginBottom: '4px',
     textAlign: 'left'
   },
+  // Υποστοιχείο nav (κατηγορίες εργαλείων)
+  navSubItem: {
+    paddingLeft: '28px',
+    fontSize: '13px',
+    color: '#64748b'
+  },
   navItemActive: {
     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     color: '#fff',
     boxShadow: '0 4px 12px rgba(102,126,234,0.4)'
   },
-  navIcon: {
-    fontSize: '20px',
-    flexShrink: 0
-  },
-  badge: {
+  navIcon: { fontSize: '20px', flexShrink: 0 },
+  catCount: {
     marginLeft: 'auto',
-    background: '#ef4444',
-    color: '#fff',
+    background: 'rgba(255,255,255,0.1)',
+    color: '#94a3b8',
     fontSize: '11px',
     fontWeight: '600',
-    padding: '2px 8px',
-    borderRadius: '12px'
+    padding: '2px 7px',
+    borderRadius: '10px'
   },
   navDivider: {
     height: '1px',
-    background: 'rgba(255,255,255,0.1)',
+    background: 'rgba(255,255,255,0.07)',
     margin: '16px 0'
   },
-  navSection: {
-    marginBottom: '16px'
-  },
+  navSection: { marginBottom: '16px' },
   navSectionTitle: {
     fontSize: '11px',
     fontWeight: '600',
-    color: '#64748b',
+    color: '#475569',
     padding: '8px 16px',
     textTransform: 'uppercase',
     letterSpacing: '0.5px'
   },
-  
-  // Sidebar Footer
   sidebarFooter: {
     padding: '16px',
-    borderTop: '1px solid rgba(255,255,255,0.1)'
+    borderTop: '1px solid rgba(255,255,255,0.07)'
   },
   userCard: {
     display: 'flex',
@@ -915,10 +930,7 @@ const styles = {
     color: '#fff',
     flexShrink: 0
   },
-  userInfo: {
-    flex: 1,
-    minWidth: 0
-  },
+  userInfo: { flex: 1, minWidth: 0 },
   userName: {
     fontSize: '14px',
     fontWeight: '500',
@@ -936,35 +948,11 @@ const styles = {
     cursor: 'pointer',
     textDecoration: 'underline'
   },
-  
-  // Main Content
-  main: {
-    flex: 1,
-    transition: 'margin-left 0.3s ease'
-  },
-  container: {
-    maxWidth: '1400px',
-    margin: '0 auto',
-    padding: '40px',
-    paddingTop: '24px'
-  },
-  
-  // Welcome Section
-  welcomeSection: {
-    marginBottom: '32px'
-  },
-  welcomeTitle: {
-    fontSize: '32px',
-    fontWeight: '700',
-    color: '#0f172a',
-    marginBottom: '8px'
-  },
-  welcomeSubtitle: {
-    fontSize: '16px',
-    color: '#64748b'
-  },
-  
-  // Stats Cards
+  main: { flex: 1, transition: 'margin-left 0.3s ease' },
+  container: { maxWidth: '1400px', margin: '0 auto', padding: '40px', paddingTop: '24px' },
+  welcomeSection: { marginBottom: '32px' },
+  welcomeTitle: { fontSize: '32px', fontWeight: '700', color: '#0f172a', marginBottom: '8px' },
+  welcomeSubtitle: { fontSize: '16px', color: '#64748b' },
   statsGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
@@ -979,30 +967,13 @@ const styles = {
     transition: 'all 0.3s ease'
   },
   darkStatCard: {
-    background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
-    boxShadow: '0 8px 16px rgba(0,0,0,0.2), 0 4px 8px rgba(0,0,0,0.1)'
+    background: 'linear-gradient(135deg, #0a0f1a 0%, #1e293b 100%)',
+    boxShadow: '0 8px 16px rgba(0,0,0,0.25)'
   },
-  statCardContent: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start'
-  },
-  statLabel: {
-    fontSize: '13px',
-    color: '#64748b',
-    fontWeight: '500',
-    marginBottom: '8px'
-  },
-  statValue: {
-    fontSize: '36px',
-    fontWeight: '700',
-    color: '#0f172a',
-    marginBottom: '4px'
-  },
-  statSubtext: {
-    fontSize: '12px',
-    color: '#94a3b8'
-  },
+  statCardContent: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' },
+  statLabel: { fontSize: '13px', color: '#64748b', fontWeight: '500', marginBottom: '8px' },
+  statValue: { fontSize: '36px', fontWeight: '700', color: '#0f172a', marginBottom: '4px' },
+  statSubtext: { fontSize: '12px', color: '#94a3b8' },
   statIcon: {
     width: '64px',
     height: '64px',
@@ -1013,26 +984,13 @@ const styles = {
     fontSize: '28px',
     boxShadow: '0 8px 16px rgba(0,0,0,0.15)'
   },
-  
-  // Section
-  section: {
-    marginBottom: '48px'
-  },
-  sectionTitle: {
-    fontSize: '24px',
-    fontWeight: '700',
-    color: '#0f172a',
-    marginBottom: '24px'
-  },
-  
-  // Cards Grid
+  section: { marginBottom: '48px' },
+  sectionTitle: { fontSize: '24px', fontWeight: '700', color: '#0f172a', marginBottom: '24px' },
   cardsGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
     gap: '24px'
   },
-  
-  // Folder Card
   folderCard: {
     background: '#fff',
     borderRadius: '20px',
@@ -1042,67 +1000,28 @@ const styles = {
     cursor: 'pointer',
     border: '2px solid transparent'
   },
-  folderCardHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: '16px'
-  },
+  folderCardHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' },
   folderIconLarge: {
-    width: '56px',
-    height: '56px',
-    borderRadius: '14px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '28px',
-    boxShadow: '0 8px 16px rgba(0,0,0,0.15)'
+    width: '56px', height: '56px', borderRadius: '14px',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    fontSize: '28px', boxShadow: '0 8px 16px rgba(0,0,0,0.15)'
   },
-  moreBtn: {
-    background: 'transparent',
-    border: 'none',
-    fontSize: '20px',
-    color: '#94a3b8',
-    cursor: 'pointer',
-    padding: '4px'
-  },
-  folderCardTitle: {
-    fontSize: '20px',
-    fontWeight: '600',
-    color: '#0f172a',
-    marginBottom: '8px'
-  },
-  folderCardDesc: {
-    fontSize: '14px',
-    color: '#64748b',
-    lineHeight: '1.6',
-    marginBottom: '20px'
-  },
+  moreBtn: { background: 'transparent', border: 'none', fontSize: '20px', color: '#94a3b8', cursor: 'pointer', padding: '4px' },
+  folderCardTitle: { fontSize: '20px', fontWeight: '600', color: '#0f172a', marginBottom: '8px' },
+  folderCardDesc: { fontSize: '14px', color: '#64748b', lineHeight: '1.6', marginBottom: '20px' },
   folderCardFooter: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: '16px',
-    borderTop: '1px solid #f1f5f9'
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    paddingTop: '16px', borderTop: '1px solid #f1f5f9'
   },
-  folderCardStat: {
-    fontSize: '13px',
-    color: '#64748b',
-    fontWeight: '500'
-  },
+  folderCardStat: { fontSize: '13px', color: '#64748b', fontWeight: '500' },
   viewDetailsBtn: {
-    background: 'transparent',
-    border: 'none',
-    color: '#3b82f6',
-    fontSize: '13px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center'
+    background: 'transparent', border: 'none', color: '#3b82f6',
+    fontSize: '13px', fontWeight: '600', cursor: 'pointer',
+    display: 'flex', alignItems: 'center'
   },
-  
-  // Tool Card
-  toolCard: {
+
+  // Category Card (νέο — για φακέλους εργαλείων στην αρχική)
+  categoryCard: {
     position: 'relative',
     background: '#fff',
     borderRadius: '20px',
@@ -1111,422 +1030,182 @@ const styles = {
     transition: 'all 0.3s ease',
     cursor: 'pointer'
   },
-  toolCardAccent: {
+  categoryCardAccent: {
     height: '4px',
-    background: 'linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%)'
+    background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)'
   },
-  toolCardContent: {
-    padding: '24px'
-  },
-  toolIconWrapper: {
-    width: '56px',
-    height: '56px',
-    borderRadius: '14px',
-    background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
+  categoryCardContent: { padding: '24px' },
+  categoryIconWrapper: {
+    width: '56px', height: '56px', borderRadius: '14px',
+    background: 'linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
     marginBottom: '16px'
   },
-  toolIcon: {
-    fontSize: '28px'
+  categoryIcon: { fontSize: '28px' },
+  categoryCardTitle: { fontSize: '18px', fontWeight: '600', color: '#0f172a', marginBottom: '8px' },
+  categoryCardDesc: { fontSize: '14px', color: '#64748b', lineHeight: '1.6', marginBottom: '20px' },
+
+  // Tool Card
+  toolCard: {
+    position: 'relative', background: '#fff', borderRadius: '20px',
+    overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.05)',
+    transition: 'all 0.3s ease', cursor: 'pointer'
   },
-  toolCardTitle: {
-    fontSize: '18px',
-    fontWeight: '600',
-    color: '#0f172a',
-    marginBottom: '8px'
+  toolCardAccent: { height: '4px', background: 'linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%)' },
+  toolCardContent: { padding: '24px' },
+  toolIconWrapper: {
+    width: '56px', height: '56px', borderRadius: '14px',
+    background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px'
   },
-  toolCardDesc: {
-    fontSize: '14px',
-    color: '#64748b',
-    lineHeight: '1.6',
-    marginBottom: '20px'
+  toolIcon: { fontSize: '28px' },
+  toolCardTitle: { fontSize: '18px', fontWeight: '600', color: '#0f172a', marginBottom: '8px' },
+  toolCardDesc: { fontSize: '14px', color: '#64748b', lineHeight: '1.6', marginBottom: '20px' },
+
+  // Category Section Header (μέσα στο All Tools)
+  catSectionHeader: {
+    display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px'
   },
-  
-  // All Tools Card
+  catSectionIcon: { fontSize: '24px' },
+  catSectionTitle: { fontSize: '20px', fontWeight: '700', color: '#0f172a', flex: 1 },
+  catSectionCount: {
+    background: '#e2e8f0', color: '#475569',
+    fontSize: '13px', fontWeight: '600',
+    padding: '4px 12px', borderRadius: '12px'
+  },
+
   allToolsCard: {
     position: 'relative',
     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    borderRadius: '20px',
-    overflow: 'hidden',
+    borderRadius: '20px', overflow: 'hidden',
     boxShadow: '0 8px 16px rgba(102,126,234,0.3)',
-    transition: 'all 0.3s ease',
-    cursor: 'pointer'
+    transition: 'all 0.3s ease', cursor: 'pointer'
   },
-  allToolsCardContent: {
-    padding: '32px 24px',
-    textAlign: 'center',
-    color: '#fff'
-  },
-  allToolsIcon: {
-    fontSize: '48px',
-    marginBottom: '16px'
-  },
-  allToolsTitle: {
-    fontSize: '20px',
-    fontWeight: '700',
-    marginBottom: '8px',
-    color: '#fff'
-  },
-  allToolsDesc: {
-    fontSize: '14px',
-    opacity: 0.9,
-    marginBottom: '20px',
-    color: '#fff'
-  },
-  
-  // Yellow Button
+  allToolsCardContent: { padding: '32px 24px', textAlign: 'center', color: '#fff' },
+  allToolsIcon: { fontSize: '48px', marginBottom: '16px' },
+  allToolsTitle: { fontSize: '20px', fontWeight: '700', marginBottom: '8px', color: '#fff' },
+  allToolsDesc: { fontSize: '14px', opacity: 0.9, marginBottom: '20px', color: '#fff' },
   yellowBtn: {
     background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
-    color: '#78350f',
-    border: 'none',
-    padding: '12px 24px',
-    borderRadius: '12px',
-    fontSize: '14px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-    boxShadow: '0 4px 12px rgba(251,191,36,0.3)',
-    width: '100%'
-  },
-  openBtn: {
-    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-    color: '#fff',
-    border: 'none',
-    padding: '12px 24px',
-    borderRadius: '12px',
-    fontSize: '14px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-    boxShadow: '0 4px 12px rgba(16,185,129,0.3)',
-    marginRight: '12px'
-  },
-  openBtnCompact: {
-    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-    color: '#fff',
-    border: 'none',
-    padding: '8px 16px',
-    borderRadius: '8px',
-    fontSize: '13px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-    boxShadow: '0 2px 8px rgba(16,185,129,0.25)',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px'
+    color: '#78350f', border: 'none', padding: '12px 24px', borderRadius: '12px',
+    fontSize: '14px', fontWeight: '600', cursor: 'pointer',
+    transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(251,191,36,0.3)', width: '100%'
   },
   yellowBtnSmall: {
     background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
-    color: '#78350f',
-    border: 'none',
-    padding: '8px 16px',
-    borderRadius: '8px',
-    fontSize: '13px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'all 0.2s'
+    color: '#78350f', border: 'none', padding: '8px 16px', borderRadius: '8px',
+    fontSize: '13px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s'
   },
-  
-  // Recent List
   recentList: {
-    background: '#fff',
-    borderRadius: '16px',
-    padding: '16px',
+    background: '#fff', borderRadius: '16px', padding: '16px',
     boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
   },
   recentItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '16px',
-    padding: '16px',
-    borderRadius: '12px',
-    transition: 'background 0.2s',
-    cursor: 'pointer'
+    display: 'flex', alignItems: 'center', gap: '16px',
+    padding: '16px', borderRadius: '12px', transition: 'background 0.2s', cursor: 'pointer'
   },
-  recentIcon: {
-    fontSize: '32px'
-  },
-  recentInfo: {
-    flex: 1,
-    minWidth: 0
-  },
+  recentIcon: { fontSize: '32px' },
+  recentInfo: { flex: 1, minWidth: 0 },
   recentTitle: {
-    fontSize: '15px',
-    fontWeight: '600',
-    color: '#0f172a',
-    marginBottom: '4px',
-    whiteSpace: 'nowrap',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis'
+    fontSize: '15px', fontWeight: '600', color: '#0f172a', marginBottom: '4px',
+    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
   },
-  recentMeta: {
-    fontSize: '13px',
-    color: '#94a3b8'
-  },
+  recentMeta: { fontSize: '13px', color: '#94a3b8' },
   quickActionBtn: {
-    background: 'transparent',
-    border: '1px solid #e2e8f0',
-    color: '#3b82f6',
-    padding: '8px 16px',
-    borderRadius: '8px',
-    fontSize: '13px',
-    fontWeight: '500',
-    cursor: 'pointer'
+    background: 'transparent', border: '1px solid #e2e8f0', color: '#3b82f6',
+    padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: '500', cursor: 'pointer'
   },
-  
-  // Page Header
-  pageHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '20px',
-    marginBottom: '32px'
-  },
+  pageHeader: { display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '32px' },
   backBtn: {
-    background: '#fff',
-    border: '1px solid #e2e8f0',
-    color: '#64748b',
-    padding: '10px 20px',
-    borderRadius: '12px',
-    fontSize: '14px',
-    fontWeight: '500',
-    cursor: 'pointer',
-    transition: 'all 0.2s'
+    background: '#fff', border: '1px solid #e2e8f0', color: '#64748b',
+    padding: '10px 20px', borderRadius: '12px', fontSize: '14px',
+    fontWeight: '500', cursor: 'pointer', transition: 'all 0.2s'
   },
-  pageTitle: {
-    fontSize: '28px',
-    fontWeight: '700',
-    color: '#0f172a',
-    marginBottom: '4px'
-  },
-  pageSubtitle: {
-    fontSize: '14px',
-    color: '#64748b'
-  },
-  
-  // Search Bar
-  searchBar: {
-    display: 'flex',
-    gap: '12px',
-    marginBottom: '32px'
-  },
+  pageTitle: { fontSize: '28px', fontWeight: '700', color: '#0f172a', marginBottom: '4px' },
+  pageSubtitle: { fontSize: '14px', color: '#64748b' },
+  searchBar: { display: 'flex', gap: '12px', marginBottom: '32px' },
   searchInput: {
-    flex: 1,
-    padding: '14px 20px',
-    border: '2px solid #e2e8f0',
-    borderRadius: '12px',
-    fontSize: '15px',
-    outline: 'none',
-    transition: 'border-color 0.2s'
+    flex: 1, padding: '14px 20px', border: '2px solid #e2e8f0',
+    borderRadius: '12px', fontSize: '15px', outline: 'none', transition: 'border-color 0.2s'
   },
   searchBtn: {
     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    color: '#fff',
-    border: 'none',
-    padding: '14px 24px',
-    borderRadius: '12px',
-    fontSize: '18px',
-    cursor: 'pointer'
+    color: '#fff', border: 'none', padding: '14px 24px',
+    borderRadius: '12px', fontSize: '18px', cursor: 'pointer'
   },
-  
-  // Files Grid
   filesGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
     gap: '24px'
   },
-  
-  // File Card
   fileCard: {
-    background: '#fff',
-    borderRadius: '16px',
-    overflow: 'hidden',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-    transition: 'all 0.3s ease',
-    cursor: 'pointer',
-    border: '2px solid transparent'
+    background: '#fff', borderRadius: '16px', overflow: 'hidden',
+    boxShadow: '0 2px 4px rgba(0,0,0,0.05)', transition: 'all 0.3s ease',
+    cursor: 'pointer', border: '2px solid transparent'
   },
-  fileCardActive: {
-    borderColor: '#3b82f6',
-    boxShadow: '0 8px 16px rgba(59,130,246,0.2)'
-  },
-  fileCardHeader: {
-    position: 'relative'
-  },
+  fileCardActive: { borderColor: '#3b82f6', boxShadow: '0 8px 16px rgba(59,130,246,0.2)' },
+  fileCardHeader: { position: 'relative' },
   filePreview: {
-    height: '160px',
-    background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center'
+    height: '160px', background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center'
   },
-  filePreviewIcon: {
-    fontSize: '48px'
-  },
+  filePreviewIcon: { fontSize: '48px' },
   favBtn: {
-    position: 'absolute',
-    top: '12px',
-    right: '12px',
-    background: 'rgba(255,255,255,0.9)',
-    border: 'none',
-    width: '36px',
-    height: '36px',
-    borderRadius: '50%',
-    fontSize: '18px',
-    cursor: 'pointer',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+    position: 'absolute', top: '12px', right: '12px',
+    background: 'rgba(255,255,255,0.9)', border: 'none',
+    width: '36px', height: '36px', borderRadius: '50%',
+    fontSize: '18px', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
   },
-  fileCardBody: {
-    padding: '16px'
-  },
+  fileCardBody: { padding: '16px' },
   fileCardTitle: {
-    fontSize: '16px',
-    fontWeight: '600',
-    color: '#0f172a',
-    marginBottom: '6px',
-    whiteSpace: 'nowrap',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis'
+    fontSize: '16px', fontWeight: '600', color: '#0f172a', marginBottom: '6px',
+    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
   },
   fileCardMeta: {
-    fontSize: '13px',
-    color: '#94a3b8',
-    whiteSpace: 'nowrap',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis'
+    fontSize: '13px', color: '#94a3b8',
+    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
   },
-  fileCardFooter: {
-    padding: '12px 16px',
-    borderTop: '1px solid #f1f5f9'
-  },
-  
-  // Modal
+  fileCardFooter: { padding: '12px 16px', borderTop: '1px solid #f1f5f9' },
   modal: {
-    position: 'fixed',
-    inset: 0,
-    background: 'rgba(0,0,0,0.7)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 200,
-    padding: '20px'
+    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    zIndex: 200, padding: '20px'
   },
   modalContent: {
-    background: '#fff',
-    borderRadius: '20px',
-    width: '90vw',
-    maxWidth: '1400px',
-    height: '92vh',
-    display: 'flex',
-    flexDirection: 'column',
-    overflow: 'hidden',
+    background: '#fff', borderRadius: '20px',
+    width: '90vw', maxWidth: '1400px', height: '92vh',
+    display: 'flex', flexDirection: 'column', overflow: 'hidden',
     boxShadow: '0 25px 50px rgba(0,0,0,0.3)'
   },
   modalHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '12px 16px',
-    borderBottom: '1px solid #e2e8f0',
-    minHeight: '50px'
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    padding: '12px 16px', borderBottom: '1px solid #e2e8f0', minHeight: '50px'
   },
   modalTitle: {
-    fontSize: '16px',
-    fontWeight: '600',
-    color: '#0f172a',
-    flex: 1,
-    marginRight: '16px',
-    whiteSpace: 'nowrap',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis'
+    fontSize: '16px', fontWeight: '600', color: '#0f172a',
+    flex: 1, marginRight: '16px', whiteSpace: 'nowrap',
+    overflow: 'hidden', textOverflow: 'ellipsis'
   },
-  modalHeaderButtons: {
-    display: 'flex',
-    gap: '8px',
-    alignItems: 'center'
-  },
+  modalHeaderButtons: { display: 'flex', gap: '8px', alignItems: 'center' },
   iconBtn: {
     background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-    color: '#fff',
-    border: 'none',
-    width: '32px',
-    height: '32px',
-    borderRadius: '8px',
-    fontSize: '16px',
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-    boxShadow: '0 2px 6px rgba(16,185,129,0.25)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center'
+    color: '#fff', border: 'none', width: '32px', height: '32px',
+    borderRadius: '8px', fontSize: '16px', cursor: 'pointer',
+    transition: 'all 0.2s', boxShadow: '0 2px 6px rgba(16,185,129,0.25)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center'
   },
   modalClose: {
-    background: 'transparent',
-    border: 'none',
-    fontSize: '20px',
-    color: '#94a3b8',
-    cursor: 'pointer',
-    width: '32px',
-    height: '32px',
-    borderRadius: '8px',
-    transition: 'all 0.2s',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center'
+    background: 'transparent', border: 'none', fontSize: '20px', color: '#94a3b8',
+    cursor: 'pointer', width: '32px', height: '32px', borderRadius: '8px',
+    transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center'
   },
-  modalBody: {
-    flex: 1,
-    overflow: 'hidden'
-  },
-  pdfViewer: {
-    width: '100%',
-    height: '100%',
-    border: 'none'
-  },
-  modalFooter: {
-    padding: '10px 16px',
-    borderTop: '1px solid #e2e8f0',
-    display: 'flex',
-    justifyContent: 'flex-end',
-    minHeight: '50px',
-    alignItems: 'center'
-  },
-  
-  // Tool Container
-  toolContainer: {
-    background: '#fff',
-    borderRadius: '20px',
-    overflow: 'hidden',
-    height: 'calc(100vh - 200px)',
-    boxShadow: '0 4px 6px rgba(0,0,0,0.05)'
-  },
-  toolFrame: {
-    width: '100%',
-    height: '100%',
-    border: 'none'
-  },
-  
-  // Empty/Loading States
+  modalBody: { flex: 1, overflow: 'hidden' },
+  pdfViewer: { width: '100%', height: '100%', border: 'none' },
   loadingState: {
-    gridColumn: '1 / -1',
-    textAlign: 'center',
-    padding: '60px 20px',
-    color: '#94a3b8',
-    fontSize: '16px'
+    gridColumn: '1 / -1', textAlign: 'center',
+    padding: '60px 20px', color: '#94a3b8', fontSize: '16px'
   },
-  emptyState: {
-    gridColumn: '1 / -1',
-    textAlign: 'center',
-    padding: '60px 20px'
-  },
-  emptyIcon: {
-    fontSize: '64px',
-    marginBottom: '16px'
-  },
-  emptyText: {
-    color: '#94a3b8',
-    fontSize: '16px'
-  }
+  emptyState: { gridColumn: '1 / -1', textAlign: 'center', padding: '60px 20px' },
+  emptyIcon: { fontSize: '64px', marginBottom: '16px' },
+  emptyText: { color: '#94a3b8', fontSize: '16px' }
 };
