@@ -419,9 +419,15 @@ export default function Home() {
                 <div style={styles.userName}>
                   {session.user?.email?.split('@')[0]}
                 </div>
-                <button onClick={() => signOut()} style={styles.logoutLink}>
-                  Αποσύνδεση
-                </button>
+                <div style={{display:'flex', gap:'8px', alignItems:'center'}}>
+                  <button onClick={() => signOut()} style={styles.logoutLink}>
+                    Αποσύνδεση
+                  </button>
+                  <span style={{color:'#475569'}}>·</span>
+                  <button onClick={() => router.push('/admin')} style={styles.logoutLink} title="Διαχείριση">
+                    ⚙️ Admin
+                  </button>
+                </div>
               </div>
             )}
           </div>
