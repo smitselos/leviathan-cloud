@@ -793,7 +793,7 @@ export default function Home() {
                 <span style={styles.zoomLabel} onClick={zoomReset} title="Επαναφορά">{modalZoom}%</span>
                 <button onClick={zoomIn} style={styles.zoomBtn} title="Μεγέθυνση">+</button>
                 <div style={styles.modalDivider}></div>
-                <button onClick={() => window.open(currentTool.webViewLink || `/tools/${currentTool.file}`, '_blank')} style={styles.iconBtn} title="Άνοιγμα σε νέα σελίδα">↗</button>
+                <button onClick={() => window.open(`/api/tool/${currentTool.driveId || currentTool.file}`, '_blank')} style={styles.iconBtn} title="Άνοιγμα σε νέα σελίδα">↗</button>
                 <button onClick={() => { setCurrentTool(null); zoomReset(); }} style={styles.modalClose} title="Κλείσιμο">✕</button>
               </div>
             </div>
