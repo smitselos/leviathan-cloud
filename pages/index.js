@@ -800,7 +800,7 @@ export default function Home() {
             <div style={{...styles.modalBody, borderRadius: '0 0 20px 20px', overflow: 'auto'}}>
               <div style={{ transform: `scale(${modalZoom/100})`, transformOrigin: 'top center', height: modalZoom > 100 ? `${modalZoom}%` : '100%', width: modalZoom > 100 ? `${10000/modalZoom}%` : '100%' }}>
                 <iframe
-                  src={currentTool.webViewLink || `/tools/${currentTool.file}`}
+                  src={`/api/tool/${currentTool.driveId || currentTool.file}`}
                   style={styles.pdfViewer}
                   title={currentTool.name}
                 />
