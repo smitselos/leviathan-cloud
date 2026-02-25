@@ -742,6 +742,41 @@ export default function Home() {
                 );
               })}
 
+              {/* Εργαλεία ΧΩΡΙΣ κατηγορία */}
+              {(() => {
+                const uncategorized = filteredTools.filter(t => !t.category);
+                if (uncategorized.length === 0) return null;
+                return (
+                  <section style={styles.section}>
+                    <div style={styles.catSectionHeader}>
+                      <span style={styles.catSectionIcon}>🔧</span>
+                      <h2 style={styles.catSectionTitle}>Χωρίς κατηγορία</h2>
+                      <span style={styles.catSectionCount}>{uncategorized.length}</span>
+                    </div>
+                    <div style={styles.filesGrid}>
+                      {uncategorized.map(tool => (
+                        <div
+                          key={tool.file}
+                          className="card-hover card-hover-tool"
+                          style={styles.toolCard}
+                          onClick={() => openTool(tool)}
+                        >
+                          <div style={styles.toolCardAccent}></div>
+                          <div style={styles.toolCardContent}>
+                            <div style={styles.toolIconWrapper}>
+                              <span style={styles.toolIcon}>{tool.icon || '🔧'}</span>
+                            </div>
+                            <h3 style={styles.toolCardTitle}>{tool.name}</h3>
+                            <p style={styles.toolCardDesc}>Διαδραστικό εργαλείο για εκπαιδευτική χρήση</p>
+                            <button style={styles.yellowBtnSmall}>Εκκίνηση →</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                );
+              })()}
+
               {filteredTools.length === 0 && (
                 <div style={styles.emptyState}>
                   <div style={styles.emptyIcon}>🔍</div>
