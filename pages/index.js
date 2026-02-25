@@ -445,103 +445,79 @@ export default function Home() {
                   </p>
                 </div>
               </div>
-              
+
+              {/* ── 1η ΣΕΙΡΑ: Αγαπημένα | Πρόσφατα | Όλα τα Έγγραφα ── */}
               <div style={styles.statsGrid}>
-                <div 
-                  className="card-hover"
-                  style={{...styles.statCard, cursor: 'pointer'}}
-                  onClick={() => setActiveView('favorites')}
-                >
+                <div className="card-hover" style={{...styles.statCard, cursor:'pointer'}} onClick={() => setActiveView('favorites')}>
                   <div style={styles.statCardContent}>
                     <div>
-                      <div style={styles.statLabel}>Αγαπημένα</div>
+                      <div style={styles.statLabel}>Αγαπημένα Έγγραφα</div>
                       <div style={styles.statValue}>{favorites.length}</div>
                       <div style={styles.statSubtext}>Επιλεγμένα αρχεία</div>
                     </div>
-                    <div style={{...styles.statIcon, background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'}}>
-                      ⭐
-                    </div>
+                    <div style={{...styles.statIcon, background:'linear-gradient(135deg,#f59e0b,#d97706)'}}>⭐</div>
                   </div>
                 </div>
-                
-                <div 
-                  className="card-hover"
-                  style={{...styles.statCard, cursor: 'pointer'}}
-                  onClick={() => setActiveView('recent')}
-                >
+
+                <div className="card-hover" style={{...styles.statCard, cursor:'pointer'}} onClick={() => setActiveView('recent')}>
                   <div style={styles.statCardContent}>
                     <div>
-                      <div style={styles.statLabel}>Πρόσφατα</div>
+                      <div style={styles.statLabel}>Πρόσφατα Έγγραφα</div>
                       <div style={styles.statValue}>{recentFiles.length}</div>
                       <div style={styles.statSubtext}>Τελευταία αρχεία</div>
                     </div>
-                    <div style={{...styles.statIcon, background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'}}>
-                      📄
-                    </div>
+                    <div style={{...styles.statIcon, background:'linear-gradient(135deg,#f093fb,#f5576c)'}}>🕐</div>
                   </div>
                 </div>
-                
-                <div 
-                  className="card-hover card-hover-dark"
-                  style={{...styles.statCard, ...styles.darkStatCard, cursor: 'pointer'}}
-                  onClick={openAllTools}
-                >
+
+                <div className="card-hover" style={{...styles.statCard, cursor:'pointer'}} onClick={() => { setActiveView('allDocs'); setCurrentFolder(null); }}>
                   <div style={styles.statCardContent}>
                     <div>
-                      <div style={{...styles.statLabel, color: '#e2e8f0'}}>Εργαλεία</div>
-                      <div style={{...styles.statValue, color: '#fff'}}>{tools.length}</div>
-                      <div style={{...styles.statSubtext, color: '#cbd5e1'}}>Διαθέσιμα εργαλεία</div>
+                      <div style={styles.statLabel}>Όλα τα Έγγραφα</div>
+                      <div style={styles.statValue}>📄</div>
+                      <div style={styles.statSubtext}>Κείμενα &amp; Βιβλία</div>
                     </div>
-                    <div style={{...styles.statIcon, background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)'}}>
-                      🔧
-                    </div>
+                    <div style={{...styles.statIcon, background:'linear-gradient(135deg,#3b82f6,#1d4ed8)'}}>📚</div>
                   </div>
                 </div>
               </div>
-              
+
+              {/* ── 2η ΣΕΙΡΑ: Κείμενα | Βιβλία ── */}
               <section style={styles.section}>
-                <h2 style={styles.sectionTitle}>Φάκελοι Περιεχομένου</h2>
+                <h2 style={styles.sectionTitle}>Φάκελοι Εγγράφων</h2>
                 <div style={styles.cardsGrid}>
                   {Object.entries(FOLDERS).map(([id, folder]) => (
-                    <div 
-                      key={id}
-                      className="card-hover"
-                      style={styles.folderCard}
-                      onClick={() => openFolder(id)}
-                    >
+                    <div key={id} className="card-hover" style={styles.folderCard} onClick={() => openFolder(id)}>
                       <div style={styles.folderCardHeader}>
-                        <div style={{...styles.folderIconLarge, background: folder.color}}>
-                          {folder.icon}
-                        </div>
+                        <div style={{...styles.folderIconLarge, background: folder.color}}>{folder.icon}</div>
                         <button style={styles.moreBtn}>⋮</button>
                       </div>
                       <h3 style={styles.folderCardTitle}>{folder.name}</h3>
                       <p style={styles.folderCardDesc}>{folder.desc}</p>
                       <div style={styles.folderCardFooter}>
-                        <span style={styles.folderCardStat}>
-                          📄 {files.length} αρχεία
-                        </span>
-                        <button style={styles.viewDetailsBtn}>
-                          Προβολή <span style={{marginLeft: '4px'}}>→</span>
-                        </button>
+                        <span style={styles.folderCardStat}>📄 Αρχεία</span>
+                        <button style={styles.viewDetailsBtn}>Προβολή →</button>
                       </div>
                     </div>
                   ))}
                 </div>
               </section>
 
-              {/* Κατηγορίες Εργαλείων στην αρχική */}
+              {/* ── ΔΙΑΧΩΡΙΣΤΙΚΗ ΓΡΑΜΜΗ ── */}
+              {tools.length > 0 && <div style={styles.sectionDivider}></div>}
+
+              {/* ── 3η ΣΕΙΡΑ: Εργαλεία ── */}
               {tools.length > 0 && (
                 <section style={styles.section}>
-                  <h2 style={styles.sectionTitle}>Κατηγορίες Εργαλείων</h2>
+                  <h2 style={styles.sectionTitle}>Εργαλεία</h2>
                   <div style={styles.cardsGrid}>
 
-                    {/* Πρόσφατα — πάντα πρώτο */}
+                    {/* Πρόσφατα εργαλεία */}
                     {recentTools.length > 0 && (
                       <div className="card-hover" style={styles.categoryCard} onClick={() => openToolCategory('__recent__')}>
-                        <div style={{...styles.categoryCardAccent, background: 'linear-gradient(90deg, #f59e0b 0%, #ef4444 100%)'}}></div>
+                        <div style={{...styles.categoryCardAccent, background:'linear-gradient(90deg,#f59e0b,#ef4444)'}}></div>
                         <div style={styles.categoryCardContent}>
-                          <div style={{...styles.categoryIconWrapper, background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)'}}>
+                          <div style={{...styles.categoryIconWrapper, background:'linear-gradient(135deg,#fef3c7,#fde68a)'}}>
                             <span style={styles.categoryIcon}>🕐</span>
                           </div>
                           <h3 style={styles.categoryCardTitle}>Πρόσφατα</h3>
@@ -551,7 +527,7 @@ export default function Home() {
                       </div>
                     )}
 
-                    {/* Δυναμικές κατηγορίες */}
+                    {/* Δυναμικές κατηγορίες (Λογοτεχνία, Ιστορία, Γλώσσα, Λατινικά κ.λπ.) */}
                     {Object.entries(toolCategories).map(([catName, catTools]) => (
                       <div key={catName} className="card-hover" style={styles.categoryCard} onClick={() => openToolCategory(catName)}>
                         <div style={styles.categoryCardAccent}></div>
@@ -568,7 +544,7 @@ export default function Home() {
                       </div>
                     ))}
 
-                    {/* Όλα — πάντα τελευταίο */}
+                    {/* Όλα τα εργαλεία — πάντα τελευταίο */}
                     <div className="card-hover card-hover-dark" style={styles.allToolsCard} onClick={openAllTools}>
                       <div style={styles.allToolsCardContent}>
                         <div style={styles.allToolsIcon}>🔧</div>
@@ -580,28 +556,20 @@ export default function Home() {
                   </div>
                 </section>
               )}
-              
+
+              {/* Πρόσφατα αρχεία (λίστα) */}
               {recentFiles.length > 0 && (
                 <section style={styles.section}>
                   <h2 style={styles.sectionTitle}>Πρόσφατα Αρχεία</h2>
                   <div style={styles.recentList}>
                     {recentFiles.map((file) => (
-                      <div 
-                        key={file.id}
-                        className="recent-item-hover"
-                        style={styles.recentItem}
-                      >
+                      <div key={file.id} className="recent-item-hover" style={styles.recentItem}>
                         <div style={styles.recentIcon}>📄</div>
                         <div style={styles.recentInfo}>
                           <div style={styles.recentTitle}>{file.title}</div>
                           <div style={styles.recentMeta}>{file.name}</div>
                         </div>
-                        <button 
-                          onClick={() => openFile(file)}
-                          style={styles.quickActionBtn}
-                        >
-                          Άνοιγμα →
-                        </button>
+                        <button onClick={() => openFile(file)} style={styles.quickActionBtn}>Άνοιγμα →</button>
                       </div>
                     ))}
                   </div>
@@ -1200,6 +1168,12 @@ const styles = {
     boxShadow: '0 8px 16px rgba(0,0,0,0.15)'
   },
   section: { marginBottom: '48px' },
+  sectionDivider: {
+    height: '2px',
+    background: 'linear-gradient(90deg, transparent, #e2e8f0 20%, #e2e8f0 80%, transparent)',
+    margin: '-16px 0 40px 0',
+    borderRadius: '2px'
+  },
   sectionTitle: { fontSize: '24px', fontWeight: '700', color: '#0f172a', marginBottom: '24px' },
   cardsGrid: {
     display: 'grid',
