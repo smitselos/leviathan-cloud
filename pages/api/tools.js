@@ -1,6 +1,6 @@
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from './auth/[...nextauth]';
-import { listToolsFromDrive } from '../../../lib/drive';
+import { listToolsFromDrive } from '../../lib/drive';
 
 export default async function handler(req, res) {
   const session = await getServerSession(req, res, authOptions);
