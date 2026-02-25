@@ -24,8 +24,32 @@ export default function Home() {
   const [recentFiles, setRecentFiles] = useState([]);
   const [stats, setStats] = useState({ total: 0, completed: 0, inProgress: 0 });
   const [toolsSearchQuery, setToolsSearchQuery] = useState('');
-  // NEW: για την επιλεγμένη κατηγορία εργαλείων
+  // για την επιλεγμένη κατηγορία εργαλείων
   const [currentToolCategory, setCurrentToolCategory] = useState(null);
+  // zoom για modals (100 = κανονικό, min 50, max 200)
+  const [modalZoom, setModalZoom] = useState(100);
+
+  const zoomIn  = () => setModalZoom(z => Math.min(z + 10, 200));
+  const zoomOut = () => setModalZoom(z => Math.max(z - 10, 50));
+  const zoomReset = () => setModalZoom(100);
+
+  // Αγαπημένα εργαλεία
+  const [favoriteTools, setFavoriteTools] = useState([]);
+
+  const toggleFavoriteTool = (tool) => {
+    const isFav = favoriteTools.some(t => t.file === tool.file);
+    const updated = isFav
+      ? favoriteTools.filter(t => t.file !== tool.file)
+      : [...favoriteTools, tool];
+    setFavoriteTools(updated);
+    localStorage.setItem('leviathan-favorite-tools', JSON.stringify(updated));
+  };
+
+  // Πρόσφατα εργαλεία: ταξινόμηση βάσει addedAt (ISO string) — τα τελευταία 5
+  const recentTools = [...tools]
+    .filter(t => t.addedAt)
+    .sort((a, b) => new Date(b.addedAt) - new Date(a.addedAt))
+    .slice(0, 5);
   
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -39,7 +63,10 @@ export default function Home() {
     
     if (savedFavorites) setFavorites(JSON.parse(savedFavorites));
     if (savedRecent) setRecentFiles(JSON.parse(savedRecent));
-    
+
+    const savedFavTools = localStorage.getItem('leviathan-favorite-tools');
+    if (savedFavTools) setFavoriteTools(JSON.parse(savedFavTools));
+
     loadTools();
   }, []);
   
@@ -53,13 +80,14 @@ export default function Home() {
     }
   };
 
-  // Ομαδοποίηση εργαλείων ανά κατηγορία (category field ή 'Γενικά' default)
+  // Ομαδοποίηση εργαλείων ανά κατηγορία
+  // Εργαλεία ΧΩΡΙΣ category ΔΕΝ εμφανίζονται σε υποφάκελο "Γενικά" — φαίνονται μόνο στο "Όλα"
   const getToolCategories = () => {
     const cats = {};
     tools.forEach(tool => {
-      const cat = tool.category || 'Γενικά';
-      if (!cats[cat]) cats[cat] = [];
-      cats[cat].push(tool);
+      if (!tool.category) return; // χωρίς κατηγορία → μόνο στο "Όλα"
+      if (!cats[tool.category]) cats[tool.category] = [];
+      cats[tool.category].push(tool);
     });
     return cats;
   };
@@ -146,15 +174,19 @@ export default function Home() {
     return t.name.toLowerCase().includes(q);
   });
 
-  // Εργαλεία της επιλεγμένης κατηγορίας, φιλτραρισμένα με αναζήτηση
+  // Εργαλεία της επιλεγμένης κατηγορίας
   const filteredCategoryTools = currentToolCategory
-    ? tools
-        .filter(t => (t.category || 'Γενικά') === currentToolCategory)
-        .filter(t => {
-          if (!toolsSearchQuery) return true;
-          return t.name.toLowerCase().includes(toolsSearchQuery.toLowerCase());
-        })
+    ? (currentToolCategory === '__recent__'
+        ? recentTools
+        : currentToolCategory === '__favtools__'
+          ? favoriteTools
+          : tools.filter(t => t.category === currentToolCategory)
+      ).filter(t => !toolsSearchQuery || t.name.toLowerCase().includes(toolsSearchQuery.toLowerCase()))
     : [];
+
+  // Όλα τα έγγραφα (από όλους τους φακέλους μαζί — εδώ επιστρέφουμε ό,τι έχει φορτωθεί)
+  // Για allDocs view χρειάζεται φόρτωση και των δύο φακέλων
+  const allDocFiles = files;
   
   if (status === 'loading') {
     return (
@@ -171,6 +203,48 @@ export default function Home() {
   
   return (
     <div style={styles.app}>
+      <style>{`
+        .card-hover {
+          transition: transform 0.22s cubic-bezier(.34,1.56,.64,1), box-shadow 0.22s ease, filter 0.22s ease !important;
+        }
+        .card-hover:hover {
+          transform: translateY(-6px) scale(1.025) !important;
+          box-shadow: 0 16px 40px rgba(0,0,0,0.13), 0 4px 12px rgba(102,126,234,0.10) !important;
+          filter: brightness(1.03) !important;
+          z-index: 2;
+          position: relative;
+        }
+        .card-hover-tool:hover {
+          transform: translateY(-6px) scale(1.025) !important;
+          box-shadow: 0 16px 40px rgba(0,0,0,0.13), 0 4px 12px rgba(251,191,36,0.18) !important;
+          filter: brightness(1.04) !important;
+        }
+        .card-hover-dark:hover {
+          transform: translateY(-6px) scale(1.025) !important;
+          box-shadow: 0 16px 40px rgba(0,0,0,0.35), 0 4px 12px rgba(102,126,234,0.25) !important;
+          filter: brightness(1.08) !important;
+        }
+        .card-hover-file:hover {
+          transform: translateY(-5px) scale(1.018) !important;
+          box-shadow: 0 12px 32px rgba(59,130,246,0.13), 0 3px 8px rgba(0,0,0,0.08) !important;
+          filter: brightness(1.02) !important;
+        }
+        .nav-item-hover {
+          transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease !important;
+        }
+        .nav-item-hover:hover {
+          background: rgba(255,255,255,0.07) !important;
+          transform: translateX(3px) !important;
+          color: #e2e8f0 !important;
+        }
+        .recent-item-hover {
+          transition: background 0.15s ease, transform 0.15s ease !important;
+        }
+        .recent-item-hover:hover {
+          background: #f8fafc !important;
+          transform: translateX(4px) !important;
+        }
+      `}</style>
       {/* Sidebar */}
       <aside style={{...styles.sidebar, width: sidebarCollapsed ? '70px' : '260px'}}>
         <div style={styles.sidebarHeader}>
@@ -189,69 +263,149 @@ export default function Home() {
         </div>
         
         <nav style={styles.nav}>
-          <button 
+
+          {/* Αρχική */}
+          <button
             onClick={goHome}
+            className="nav-item-hover"
             style={{...styles.navItem, ...(activeView === 'home' ? styles.navItemActive : {})}}
           >
             <span style={styles.navIcon}>🏠</span>
             {!sidebarCollapsed && <span>Αρχική</span>}
           </button>
-          
+
           <div style={styles.navDivider}></div>
-          
-          {/* ΑΛΛΑΓΗ 1: Περιεχόμενο πρώτα */}
+
+          {/* ── ΕΓΓΡΑΦΑ ── */}
           <div style={styles.navSection}>
-            {!sidebarCollapsed && <div style={styles.navSectionTitle}>ΠΕΡΙΕΧΟΜΕΝΟ</div>}
+            {!sidebarCollapsed && <div style={styles.navSectionTitle}>ΕΓΓΡΑΦΑ</div>}
+
+            {/* Αγαπημένα έγγραφα */}
+            <button
+              className="nav-item-hover"
+              onClick={() => setActiveView('favorites')}
+              style={{...styles.navItem, ...styles.navSubItem,
+                ...(activeView === 'favorites' ? styles.navItemActive : {})}}
+            >
+              <span style={styles.navIcon}>⭐</span>
+              {!sidebarCollapsed && <>
+                <span style={{flex:1, textAlign:'left'}}>Αγαπημένα</span>
+                <span style={styles.catCount}>{favorites.length}</span>
+              </>}
+            </button>
+
+            {/* Πρόσφατα έγγραφα */}
+            <button
+              className="nav-item-hover"
+              onClick={() => setActiveView('recent')}
+              style={{...styles.navItem, ...styles.navSubItem,
+                ...(activeView === 'recent' ? styles.navItemActive : {})}}
+            >
+              <span style={styles.navIcon}>🕐</span>
+              {!sidebarCollapsed && <>
+                <span style={{flex:1, textAlign:'left'}}>Πρόσφατα</span>
+                <span style={styles.catCount}>{recentFiles.length}</span>
+              </>}
+            </button>
+
+            {/* Όλα τα έγγραφα */}
+            <button
+              className="nav-item-hover"
+              onClick={() => { setActiveView('allDocs'); setCurrentFolder(null); }}
+              style={{...styles.navItem, ...styles.navSubItem,
+                ...(activeView === 'allDocs' ? styles.navItemActive : {})}}
+            >
+              <span style={styles.navIcon}>📄</span>
+              {!sidebarCollapsed && <span>Όλα τα Έγγραφα</span>}
+            </button>
+
+            <div style={styles.navMiniDivider}></div>
+
+            {/* Φάκελοι: Κείμενα, Βιβλία */}
             {Object.entries(FOLDERS).map(([id, folder]) => (
-              <button 
+              <button
                 key={id}
+                className="nav-item-hover"
                 onClick={() => openFolder(id)}
-                style={{
-                  ...styles.navItem, 
-                  ...(currentFolder === id ? styles.navItemActive : {})
-                }}
+                style={{...styles.navItem, ...styles.navSubItem,
+                  ...(currentFolder === id ? styles.navItemActive : {})}}
               >
                 <span style={styles.navIcon}>{folder.icon}</span>
-                {!sidebarCollapsed && <span>{folder.name}</span>}
+                {!sidebarCollapsed && <span style={{flex:1, textAlign:'left'}}>{folder.name}</span>}
               </button>
             ))}
           </div>
 
-          {/* ΑΛΛΑΓΗ 1: Εργαλεία μετά, με υποφακέλους */}
+          <div style={styles.navDivider}></div>
+
+          {/* ── ΕΡΓΑΛΕΙΑ ── */}
           {tools.length > 0 && (
-            <>
-              <div style={styles.navDivider}></div>
-              <div style={styles.navSection}>
-                {!sidebarCollapsed && <div style={styles.navSectionTitle}>ΕΡΓΑΛΕΙΑ</div>}
-                {/* Κουμπί "Όλα τα Εργαλεία" */}
-                <button 
-                  onClick={openAllTools}
-                  style={{
-                    ...styles.navItem,
-                    ...(activeView === 'allTools' ? styles.navItemActive : {})
-                  }}
+            <div style={styles.navSection}>
+              {!sidebarCollapsed && <div style={styles.navSectionTitle}>ΕΡΓΑΛΕΙΑ</div>}
+
+              {/* Αγαπημένα εργαλεία */}
+              <button
+                className="nav-item-hover"
+                onClick={() => openToolCategory('__favtools__')}
+                style={{...styles.navItem, ...styles.navSubItem,
+                  ...(currentToolCategory === '__favtools__' ? styles.navItemActive : {})}}
+              >
+                <span style={styles.navIcon}>⭐</span>
+                {!sidebarCollapsed && <>
+                  <span style={{flex:1, textAlign:'left'}}>Αγαπημένα</span>
+                  <span style={styles.catCount}>{favoriteTools.length}</span>
+                </>}
+              </button>
+
+              {/* Πρόσφατα εργαλεία */}
+              {recentTools.length > 0 && (
+                <button
+                  className="nav-item-hover"
+                  onClick={() => openToolCategory('__recent__')}
+                  style={{...styles.navItem, ...styles.navSubItem,
+                    ...(currentToolCategory === '__recent__' ? styles.navItemActive : {})}}
                 >
-                  <span style={styles.navIcon}>🔧</span>
-                  {!sidebarCollapsed && <span>Όλα ({tools.length})</span>}
+                  <span style={styles.navIcon}>🕐</span>
+                  {!sidebarCollapsed && <>
+                    <span style={{flex:1, textAlign:'left'}}>Πρόσφατα</span>
+                    <span style={styles.catCount}>{recentTools.length}</span>
+                  </>}
                 </button>
-                {/* Κατηγορίες εργαλείων ως υποφάκελοι */}
-                {!sidebarCollapsed && Object.entries(toolCategories).map(([catName, catTools]) => (
-                  <button
-                    key={catName}
-                    onClick={() => openToolCategory(catName)}
-                    style={{
-                      ...styles.navItem,
-                      ...styles.navSubItem,
-                      ...(currentToolCategory === catName && activeView === 'toolCategory' ? styles.navItemActive : {})
-                    }}
-                  >
-                    <span style={styles.navIcon}>{getCategoryIcon(catName)}</span>
+              )}
+
+              {/* Όλα τα εργαλεία */}
+              <button
+                className="nav-item-hover"
+                onClick={openAllTools}
+                style={{...styles.navItem, ...styles.navSubItem,
+                  ...(activeView === 'allTools' ? styles.navItemActive : {})}}
+              >
+                <span style={styles.navIcon}>🔧</span>
+                {!sidebarCollapsed && <>
+                  <span style={{flex:1, textAlign:'left'}}>Όλα</span>
+                  <span style={styles.catCount}>{tools.length}</span>
+                </>}
+              </button>
+
+              <div style={styles.navMiniDivider}></div>
+
+              {/* Κατηγορίες εργαλείων */}
+              {Object.entries(toolCategories).map(([catName, catTools]) => (
+                <button
+                  key={catName}
+                  className="nav-item-hover"
+                  onClick={() => openToolCategory(catName)}
+                  style={{...styles.navItem, ...styles.navSubItem,
+                    ...(currentToolCategory === catName && activeView === 'toolCategory' ? styles.navItemActive : {})}}
+                >
+                  <span style={styles.navIcon}>{getCategoryIcon(catName)}</span>
+                  {!sidebarCollapsed && <>
                     <span style={{flex:1, textAlign:'left'}}>{catName}</span>
                     <span style={styles.catCount}>{catTools.length}</span>
-                  </button>
-                ))}
-              </div>
-            </>
+                  </>}
+                </button>
+              ))}
+            </div>
           )}
         </nav>
         
@@ -294,6 +448,7 @@ export default function Home() {
               
               <div style={styles.statsGrid}>
                 <div 
+                  className="card-hover"
                   style={{...styles.statCard, cursor: 'pointer'}}
                   onClick={() => setActiveView('favorites')}
                 >
@@ -310,6 +465,7 @@ export default function Home() {
                 </div>
                 
                 <div 
+                  className="card-hover"
                   style={{...styles.statCard, cursor: 'pointer'}}
                   onClick={() => setActiveView('recent')}
                 >
@@ -326,6 +482,7 @@ export default function Home() {
                 </div>
                 
                 <div 
+                  className="card-hover card-hover-dark"
                   style={{...styles.statCard, ...styles.darkStatCard, cursor: 'pointer'}}
                   onClick={openAllTools}
                 >
@@ -347,7 +504,8 @@ export default function Home() {
                 <div style={styles.cardsGrid}>
                   {Object.entries(FOLDERS).map(([id, folder]) => (
                     <div 
-                      key={id} 
+                      key={id}
+                      className="card-hover"
                       style={styles.folderCard}
                       onClick={() => openFolder(id)}
                     >
@@ -372,17 +530,30 @@ export default function Home() {
                 </div>
               </section>
 
-              {/* NEW: Κατηγορίες Εργαλείων στην αρχική */}
+              {/* Κατηγορίες Εργαλείων στην αρχική */}
               {tools.length > 0 && (
                 <section style={styles.section}>
                   <h2 style={styles.sectionTitle}>Κατηγορίες Εργαλείων</h2>
                   <div style={styles.cardsGrid}>
+
+                    {/* Πρόσφατα — πάντα πρώτο */}
+                    {recentTools.length > 0 && (
+                      <div className="card-hover" style={styles.categoryCard} onClick={() => openToolCategory('__recent__')}>
+                        <div style={{...styles.categoryCardAccent, background: 'linear-gradient(90deg, #f59e0b 0%, #ef4444 100%)'}}></div>
+                        <div style={styles.categoryCardContent}>
+                          <div style={{...styles.categoryIconWrapper, background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)'}}>
+                            <span style={styles.categoryIcon}>🕐</span>
+                          </div>
+                          <h3 style={styles.categoryCardTitle}>Πρόσφατα</h3>
+                          <p style={styles.categoryCardDesc}>{recentTools.length} τελευταία εργαλεία</p>
+                          <button style={styles.yellowBtnSmall}>Άνοιγμα →</button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Δυναμικές κατηγορίες */}
                     {Object.entries(toolCategories).map(([catName, catTools]) => (
-                      <div
-                        key={catName}
-                        style={styles.categoryCard}
-                        onClick={() => openToolCategory(catName)}
-                      >
+                      <div key={catName} className="card-hover" style={styles.categoryCard} onClick={() => openToolCategory(catName)}>
                         <div style={styles.categoryCardAccent}></div>
                         <div style={styles.categoryCardContent}>
                           <div style={styles.categoryIconWrapper}>
@@ -392,29 +563,20 @@ export default function Home() {
                           <p style={styles.categoryCardDesc}>
                             {catTools.length} {catTools.length === 1 ? 'εργαλείο' : 'εργαλεία'}
                           </p>
-                          <button style={styles.yellowBtnSmall}>
-                            Άνοιγμα →
-                          </button>
+                          <button style={styles.yellowBtnSmall}>Άνοιγμα →</button>
                         </div>
                       </div>
                     ))}
-                    {tools.length > 0 && (
-                      <div 
-                        style={styles.allToolsCard}
-                        onClick={openAllTools}
-                      >
-                        <div style={styles.allToolsCardContent}>
-                          <div style={styles.allToolsIcon}>🔧</div>
-                          <h3 style={styles.allToolsTitle}>Όλα τα Εργαλεία</h3>
-                          <p style={styles.allToolsDesc}>
-                            {tools.length} διαθέσιμα εργαλεία
-                          </p>
-                          <button style={styles.yellowBtn}>
-                            Προβολή Όλων →
-                          </button>
-                        </div>
+
+                    {/* Όλα — πάντα τελευταίο */}
+                    <div className="card-hover card-hover-dark" style={styles.allToolsCard} onClick={openAllTools}>
+                      <div style={styles.allToolsCardContent}>
+                        <div style={styles.allToolsIcon}>🔧</div>
+                        <h3 style={styles.allToolsTitle}>Όλα τα Εργαλεία</h3>
+                        <p style={styles.allToolsDesc}>{tools.length} διαθέσιμα εργαλεία</p>
+                        <button style={styles.yellowBtn}>Προβολή Όλων →</button>
                       </div>
-                    )}
+                    </div>
                   </div>
                 </section>
               )}
@@ -426,6 +588,7 @@ export default function Home() {
                     {recentFiles.map((file) => (
                       <div 
                         key={file.id}
+                        className="recent-item-hover"
                         style={styles.recentItem}
                       >
                         <div style={styles.recentIcon}>📄</div>
@@ -447,6 +610,33 @@ export default function Home() {
             </>
           )}
           
+          {/* All Docs View */}
+          {activeView === 'allDocs' && (
+            <>
+              <div style={styles.pageHeader}>
+                <button onClick={goHome} style={styles.backBtn}>← Πίσω</button>
+                <div>
+                  <h1 style={styles.pageTitle}>📄 Όλα τα Έγγραφα</h1>
+                  <p style={styles.pageSubtitle}>Επέλεξε φάκελο για να δεις τα αρχεία</p>
+                </div>
+              </div>
+              <div style={styles.cardsGrid}>
+                {Object.entries(FOLDERS).map(([id, folder]) => (
+                  <div key={id} className="card-hover" style={styles.folderCard} onClick={() => openFolder(id)}>
+                    <div style={styles.folderCardHeader}>
+                      <div style={{...styles.folderIconLarge, background: folder.color}}>{folder.icon}</div>
+                    </div>
+                    <h3 style={styles.folderCardTitle}>{folder.name}</h3>
+                    <p style={styles.folderCardDesc}>{folder.desc}</p>
+                    <div style={styles.folderCardFooter}>
+                      <button style={styles.viewDetailsBtn}>Προβολή →</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
           {/* Folder View */}
           {activeView === 'folder' && currentFolder && (
             <>
@@ -485,6 +675,7 @@ export default function Home() {
                   filteredFiles.map(file => (
                     <div 
                       key={file.id}
+                      className="card-hover card-hover-file"
                       style={{
                         ...styles.fileCard,
                         ...(currentFile?.id === file.id ? styles.fileCardActive : {})
@@ -557,6 +748,7 @@ export default function Home() {
                       {visible.map(tool => (
                         <div 
                           key={tool.file}
+                          className="card-hover card-hover-tool"
                           style={styles.toolCard}
                           onClick={() => openTool(tool)}
                         >
@@ -585,14 +777,14 @@ export default function Home() {
             </>
           )}
 
-          {/* NEW: Tool Category View */}
+          {/* Tool Category View */}
           {activeView === 'toolCategory' && currentToolCategory && (
             <>
               <div style={styles.pageHeader}>
                 <button onClick={openAllTools} style={styles.backBtn}>← Πίσω στα Εργαλεία</button>
                 <div>
                   <h1 style={styles.pageTitle}>
-                    {getCategoryIcon(currentToolCategory)} {currentToolCategory}
+                    {currentToolCategory === '__recent__' ? '🕐 Πρόσφατα' : `${getCategoryIcon(currentToolCategory)} ${currentToolCategory}`}
                   </h1>
                   <p style={styles.pageSubtitle}>
                     {filteredCategoryTools.length} {filteredCategoryTools.length === 1 ? 'εργαλείο' : 'εργαλεία'}
@@ -619,15 +811,20 @@ export default function Home() {
                   </div>
                 ) : (
                   filteredCategoryTools.map(tool => (
-                    <div 
-                      key={tool.file}
-                      style={styles.toolCard}
-                      onClick={() => openTool(tool)}
-                    >
+                    <div key={tool.file} className="card-hover card-hover-tool" style={styles.toolCard} onClick={() => openTool(tool)}>
                       <div style={styles.toolCardAccent}></div>
                       <div style={styles.toolCardContent}>
-                        <div style={styles.toolIconWrapper}>
-                          <span style={styles.toolIcon}>{tool.icon || '🔧'}</span>
+                        <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start'}}>
+                          <div style={styles.toolIconWrapper}>
+                            <span style={styles.toolIcon}>{tool.icon || '🔧'}</span>
+                          </div>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); toggleFavoriteTool(tool); }}
+                            style={styles.favBtn}
+                            title="Αγαπημένο"
+                          >
+                            {favoriteTools.some(t => t.file === tool.file) ? '⭐' : '☆'}
+                          </button>
                         </div>
                         <h3 style={styles.toolCardTitle}>{tool.name}</h3>
                         <p style={styles.toolCardDesc}>Διαδραστικό εργαλείο για εκπαιδευτική χρήση</p>
@@ -660,7 +857,7 @@ export default function Home() {
                   </div>
                 ) : (
                   favorites.map(file => (
-                    <div key={file.id} style={styles.fileCard} onClick={() => openFile(file)}>
+                    <div key={file.id} className="card-hover card-hover-file" style={styles.fileCard} onClick={() => openFile(file)}>
                       <div style={styles.fileCardHeader}>
                         <div style={styles.filePreview}>
                           <span style={styles.filePreviewIcon}>📄</span>
@@ -701,7 +898,7 @@ export default function Home() {
                   </div>
                 ) : (
                   recentFiles.map(file => (
-                    <div key={file.id} style={styles.fileCard} onClick={() => openFile(file)}>
+                    <div key={file.id} className="card-hover card-hover-file" style={styles.fileCard} onClick={() => openFile(file)}>
                       <div style={styles.fileCardHeader}>
                         <div style={styles.filePreview}>
                           <span style={styles.filePreviewIcon}>📄</span>
@@ -728,18 +925,25 @@ export default function Home() {
       
       {/* File Preview Modal */}
       {currentFile && (
-        <div style={styles.modal} onClick={() => setCurrentFile(null)}>
+        <div style={styles.modal} onClick={() => { setCurrentFile(null); zoomReset(); }}>
           <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
             <div style={styles.modalHeader}>
               <h2 style={styles.modalTitle}>{currentFile.title}</h2>
               <div style={styles.modalHeaderButtons}>
+                {/* Zoom controls */}
+                <button onClick={zoomOut} style={styles.zoomBtn} title="Σμίκρυνση">−</button>
+                <span style={styles.zoomLabel} onClick={zoomReset} title="Επαναφορά">{modalZoom}%</span>
+                <button onClick={zoomIn} style={styles.zoomBtn} title="Μεγέθυνση">+</button>
+                <div style={styles.modalDivider}></div>
                 <button onClick={() => window.open(`/api/files/pdf/${currentFile.id}`, '_blank')} style={styles.iconBtn} title="Άνοιγμα σε νέα καρτέλα">↗</button>
                 <button onClick={() => { const w = window.open(`/api/files/pdf/${currentFile.id}`, '_blank'); if (w) w.onload = () => w.print(); }} style={styles.iconBtn} title="Εκτύπωση">🖨️</button>
-                <button onClick={() => setCurrentFile(null)} style={styles.modalClose} title="Κλείσιμο">✕</button>
+                <button onClick={() => { setCurrentFile(null); zoomReset(); }} style={styles.modalClose} title="Κλείσιμο">✕</button>
               </div>
             </div>
-            <div style={{...styles.modalBody, borderRadius: '0 0 20px 20px'}}>
-              <iframe src={`/api/files/pdf/${currentFile.id}`} style={styles.pdfViewer} title="PDF Viewer" />
+            <div style={{...styles.modalBody, borderRadius: '0 0 20px 20px', overflow: 'auto'}}>
+              <div style={{ transform: `scale(${modalZoom/100})`, transformOrigin: 'top center', height: modalZoom > 100 ? `${modalZoom}%` : '100%', width: modalZoom > 100 ? `${10000/modalZoom}%` : '100%' }}>
+                <iframe src={`/api/files/pdf/${currentFile.id}`} style={styles.pdfViewer} title="PDF Viewer" />
+              </div>
             </div>
           </div>
         </div>
@@ -747,17 +951,24 @@ export default function Home() {
       
       {/* Tool Viewer Modal */}
       {currentTool && !currentFile && (
-        <div style={styles.modal} onClick={() => setCurrentTool(null)}>
+        <div style={styles.modal} onClick={() => { setCurrentTool(null); zoomReset(); }}>
           <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
             <div style={styles.modalHeader}>
               <h2 style={styles.modalTitle}>{currentTool.icon || '🔧'} {currentTool.name}</h2>
               <div style={styles.modalHeaderButtons}>
+                {/* Zoom controls */}
+                <button onClick={zoomOut} style={styles.zoomBtn} title="Σμίκρυνση">−</button>
+                <span style={styles.zoomLabel} onClick={zoomReset} title="Επαναφορά">{modalZoom}%</span>
+                <button onClick={zoomIn} style={styles.zoomBtn} title="Μεγέθυνση">+</button>
+                <div style={styles.modalDivider}></div>
                 <button onClick={() => window.open(`/tools/${currentTool.file}`, '_blank')} style={styles.iconBtn} title="Άνοιγμα σε νέα σελίδα">↗</button>
-                <button onClick={() => setCurrentTool(null)} style={styles.modalClose} title="Κλείσιμο">✕</button>
+                <button onClick={() => { setCurrentTool(null); zoomReset(); }} style={styles.modalClose} title="Κλείσιμο">✕</button>
               </div>
             </div>
-            <div style={{...styles.modalBody, borderRadius: '0 0 20px 20px'}}>
-              <iframe src={`/tools/${currentTool.file}`} style={styles.pdfViewer} title={currentTool.name} />
+            <div style={{...styles.modalBody, borderRadius: '0 0 20px 20px', overflow: 'auto'}}>
+              <div style={{ transform: `scale(${modalZoom/100})`, transformOrigin: 'top center', height: modalZoom > 100 ? `${modalZoom}%` : '100%', width: modalZoom > 100 ? `${10000/modalZoom}%` : '100%' }}>
+                <iframe src={`/tools/${currentTool.file}`} style={styles.pdfViewer} title={currentTool.name} />
+              </div>
             </div>
           </div>
         </div>
@@ -896,7 +1107,11 @@ const styles = {
     background: 'rgba(255,255,255,0.07)',
     margin: '16px 0'
   },
-  navSection: { marginBottom: '16px' },
+  navMiniDivider: {
+    height: '1px',
+    background: 'rgba(255,255,255,0.05)',
+    margin: '8px 16px'
+  },
   navSectionTitle: {
     fontSize: '11px',
     fontWeight: '600',
@@ -1198,6 +1413,38 @@ const styles = {
     background: 'transparent', border: 'none', fontSize: '20px', color: '#94a3b8',
     cursor: 'pointer', width: '32px', height: '32px', borderRadius: '8px',
     transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center'
+  },
+  // Zoom controls
+  zoomBtn: {
+    background: '#1e293b',
+    color: '#fff',
+    border: 'none',
+    width: '32px',
+    height: '32px',
+    borderRadius: '8px',
+    fontSize: '18px',
+    fontWeight: '700',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'all 0.2s',
+    lineHeight: 1
+  },
+  zoomLabel: {
+    fontSize: '13px',
+    fontWeight: '600',
+    color: '#475569',
+    minWidth: '42px',
+    textAlign: 'center',
+    cursor: 'pointer',
+    userSelect: 'none'
+  },
+  modalDivider: {
+    width: '1px',
+    height: '24px',
+    background: '#e2e8f0',
+    margin: '0 4px'
   },
   modalBody: { flex: 1, overflow: 'hidden' },
   pdfViewer: { width: '100%', height: '100%', border: 'none' },
