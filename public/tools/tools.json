@@ -1,44 +1,86 @@
 [
   {
-    "file": "quiz-connectors.html",
-    "name": "Κουίζ Συνδέσμων",
-    "icon": "🔗",
-    "category": "Γλώσσα",
-    "addedAt": "2026-02-20"
-  },
-  {
-    "file": "paragraph-analysis.html",
-    "name": "Ανάλυση Παραγράφου",
-    "icon": "🔍",
-    "category": "Γλώσσα",
-    "addedAt": "2026-02-22"
-  },
-  {
-    "file": "cohesion-quiz.html",
-    "name": "Κουίζ Συνοχής",
-    "icon": "🎯",
-    "category": "Γλώσσα",
-    "addedAt": "2026-02-23"
-  },
-  {
-    "file": "latin-quiz.html",
-    "name": "Κουίζ Λατινικών",
-    "icon": "📜",
-    "category": "Λατινικά",
-    "addedAt": "2026-02-24"
-  },
-  {
-    "file": "history-timeline.html",
-    "name": "Χρονολόγιο Ιστορίας",
+    "file": "aigospotamoi.html",
+    "name": "Αιγός Ποταμοί",
     "icon": "🏛️",
     "category": "Ιστορία",
     "addedAt": "2026-02-25"
   },
   {
-    "file": "literature-analysis.html",
-    "name": "Ανάλυση Λογοτεχνικού Κειμένου",
+    "file": "diafimhsh.html",
+    "name": "Διαφήμιση - Κριτήριο Αξιολόγησης",
+    "icon": "📝",
+    "category": "Γλώσσα",
+    "addedAt": "2026-02-25"
+  },
+  {
+    "file": "efiveia.html",
+    "name": "Κριτήριο – Εφηβεία",
+    "icon": "📝",
+    "category": "Γλώσσα",
+    "addedAt": "2026-02-25"
+  },
+  {
+    "file": "efiveia2.html",
+    "name": "Κριτήριο #2 - Εφηβεία",
+    "icon": "📝",
+    "category": "Γλώσσα",
+    "addedAt": "2026-02-25"
+  },
+  {
+    "file": "genia_Z.html",
+    "name": "Έρευνα: Η Ταυτότητα της Νέας Γενιάς",
+    "icon": "🔍",
+    "category": "Γλώσσα",
+    "addedAt": "2026-02-25"
+  },
+  {
+    "file": "neoi.html",
+    "name": "Η Ταυτότητα της Νέας Γενιάς",
+    "icon": "🎯",
+    "category": "Γλώσσα",
+    "addedAt": "2026-02-25"
+  },
+  {
+    "file": "pagkosmiopoihsh.html",
+    "name": "Κριτήριο #3 - Παγκοσμιοποίηση",
+    "icon": "📝",
+    "category": "Γλώσσα",
+    "addedAt": "2026-02-25"
+  },
+  {
+    "file": "paragrafos.html",
+    "name": "Quiz Ανάλυσης Παραγράφου",
+    "icon": "🎯",
+    "category": "Γλώσσα",
+    "addedAt": "2026-02-25"
+  },
+  {
+    "file": "peloponnisiakos_polemos.html",
+    "name": "Ο Πελοποννησιακός Πόλεμος",
+    "icon": "🏛️",
+    "category": "Ιστορία",
+    "addedAt": "2026-02-25"
+  },
+  {
+    "file": "periklhs.html",
+    "name": "Περικλής - Κεφάλαιο 2.3",
+    "icon": "🏛️",
+    "category": "Ιστορία",
+    "addedAt": "2026-02-25"
+  },
+  {
+    "file": "seirios.html",
+    "name": "Στον Σείριο - Διαδραστική Ανάλυση",
     "icon": "📚",
     "category": "Λογοτεχνία",
+    "addedAt": "2026-02-25"
+  },
+  {
+    "file": "syndesi.html",
+    "name": "Quiz Σύνδεσης Προτάσεων",
+    "icon": "🎯",
+    "category": "Γλώσσα",
     "addedAt": "2026-02-25"
   }
 ]
