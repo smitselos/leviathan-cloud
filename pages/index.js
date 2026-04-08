@@ -3,8 +3,8 @@ import { useRouter } from 'next/router';
 import { useState, useEffect, useCallback } from 'react';
 
 const FOLDERS = {
-  keimena: { name: 'Κείμενα', icon: '📚', color: '#3b82f6', desc: 'Εκπαιδευτικά κείμενα και υλικό' },
-  biblia: { name: 'Βιβλία', icon: '📖', color: '#8b5cf6', desc: 'Βιβλία αναφοράς και μελέτης' }
+  keimena: { name: 'Κείμενα', icon: null, color: '#3b82f6', desc: 'Εκπαιδευτικά κείμενα και υλικό' },
+  biblia: { name: 'Βιβλία', icon: null, color: '#8b5cf6', desc: 'Βιβλία αναφοράς και μελέτης' }
 };
 
 export default function Home() {
@@ -221,89 +221,58 @@ export default function Home() {
             </div>
           )}
           <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} style={styles.collapseBtn}>
-            {sidebarCollapsed ? '→' : '←'}
+            {sidebarCollapsed ? (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>) : (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>)}
           </button>
         </div>
         
         <nav style={styles.nav}>
+
+          {/* Αρχική */}
           <button onClick={goHome} className="nav-item-hover"
             style={{...styles.navItem, ...(activeView === 'home' ? styles.navItemActive : {})}}>
-            <span style={styles.navIcon}>🏠</span>
+            <span style={styles.navIcon}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/>
+                <path d="M9 21V12h6v9"/>
+              </svg>
+            </span>
             {!sidebarCollapsed && <span>Αρχική</span>}
           </button>
 
           <div style={styles.navDivider}></div>
 
-          <div style={styles.navSection}>
-            {!sidebarCollapsed && <div style={styles.navSectionTitle}>ΕΓΓΡΑΦΑ</div>}
-
-            <button className="nav-item-hover" onClick={() => setActiveView('favorites')}
-              style={{...styles.navItem, ...styles.navSubItem, ...(activeView === 'favorites' ? styles.navItemActive : {})}}>
-              <span style={styles.navIcon}>⭐</span>
-              {!sidebarCollapsed && <><span style={{flex:1, textAlign:'left'}}>Αγαπημένα</span><span style={styles.catCount}>{favorites.length}</span></>}
-            </button>
-
-            <button className="nav-item-hover" onClick={() => setActiveView('recent')}
-              style={{...styles.navItem, ...styles.navSubItem, ...(activeView === 'recent' ? styles.navItemActive : {})}}>
-              <span style={styles.navIcon}>🕐</span>
-              {!sidebarCollapsed && <><span style={{flex:1, textAlign:'left'}}>Πρόσφατα</span><span style={styles.catCount}>{recentFiles.length}</span></>}
-            </button>
-
-            <button className="nav-item-hover" onClick={() => { setActiveView('allDocs'); setCurrentFolder(null); }}
-              style={{...styles.navItem, ...styles.navSubItem, ...(activeView === 'allDocs' ? styles.navItemActive : {})}}>
-              <span style={styles.navIcon}>📄</span>
-              {!sidebarCollapsed && <span>Όλα τα Έγγραφα</span>}
-            </button>
-
-            <div style={styles.navMiniDivider}></div>
-
-            {Object.entries(FOLDERS).map(([id, folder]) => (
-              <button key={id} className="nav-item-hover" onClick={() => openFolder(id)}
-                style={{...styles.navItem, ...styles.navSubItem, ...(currentFolder === id ? styles.navItemActive : {})}}>
-                <span style={styles.navIcon}>{folder.icon}</span>
-                {!sidebarCollapsed && <span style={{flex:1, textAlign:'left'}}>{folder.name}</span>}
-              </button>
-            ))}
-          </div>
+          {/* Έγγραφα — ένα μόνο κουμπί, icon τύπου "projects" */}
+          <button className="nav-item-hover" onClick={() => { setActiveView('allDocs'); setCurrentFolder(null); }}
+            style={{...styles.navItem, ...(['allDocs','folder','favorites','recent'].includes(activeView) ? styles.navItemActive : {})}}>
+            <span style={styles.navIcon}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 6h18M3 12h18M3 18h18"/>
+                <rect x="1" y="3" width="4" height="4" rx="0.5"/>
+                <rect x="1" y="9" width="4" height="4" rx="0.5"/>
+                <rect x="1" y="15" width="4" height="4" rx="0.5"/>
+              </svg>
+            </span>
+            {!sidebarCollapsed && <span>Κείμενα &amp; Βιβλία</span>}
+          </button>
 
           <div style={styles.navDivider}></div>
 
+          {/* Εργαλεία — ένα μόνο κουμπί */}
           {tools.length > 0 && (
-            <div style={styles.navSection}>
-              {!sidebarCollapsed && <div style={styles.navSectionTitle}>ΕΡΓΑΛΕΙΑ</div>}
-
-              <button className="nav-item-hover" onClick={() => openToolCategory('__favtools__')}
-                style={{...styles.navItem, ...styles.navSubItem, ...(currentToolCategory === '__favtools__' ? styles.navItemActive : {})}}>
-                <span style={styles.navIcon}>⭐</span>
-                {!sidebarCollapsed && <><span style={{flex:1, textAlign:'left'}}>Αγαπημένα</span><span style={styles.catCount}>{favoriteTools.length}</span></>}
-              </button>
-
-              {recentTools.length > 0 && (
-                <button className="nav-item-hover" onClick={() => openToolCategory('__recent__')}
-                  style={{...styles.navItem, ...styles.navSubItem, ...(currentToolCategory === '__recent__' ? styles.navItemActive : {})}}>
-                  <span style={styles.navIcon}>🕐</span>
-                  {!sidebarCollapsed && <><span style={{flex:1, textAlign:'left'}}>Πρόσφατα</span><span style={styles.catCount}>{recentTools.length}</span></>}
-                </button>
-              )}
-
-              <button className="nav-item-hover" onClick={openAllTools}
-                style={{...styles.navItem, ...styles.navSubItem, ...(activeView === 'allTools' ? styles.navItemActive : {})}}>
-                <span style={styles.navIcon}>🔧</span>
-                {!sidebarCollapsed && <><span style={{flex:1, textAlign:'left'}}>Όλα</span><span style={styles.catCount}>{tools.length}</span></>}
-              </button>
-
-              <div style={styles.navMiniDivider}></div>
-
-              {Object.entries(toolCategories).map(([catName, catTools]) => (
-                <button key={catName} className="nav-item-hover" onClick={() => openToolCategory(catName)}
-                  style={{...styles.navItem, ...styles.navSubItem,
-                    ...(currentToolCategory === catName && activeView === 'toolCategory' ? styles.navItemActive : {})}}>
-                  <span style={styles.navIcon}>{getCategoryIcon(catName)}</span>
-                  {!sidebarCollapsed && <><span style={{flex:1, textAlign:'left'}}>{catName}</span><span style={styles.catCount}>{catTools.length}</span></>}
-                </button>
-              ))}
-            </div>
+            <button className="nav-item-hover" onClick={openAllTools}
+              style={{...styles.navItem, ...(['allTools','toolCategory'].includes(activeView) ? styles.navItemActive : {})}}>
+              <span style={styles.navIcon}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="7" height="7" rx="1"/>
+                  <rect x="14" y="3" width="7" height="7" rx="1"/>
+                  <rect x="3" y="14" width="7" height="7" rx="1"/>
+                  <rect x="14" y="14" width="7" height="7" rx="1"/>
+                </svg>
+              </span>
+              {!sidebarCollapsed && <><span style={{flex:1, textAlign:'left'}}>Εφαρμογές</span><span style={styles.catCount}>{tools.length}</span></>}
+            </button>
           )}
+
         </nav>
         
         <div style={styles.sidebarFooter}>
@@ -343,7 +312,7 @@ export default function Home() {
                       <div style={styles.statValue}>{favorites.length}</div>
                       <div style={styles.statSubtext}>Επιλεγμένα αρχεία</div>
                     </div>
-                    <div style={{...styles.statIcon, background:'#fef3c7'}}>⭐</div>
+                    <div style={{...styles.statIcon, background:'#f0f0f0'}}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
                   </div>
                 </div>
 
@@ -354,7 +323,7 @@ export default function Home() {
                       <div style={styles.statValue}>{recentFiles.length}</div>
                       <div style={styles.statSubtext}>Τελευταία αρχεία</div>
                     </div>
-                    <div style={{...styles.statIcon, background:'#fce7f3'}}>🕐</div>
+                    <div style={{...styles.statIcon, background:'#f0f0f0'}}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
                   </div>
                 </div>
 
@@ -362,10 +331,10 @@ export default function Home() {
                   <div style={styles.statCardContent}>
                     <div>
                       <div style={styles.statLabel}>Όλα τα Έγγραφα</div>
-                      <div style={styles.statValue}>📄</div>
+                      <div style={styles.statValue}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
                       <div style={styles.statSubtext}>Κείμενα &amp; Βιβλία</div>
                     </div>
-                    <div style={{...styles.statIcon, background:'#ede9fe'}}>📚</div>
+                    <div style={{...styles.statIcon, background:'#f0f0f0'}}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
                   </div>
                 </div>
               </div>
@@ -376,13 +345,13 @@ export default function Home() {
                   {Object.entries(FOLDERS).map(([id, folder]) => (
                     <div key={id} className="card-hover" style={styles.folderCard} onClick={() => openFolder(id)}>
                       <div style={styles.folderCardHeader}>
-                        <div style={{...styles.folderIconLarge, background: folder.color}}>{folder.icon}</div>
+                        <div style={{...styles.folderIconLarge, background: '#f4f4f4', color: '#444'}}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
                         <button style={styles.moreBtn}>⋮</button>
                       </div>
                       <h3 style={styles.folderCardTitle}>{folder.name}</h3>
                       <p style={styles.folderCardDesc}>{folder.desc}</p>
                       <div style={styles.folderCardFooter}>
-                        <span style={styles.folderCardStat}>📄 Αρχεία</span>
+                        <span style={styles.folderCardStat}>Αρχεία</span>
                         <button style={styles.viewDetailsBtn}>Προβολή →</button>
                       </div>
                     </div>
@@ -401,7 +370,7 @@ export default function Home() {
                         <div style={{...styles.categoryCardAccent, background:'#d97706'}}></div>
                         <div style={styles.categoryCardContent}>
                           <div style={{...styles.categoryIconWrapper, background:'#fffbeb'}}>
-                            <span style={styles.categoryIcon}>🕐</span>
+                            <span style={styles.categoryIcon}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
                           </div>
                           <h3 style={styles.categoryCardTitle}>Πρόσφατα</h3>
                           <p style={styles.categoryCardDesc}>{recentTools.length} τελευταία εργαλεία</p>
@@ -426,7 +395,7 @@ export default function Home() {
 
                     <div className="card-hover card-hover-dark" style={styles.allToolsCard} onClick={openAllTools}>
                       <div style={styles.allToolsCardContent}>
-                        <div style={styles.allToolsIcon}>🔧</div>
+                        <div style={styles.allToolsIcon}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div>
                         <h3 style={styles.allToolsTitle}>Όλα τα Εργαλεία</h3>
                         <p style={styles.allToolsDesc}>{tools.length} διαθέσιμα εργαλεία</p>
                         <button style={styles.yellowBtn}>Προβολή Όλων →</button>
@@ -442,7 +411,7 @@ export default function Home() {
                   <div style={styles.recentList}>
                     {recentFiles.map((file) => (
                       <div key={file.id} className="recent-item-hover" style={styles.recentItem}>
-                        <div style={styles.recentIcon}>📄</div>
+                        <div style={styles.recentIcon}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
                         <div style={styles.recentInfo}>
                           <div style={styles.recentTitle}>{file.title}</div>
                           <div style={styles.recentMeta}>{file.name}</div>
@@ -462,7 +431,7 @@ export default function Home() {
               <div style={styles.pageHeader}>
                 <button onClick={goHome} style={styles.backBtn}>← Πίσω</button>
                 <div>
-                  <h1 style={styles.pageTitle}>📄 Όλα τα Έγγραφα</h1>
+                  <h1 style={styles.pageTitle}>Όλα τα Έγγραφα</h1>
                   <p style={styles.pageSubtitle}>Επέλεξε φάκελο για να δεις τα αρχεία</p>
                 </div>
               </div>
@@ -470,7 +439,7 @@ export default function Home() {
                 {Object.entries(FOLDERS).map(([id, folder]) => (
                   <div key={id} className="card-hover" style={styles.folderCard} onClick={() => openFolder(id)}>
                     <div style={styles.folderCardHeader}>
-                      <div style={{...styles.folderIconLarge, background: folder.color}}>{folder.icon}</div>
+                      <div style={{...styles.folderIconLarge, background: '#f4f4f4', color: '#444'}}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
                     </div>
                     <h3 style={styles.folderCardTitle}>{folder.name}</h3>
                     <p style={styles.folderCardDesc}>{folder.desc}</p>
@@ -496,14 +465,14 @@ export default function Home() {
               <div style={styles.searchBar}>
                 <input type="search" placeholder="Αναζήτηση αρχείων..." value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)} style={styles.searchInput} />
-                <button style={styles.searchBtn}>🔍</button>
+                <button style={styles.searchBtn}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
               </div>
               <div style={styles.filesGrid}>
                 {loading ? (
                   <div style={styles.loadingState}>Φόρτωση...</div>
                 ) : filteredFiles.length === 0 ? (
                   <div style={styles.emptyState}>
-                    <div style={styles.emptyIcon}>📭</div>
+                    <div style={styles.emptyIcon}><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg></div>
                     <div style={styles.emptyText}>Δεν βρέθηκαν αρχεία</div>
                   </div>
                 ) : (
@@ -512,9 +481,9 @@ export default function Home() {
                       style={{...styles.fileCard, ...(currentFile?.id === file.id ? styles.fileCardActive : {})}}
                       onClick={() => openFile(file)}>
                       <div style={styles.fileCardHeader}>
-                        <div style={styles.filePreview}><span style={styles.filePreviewIcon}>📄</span></div>
+                        <div style={styles.filePreview}><span style={styles.filePreviewIcon}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span></div>
                         <button onClick={(e) => { e.stopPropagation(); toggleFavorite(file); }} style={styles.favBtn}>
-                          {favorites.some(f => f.id === file.id) ? '⭐' : '☆'}
+                          {favorites.some(f => f.id === file.id) ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>'}
                         </button>
                       </div>
                       <div style={styles.fileCardBody}>
@@ -537,14 +506,14 @@ export default function Home() {
               <div style={styles.pageHeader}>
                 <button onClick={goHome} style={styles.backBtn}>← Πίσω</button>
                 <div>
-                  <h1 style={styles.pageTitle}>🔧 Όλα τα Εργαλεία</h1>
+                  <h1 style={styles.pageTitle}>Όλα τα Εργαλεία</h1>
                   <p style={styles.pageSubtitle}>{filteredTools.length} {filteredTools.length === 1 ? 'εργαλείο' : 'εργαλεία'}</p>
                 </div>
               </div>
               <div style={styles.searchBar}>
                 <input type="search" placeholder="Αναζήτηση εργαλείων..." value={toolsSearchQuery}
                   onChange={(e) => setToolsSearchQuery(e.target.value)} style={styles.searchInput} />
-                <button style={styles.searchBtn}>🔍</button>
+                <button style={styles.searchBtn}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
               </div>
 
               {Object.entries(toolCategories).map(([catName, catTools]) => {
@@ -564,7 +533,7 @@ export default function Home() {
                         <div key={tool.file} className="card-hover card-hover-tool" style={styles.toolCard} onClick={() => openTool(tool)}>
                           <div style={styles.toolCardAccent}></div>
                           <div style={styles.toolCardContent}>
-                            <div style={styles.toolIconWrapper}><span style={styles.toolIcon}>{tool.icon || '🔧'}</span></div>
+                            <div style={styles.toolIconWrapper}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></div>
                             <h3 style={styles.toolCardTitle}>{tool.name}</h3>
                             <p style={styles.toolCardDesc}>Διαδραστικό εργαλείο για εκπαιδευτική χρήση</p>
                             <button style={styles.yellowBtnSmall}>Εκκίνηση →</button>
@@ -582,7 +551,7 @@ export default function Home() {
                 return (
                   <section style={styles.section}>
                     <div style={styles.catSectionHeader}>
-                      <span style={styles.catSectionIcon}>🔧</span>
+                      <span style={styles.catSectionIcon}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></span>
                       <h2 style={styles.catSectionTitle}>Χωρίς κατηγορία</h2>
                       <span style={styles.catSectionCount}>{uncategorized.length}</span>
                     </div>
@@ -591,7 +560,7 @@ export default function Home() {
                         <div key={tool.file} className="card-hover card-hover-tool" style={styles.toolCard} onClick={() => openTool(tool)}>
                           <div style={styles.toolCardAccent}></div>
                           <div style={styles.toolCardContent}>
-                            <div style={styles.toolIconWrapper}><span style={styles.toolIcon}>{tool.icon || '🔧'}</span></div>
+                            <div style={styles.toolIconWrapper}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></div>
                             <h3 style={styles.toolCardTitle}>{tool.name}</h3>
                             <p style={styles.toolCardDesc}>Διαδραστικό εργαλείο για εκπαιδευτική χρήση</p>
                             <button style={styles.yellowBtnSmall}>Εκκίνηση →</button>
@@ -605,7 +574,7 @@ export default function Home() {
 
               {filteredTools.length === 0 && (
                 <div style={styles.emptyState}>
-                  <div style={styles.emptyIcon}>🔍</div>
+                  <div style={styles.emptyIcon}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
                   <div style={styles.emptyText}>Δεν βρέθηκαν εργαλεία</div>
                 </div>
               )}
@@ -627,12 +596,12 @@ export default function Home() {
               <div style={styles.searchBar}>
                 <input type="search" placeholder="Αναζήτηση εργαλείων..." value={toolsSearchQuery}
                   onChange={(e) => setToolsSearchQuery(e.target.value)} style={styles.searchInput} />
-                <button style={styles.searchBtn}>🔍</button>
+                <button style={styles.searchBtn}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
               </div>
               <div style={styles.filesGrid}>
                 {filteredCategoryTools.length === 0 ? (
                   <div style={styles.emptyState}>
-                    <div style={styles.emptyIcon}>🔍</div>
+                    <div style={styles.emptyIcon}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
                     <div style={styles.emptyText}>Δεν βρέθηκαν εργαλεία</div>
                   </div>
                 ) : (
@@ -641,9 +610,9 @@ export default function Home() {
                       <div style={styles.toolCardAccent}></div>
                       <div style={styles.toolCardContent}>
                         <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start'}}>
-                          <div style={styles.toolIconWrapper}><span style={styles.toolIcon}>{tool.icon || '🔧'}</span></div>
+                          <div style={styles.toolIconWrapper}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></div>
                           <button onClick={(e) => { e.stopPropagation(); toggleFavoriteTool(tool); }} style={styles.favBtn} title="Αγαπημένο">
-                            {favoriteTools.some(t => t.file === tool.file) ? '⭐' : '☆'}
+                            {favoriteTools.some(t => t.file === tool.file) ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>'}
                           </button>
                         </div>
                         <h3 style={styles.toolCardTitle}>{tool.name}</h3>
@@ -663,22 +632,22 @@ export default function Home() {
               <div style={styles.pageHeader}>
                 <button onClick={goHome} style={styles.backBtn}>← Πίσω</button>
                 <div>
-                  <h1 style={styles.pageTitle}>⭐ Αγαπημένα</h1>
+                  <h1 style={styles.pageTitle}>Αγαπημένα</h1>
                   <p style={styles.pageSubtitle}>{favorites.length} {favorites.length === 1 ? 'αγαπημένο' : 'αγαπημένα'}</p>
                 </div>
               </div>
               <div style={styles.filesGrid}>
                 {favorites.length === 0 ? (
                   <div style={styles.emptyState}>
-                    <div style={styles.emptyIcon}>⭐</div>
+                    <div style={styles.emptyIcon}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
                     <div style={styles.emptyText}>Δεν έχεις αγαπημένα ακόμα</div>
                   </div>
                 ) : (
                   favorites.map(file => (
                     <div key={file.id} className="card-hover card-hover-file" style={styles.fileCard} onClick={() => openFile(file)}>
                       <div style={styles.fileCardHeader}>
-                        <div style={styles.filePreview}><span style={styles.filePreviewIcon}>📄</span></div>
-                        <button onClick={(e) => { e.stopPropagation(); toggleFavorite(file); }} style={styles.favBtn}>⭐</button>
+                        <div style={styles.filePreview}><span style={styles.filePreviewIcon}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span></div>
+                        <button onClick={(e) => { e.stopPropagation(); toggleFavorite(file); }} style={styles.favBtn}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
                       </div>
                       <div style={styles.fileCardBody}>
                         <h3 style={styles.fileCardTitle}>{file.title}</h3>
@@ -700,23 +669,23 @@ export default function Home() {
               <div style={styles.pageHeader}>
                 <button onClick={goHome} style={styles.backBtn}>← Πίσω</button>
                 <div>
-                  <h1 style={styles.pageTitle}>📄 Πρόσφατα Αρχεία</h1>
+                  <h1 style={styles.pageTitle}>Πρόσφατα Αρχεία</h1>
                   <p style={styles.pageSubtitle}>{recentFiles.length} {recentFiles.length === 1 ? 'αρχείο' : 'αρχεία'}</p>
                 </div>
               </div>
               <div style={styles.filesGrid}>
                 {recentFiles.length === 0 ? (
                   <div style={styles.emptyState}>
-                    <div style={styles.emptyIcon}>📄</div>
+                    <div style={styles.emptyIcon}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
                     <div style={styles.emptyText}>Δεν έχεις ανοίξει αρχεία ακόμα</div>
                   </div>
                 ) : (
                   recentFiles.map(file => (
                     <div key={file.id} className="card-hover card-hover-file" style={styles.fileCard} onClick={() => openFile(file)}>
                       <div style={styles.fileCardHeader}>
-                        <div style={styles.filePreview}><span style={styles.filePreviewIcon}>📄</span></div>
+                        <div style={styles.filePreview}><span style={styles.filePreviewIcon}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span></div>
                         <button onClick={(e) => { e.stopPropagation(); toggleFavorite(file); }} style={styles.favBtn}>
-                          {favorites.some(f => f.id === file.id) ? '⭐' : '☆'}
+                          {favorites.some(f => f.id === file.id) ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>'}
                         </button>
                       </div>
                       <div style={styles.fileCardBody}>
@@ -792,24 +761,30 @@ export default function Home() {
 }
 
 function getCategoryIcon(categoryName) {
+  const svgFile = <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>;
+  const svgBook = <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>;
+  const svgEdit = <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>;
+  const svgTool = <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>;
+  const svgSearch = <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>;
+  const svgFolder = <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>;
   const icons = {
-    'Γλώσσα':         '📝',
-    'Λογοτεχνία':     '📚',
-    'Ιστορία':        '🏛️',
-    'Λατινικά':       '📜',
-    'Αρχαία':         '🏺',
-    'Έκθεση':         '✍️',
-    'Γενικά':         '🔧',
-    'Γραμματική':     '📝',
-    'Λεξιλόγιο':      '📖',
-    'Σύνταξη':        '🔗',
-    'Κείμενο':        '📄',
-    'Αξιολόγηση':     '✅',
-    'Ασκήσεις':       '✏️',
-    'Ανάλυση':        '🔍',
-    'Παραγωγή Λόγου': '✍️',
+    'Γλώσσα':         svgEdit,
+    'Λογοτεχνία':     svgBook,
+    'Ιστορία':        svgBook,
+    'Λατινικά':       svgFile,
+    'Αρχαία':         svgFile,
+    'Έκθεση':         svgEdit,
+    'Γενικά':         svgTool,
+    'Γραμματική':     svgEdit,
+    'Λεξιλόγιο':      svgBook,
+    'Σύνταξη':        svgFile,
+    'Κείμενο':        svgFile,
+    'Αξιολόγηση':     svgSearch,
+    'Ασκήσεις':       svgEdit,
+    'Ανάλυση':        svgSearch,
+    'Παραγωγή Λόγου': svgEdit,
   };
-  return icons[categoryName] || '📁';
+  return icons[categoryName] || svgFolder;
 }
 
 const styles = {
@@ -871,7 +846,7 @@ const styles = {
   },
   navSubItem: { paddingLeft: '22px', fontSize: '12px' },
   navItemActive: { background: 'rgba(255,255,255,0.08)', color: '#ececec' },
-  navIcon: { fontSize: '15px', flexShrink: 0, width: '18px', textAlign: 'center' },
+  navIcon: { fontSize: '15px', flexShrink: 0, width: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
   catCount: {
     marginLeft: 'auto',
     background: 'rgba(255,255,255,0.07)', color: '#8e8ea0',
@@ -934,8 +909,8 @@ const styles = {
   statValue: { fontSize: '28px', fontWeight: '500', color: '#1a1a1a', marginBottom: '2px' },
   statSubtext: { fontSize: '11px', color: '#aeaeb8' },
   statIcon: {
-    width: '40px', height: '40px', borderRadius: '8px',
-    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px',
+    width: '36px', height: '36px', borderRadius: '7px', background: '#f0f0f0',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6b6b80',
   },
 
   /* ── Sections ── */
@@ -976,11 +951,11 @@ const styles = {
     position: 'relative', background: '#fff', borderRadius: '10px', overflow: 'hidden',
     border: '1px solid #ebebeb', transition: 'border-color 0.15s', cursor: 'pointer',
   },
-  categoryCardAccent: { height: '3px', background: '#8b5cf6' },
+  categoryCardAccent: { height: '3px', background: '#e0e0e0' },
   categoryCardContent: { padding: '18px' },
   categoryIconWrapper: {
     width: '40px', height: '40px', borderRadius: '8px',
-    background: '#f3f0ff',
+    background: '#f4f4f4',
     display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px',
   },
   categoryIcon: { fontSize: '20px' },
@@ -992,11 +967,11 @@ const styles = {
     position: 'relative', background: '#fff', borderRadius: '10px', overflow: 'hidden',
     border: '1px solid #ebebeb', transition: 'border-color 0.15s', cursor: 'pointer',
   },
-  toolCardAccent: { height: '3px', background: '#d97706' },
+  toolCardAccent: { height: '3px', background: '#e0e0e0' },
   toolCardContent: { padding: '18px' },
   toolIconWrapper: {
     width: '40px', height: '40px', borderRadius: '8px',
-    background: '#fffbeb',
+    background: '#f4f4f4',
     display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px',
   },
   toolIcon: { fontSize: '20px' },
@@ -1078,8 +1053,9 @@ const styles = {
     color: '#1a1a1a', transition: 'border-color 0.15s',
   },
   searchBtn: {
-    background: '#8b5cf6', color: '#fff', border: 'none',
-    padding: '10px 16px', borderRadius: '8px', fontSize: '15px', cursor: 'pointer',
+    background: 'transparent', color: '#6b6b80', border: '1px solid #ebebeb',
+    padding: '8px 12px', borderRadius: '8px', fontSize: '15px', cursor: 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
   },
 
   /* ── Files grid ── */
@@ -1134,7 +1110,7 @@ const styles = {
   },
   modalHeaderButtons: { display: 'flex', gap: '6px', alignItems: 'center' },
   iconBtn: {
-    background: '#059669', color: '#fff', border: 'none',
+    background: '#f4f4f4', color: '#444', border: '1px solid #e0e0e0',
     width: '28px', height: '28px', borderRadius: '6px',
     fontSize: '13px', cursor: 'pointer',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
