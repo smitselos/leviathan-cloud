@@ -198,16 +198,18 @@ export default function Home() {
     <div style={styles.app}>
       <style>{`
         * { box-sizing: border-box; }
-        .card-hover { transition: border-color 0.15s ease, background 0.15s ease !important; }
-        .card-hover:hover { border-color: rgba(83,74,183,0.3) !important; background: #f9f8f7 !important; }
-        .card-hover-tool:hover { border-color: rgba(186,117,23,0.3) !important; background: #fffdf7 !important; }
-        .card-hover-dark:hover { background: #1a1f2e !important; }
-        .card-hover-file:hover { border-color: rgba(24,95,165,0.25) !important; background: #f8fbff !important; }
+        .card-hover { transition: border-color 0.15s ease !important; }
+        .card-hover:hover { border-color: #c4b5fd !important; }
+        .card-hover-tool:hover { border-color: #fcd34d !important; }
+        .card-hover-dark:hover { border-color: rgba(196,181,253,0.3) !important; }
+        .card-hover-file:hover { border-color: #c4b5fd !important; }
         .nav-item-hover { transition: background 0.12s ease, color 0.12s ease !important; }
-        .nav-item-hover:hover { background: rgba(255,255,255,0.06) !important; color: #e2e8f0 !important; }
+        .nav-item-hover:hover { background: rgba(255,255,255,0.06) !important; color: #ececec !important; }
         .recent-item-hover { transition: background 0.12s ease !important; }
-        .recent-item-hover:hover { background: #f4f2ef !important; }
-        button:focus-visible, input:focus-visible { outline: 2px solid #534AB7; outline-offset: 2px; }
+        .recent-item-hover:hover { background: #f9f9f8 !important; }
+        input[type=search]:focus { border-color: #8b5cf6 !important; box-shadow: 0 0 0 3px rgba(139,92,246,0.12) !important; }
+        button:focus-visible { outline: 2px solid #8b5cf6; outline-offset: 2px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
       \`}</style>
 
       {/* Sidebar */}
@@ -811,158 +813,361 @@ function getCategoryIcon(categoryName) {
 }
 
 const styles = {
-  /* ── Loading ── */
-  loadingScreen: { minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#0a0f1a', color: '#e2e8f0' },
-  spinner: { width: '40px', height: '40px', border: '2px solid rgba(255,255,255,0.15)', borderTop: '2px solid #AFA9EC', borderRadius: '50%', animation: 'spin 0.8s linear infinite', marginBottom: '20px' },
-  loadingText: { fontSize: '16px', fontWeight: '400', color: '#94a3b8', letterSpacing: '0.02em' },
 
-  /* ── Layout ── */
-  app: { display: 'flex', minHeight: '100vh', background: '#f4f2ef', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' },
+  /* ── Loading ── */
+  loadingScreen: {
+    minHeight: '100vh', display: 'flex', flexDirection: 'column',
+    alignItems: 'center', justifyContent: 'center',
+    background: '#1a1a1a', color: '#ececec',
+    fontFamily: '"Söhne", ui-sans-serif, system-ui, -apple-system, sans-serif',
+  },
+  spinner: {
+    width: '36px', height: '36px',
+    border: '2px solid rgba(255,255,255,0.12)',
+    borderTop: '2px solid #c5b4e3',
+    borderRadius: '50%', animation: 'spin 0.9s linear infinite', marginBottom: '16px',
+  },
+  loadingText: { fontSize: '14px', fontWeight: '400', color: '#8e8ea0', letterSpacing: '0.01em' },
+
+  /* ── App shell ── */
+  app: {
+    display: 'flex', minHeight: '100vh',
+    background: '#f9f9f8',
+    fontFamily: '"Söhne", ui-sans-serif, system-ui, -apple-system, sans-serif',
+    color: '#1a1a1a',
+  },
 
   /* ── Sidebar ── */
-  sidebar: { position: 'fixed', left: 0, top: 0, bottom: 0, background: '#0f1117', color: '#e2e8f0', display: 'flex', flexDirection: 'column', transition: 'width 0.25s ease', zIndex: 100, borderRight: '0.5px solid rgba(255,255,255,0.06)' },
-  sidebarHeader: { padding: '18px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '0.5px solid rgba(255,255,255,0.06)' },
-  logo: { display: 'flex', alignItems: 'center', gap: '10px' },
-  logoText: { fontSize: '17px', fontWeight: '500', color: '#CECBF6', letterSpacing: '0.04em' },
-  collapseBtn: { background: 'transparent', border: '0.5px solid rgba(255,255,255,0.12)', color: '#94a3b8', width: '28px', height: '28px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'border-color 0.15s, color 0.15s' },
-  nav: { flex: 1, padding: '12px 8px', overflowY: 'auto' },
-  navItem: { width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 12px', background: 'transparent', border: 'none', borderRadius: '8px', color: '#64748b', fontSize: '13px', fontWeight: '400', cursor: 'pointer', transition: 'background 0.12s, color 0.12s', marginBottom: '2px', textAlign: 'left' },
-  navSubItem: { paddingLeft: '24px', fontSize: '12px', color: '#475569' },
-  navItemActive: { background: 'rgba(174,168,236,0.12)', color: '#CECBF6' },
-  navIcon: { fontSize: '16px', flexShrink: 0, width: '20px', textAlign: 'center' },
-  catCount: { marginLeft: 'auto', background: 'rgba(255,255,255,0.06)', color: '#64748b', fontSize: '11px', fontWeight: '400', padding: '1px 6px', borderRadius: '8px' },
-  navDivider: { height: '0.5px', background: 'rgba(255,255,255,0.06)', margin: '12px 8px' },
-  navMiniDivider: { height: '0.5px', background: 'rgba(255,255,255,0.04)', margin: '6px 12px' },
-  navSectionTitle: { fontSize: '10px', fontWeight: '500', color: '#334155', padding: '8px 12px 4px', textTransform: 'uppercase', letterSpacing: '0.08em' },
+  sidebar: {
+    position: 'fixed', left: 0, top: 0, bottom: 0,
+    background: '#1a1a1a',
+    display: 'flex', flexDirection: 'column',
+    transition: 'width 0.2s ease', zIndex: 100,
+    borderRight: '1px solid rgba(255,255,255,0.06)',
+  },
+  sidebarHeader: {
+    padding: '16px 12px',
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    borderBottom: '1px solid rgba(255,255,255,0.06)',
+  },
+  logo: { display: 'flex', alignItems: 'center', gap: '8px' },
+  logoText: { fontSize: '15px', fontWeight: '500', color: '#ececec', letterSpacing: '0.01em' },
+  collapseBtn: {
+    background: 'transparent',
+    border: '1px solid rgba(255,255,255,0.1)',
+    color: '#8e8ea0', width: '28px', height: '28px',
+    borderRadius: '6px', cursor: 'pointer', fontSize: '12px',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    transition: 'background 0.15s, border-color 0.15s',
+  },
+  nav: { flex: 1, padding: '8px', overflowY: 'auto' },
+  navItem: {
+    width: '100%', display: 'flex', alignItems: 'center', gap: '10px',
+    padding: '8px 10px',
+    background: 'transparent', border: 'none', borderRadius: '8px',
+    color: '#8e8ea0', fontSize: '13px', fontWeight: '400',
+    cursor: 'pointer', transition: 'background 0.12s, color 0.12s',
+    marginBottom: '1px', textAlign: 'left',
+  },
+  navSubItem: { paddingLeft: '22px', fontSize: '12px' },
+  navItemActive: { background: 'rgba(255,255,255,0.08)', color: '#ececec' },
+  navIcon: { fontSize: '15px', flexShrink: 0, width: '18px', textAlign: 'center' },
+  catCount: {
+    marginLeft: 'auto',
+    background: 'rgba(255,255,255,0.07)', color: '#8e8ea0',
+    fontSize: '11px', padding: '1px 6px', borderRadius: '10px',
+  },
+  navDivider: { height: '1px', background: 'rgba(255,255,255,0.06)', margin: '8px 4px' },
+  navMiniDivider: { height: '1px', background: 'rgba(255,255,255,0.04)', margin: '4px 10px' },
+  navSectionTitle: {
+    fontSize: '10px', fontWeight: '500', color: '#555560',
+    padding: '8px 10px 4px', textTransform: 'uppercase', letterSpacing: '0.07em',
+  },
   navSection: {},
-  sidebarFooter: { padding: '12px', borderTop: '0.5px solid rgba(255,255,255,0.06)' },
-  userCard: { display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', background: 'rgba(255,255,255,0.04)', borderRadius: '8px' },
-  userAvatar: { width: '32px', height: '32px', borderRadius: '50%', background: '#3C3489', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '500', color: '#CECBF6', flexShrink: 0 },
+  sidebarFooter: { padding: '10px', borderTop: '1px solid rgba(255,255,255,0.06)' },
+  userCard: {
+    display: 'flex', alignItems: 'center', gap: '10px',
+    padding: '8px 10px',
+    background: 'rgba(255,255,255,0.04)', borderRadius: '8px',
+  },
+  userAvatar: {
+    width: '30px', height: '30px', borderRadius: '50%',
+    background: '#c5b4e3',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    fontSize: '12px', fontWeight: '500', color: '#1a1a1a', flexShrink: 0,
+  },
   userInfo: { flex: 1, minWidth: 0 },
-  userName: { fontSize: '13px', fontWeight: '400', color: '#e2e8f0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
-  logoutLink: { fontSize: '11px', color: '#475569', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textDecoration: 'underline' },
+  userName: {
+    fontSize: '12px', fontWeight: '400', color: '#ececec',
+    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+  },
+  logoutLink: {
+    fontSize: '11px', color: '#555560',
+    background: 'none', border: 'none', padding: 0,
+    cursor: 'pointer', textDecoration: 'underline',
+  },
 
   /* ── Main ── */
-  main: { flex: 1, transition: 'margin-left 0.25s ease' },
-  container: { maxWidth: '1320px', margin: '0 auto', padding: '32px 40px' },
+  main: { flex: 1, transition: 'margin-left 0.2s ease' },
+  container: { maxWidth: '1280px', margin: '0 auto', padding: '32px 40px' },
 
   /* ── Welcome ── */
-  welcomeSection: { marginBottom: '28px' },
-  welcomeTitle: { fontSize: '26px', fontWeight: '500', color: '#1a1a18', marginBottom: '6px' },
-  welcomeSubtitle: { fontSize: '14px', color: '#6b7280' },
+  welcomeSection: { marginBottom: '32px' },
+  welcomeTitle: {
+    fontSize: '24px', fontWeight: '500', color: '#1a1a1a', marginBottom: '6px',
+  },
+  welcomeSubtitle: { fontSize: '14px', color: '#6b6b80', lineHeight: '1.5' },
 
-  /* ── Stats ── */
-  statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginBottom: '32px' },
-  statCard: { background: '#fff', borderRadius: '12px', padding: '20px', border: '0.5px solid rgba(0,0,0,0.08)', transition: 'border-color 0.15s, background 0.15s', cursor: 'pointer' },
-  darkStatCard: { background: '#0f1117', border: '0.5px solid rgba(255,255,255,0.08)' },
+  /* ── Stats grid ── */
+  statsGrid: {
+    display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+    gap: '12px', marginBottom: '36px',
+  },
+  statCard: {
+    background: '#fff', borderRadius: '10px', padding: '18px',
+    border: '1px solid #ebebeb',
+    transition: 'border-color 0.15s', cursor: 'pointer',
+  },
+  darkStatCard: { background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.08)' },
   statCardContent: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' },
-  statLabel: { fontSize: '12px', color: '#6b7280', fontWeight: '400', marginBottom: '8px' },
-  statValue: { fontSize: '32px', fontWeight: '500', color: '#1a1a18', marginBottom: '4px' },
-  statSubtext: { fontSize: '11px', color: '#9ca3af' },
-  statIcon: { width: '48px', height: '48px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px' },
+  statLabel: { fontSize: '12px', color: '#6b6b80', fontWeight: '400', marginBottom: '6px' },
+  statValue: { fontSize: '28px', fontWeight: '500', color: '#1a1a1a', marginBottom: '2px' },
+  statSubtext: { fontSize: '11px', color: '#aeaeb8' },
+  statIcon: {
+    width: '40px', height: '40px', borderRadius: '8px',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px',
+  },
 
   /* ── Sections ── */
   section: { marginBottom: '40px' },
-  sectionDivider: { height: '0.5px', background: 'rgba(0,0,0,0.08)', margin: '-8px 0 36px 0' },
-  sectionTitle: { fontSize: '18px', fontWeight: '500', color: '#1a1a18', marginBottom: '20px' },
-  cardsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' },
+  sectionDivider: { height: '1px', background: '#ebebeb', margin: '0 0 36px' },
+  sectionTitle: { fontSize: '16px', fontWeight: '500', color: '#1a1a1a', marginBottom: '16px' },
+  cardsGrid: {
+    display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px',
+  },
 
-  /* ── Folder Card ── */
-  folderCard: { background: '#fff', borderRadius: '12px', padding: '20px', border: '0.5px solid rgba(0,0,0,0.08)', transition: 'border-color 0.15s, background 0.15s', cursor: 'pointer' },
-  folderCardHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' },
-  folderIconLarge: { width: '44px', height: '44px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px' },
-  moreBtn: { background: 'transparent', border: 'none', fontSize: '18px', color: '#9ca3af', cursor: 'pointer', padding: '4px' },
-  folderCardTitle: { fontSize: '17px', fontWeight: '500', color: '#1a1a18', marginBottom: '6px' },
-  folderCardDesc: { fontSize: '13px', color: '#6b7280', lineHeight: '1.6', marginBottom: '16px' },
-  folderCardFooter: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '14px', borderTop: '0.5px solid rgba(0,0,0,0.06)' },
-  folderCardStat: { fontSize: '12px', color: '#6b7280', fontWeight: '400' },
-  viewDetailsBtn: { background: 'transparent', border: 'none', color: '#534AB7', fontSize: '12px', fontWeight: '500', cursor: 'pointer', display: 'flex', alignItems: 'center' },
+  /* ── Folder card ── */
+  folderCard: {
+    background: '#fff', borderRadius: '10px', padding: '18px',
+    border: '1px solid #ebebeb',
+    transition: 'border-color 0.15s', cursor: 'pointer',
+  },
+  folderCardHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' },
+  folderIconLarge: {
+    width: '40px', height: '40px', borderRadius: '8px',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px',
+  },
+  moreBtn: { background: 'transparent', border: 'none', fontSize: '16px', color: '#aeaeb8', cursor: 'pointer', padding: '2px' },
+  folderCardTitle: { fontSize: '15px', fontWeight: '500', color: '#1a1a1a', marginBottom: '4px' },
+  folderCardDesc: { fontSize: '13px', color: '#6b6b80', lineHeight: '1.55', marginBottom: '14px' },
+  folderCardFooter: {
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    paddingTop: '12px', borderTop: '1px solid #f0f0f0',
+  },
+  folderCardStat: { fontSize: '12px', color: '#6b6b80' },
+  viewDetailsBtn: {
+    background: 'transparent', border: 'none',
+    color: '#8b5cf6', fontSize: '12px', fontWeight: '500',
+    cursor: 'pointer', display: 'flex', alignItems: 'center',
+  },
 
-  /* ── Category Card ── */
-  categoryCard: { position: 'relative', background: '#fff', borderRadius: '12px', overflow: 'hidden', border: '0.5px solid rgba(0,0,0,0.08)', transition: 'border-color 0.15s, background 0.15s', cursor: 'pointer' },
-  categoryCardAccent: { height: '3px', background: '#534AB7' },
-  categoryCardContent: { padding: '20px' },
-  categoryIconWrapper: { width: '44px', height: '44px', borderRadius: '10px', background: '#EEEDFE', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '14px' },
-  categoryIcon: { fontSize: '22px' },
-  categoryCardTitle: { fontSize: '16px', fontWeight: '500', color: '#1a1a18', marginBottom: '6px' },
-  categoryCardDesc: { fontSize: '13px', color: '#6b7280', lineHeight: '1.6', marginBottom: '16px' },
+  /* ── Category card ── */
+  categoryCard: {
+    position: 'relative', background: '#fff', borderRadius: '10px', overflow: 'hidden',
+    border: '1px solid #ebebeb', transition: 'border-color 0.15s', cursor: 'pointer',
+  },
+  categoryCardAccent: { height: '3px', background: '#8b5cf6' },
+  categoryCardContent: { padding: '18px' },
+  categoryIconWrapper: {
+    width: '40px', height: '40px', borderRadius: '8px',
+    background: '#f3f0ff',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px',
+  },
+  categoryIcon: { fontSize: '20px' },
+  categoryCardTitle: { fontSize: '14px', fontWeight: '500', color: '#1a1a1a', marginBottom: '4px' },
+  categoryCardDesc: { fontSize: '12px', color: '#6b6b80', lineHeight: '1.55', marginBottom: '14px' },
 
-  /* ── Tool Card ── */
-  toolCard: { position: 'relative', background: '#fff', borderRadius: '12px', overflow: 'hidden', border: '0.5px solid rgba(0,0,0,0.08)', transition: 'border-color 0.15s, background 0.15s', cursor: 'pointer' },
-  toolCardAccent: { height: '3px', background: '#BA7517' },
-  toolCardContent: { padding: '20px' },
-  toolIconWrapper: { width: '44px', height: '44px', borderRadius: '10px', background: '#FAEEDA', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '14px' },
-  toolIcon: { fontSize: '22px' },
-  toolCardTitle: { fontSize: '16px', fontWeight: '500', color: '#1a1a18', marginBottom: '6px' },
-  toolCardDesc: { fontSize: '13px', color: '#6b7280', lineHeight: '1.6', marginBottom: '16px' },
+  /* ── Tool card ── */
+  toolCard: {
+    position: 'relative', background: '#fff', borderRadius: '10px', overflow: 'hidden',
+    border: '1px solid #ebebeb', transition: 'border-color 0.15s', cursor: 'pointer',
+  },
+  toolCardAccent: { height: '3px', background: '#d97706' },
+  toolCardContent: { padding: '18px' },
+  toolIconWrapper: {
+    width: '40px', height: '40px', borderRadius: '8px',
+    background: '#fffbeb',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px',
+  },
+  toolIcon: { fontSize: '20px' },
+  toolCardTitle: { fontSize: '14px', fontWeight: '500', color: '#1a1a1a', marginBottom: '4px' },
+  toolCardDesc: { fontSize: '12px', color: '#6b6b80', lineHeight: '1.55', marginBottom: '14px' },
 
   /* ── Category section header ── */
-  catSectionHeader: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' },
-  catSectionIcon: { fontSize: '18px' },
-  catSectionTitle: { fontSize: '17px', fontWeight: '500', color: '#1a1a18', flex: 1 },
-  catSectionCount: { background: 'rgba(0,0,0,0.05)', color: '#6b7280', fontSize: '12px', fontWeight: '400', padding: '3px 10px', borderRadius: '10px' },
+  catSectionHeader: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' },
+  catSectionIcon: { fontSize: '16px' },
+  catSectionTitle: { fontSize: '15px', fontWeight: '500', color: '#1a1a1a', flex: 1 },
+  catSectionCount: {
+    background: '#f0f0f0', color: '#6b6b80',
+    fontSize: '11px', padding: '2px 8px', borderRadius: '10px',
+  },
 
-  /* ── All Tools Card ── */
-  allToolsCard: { position: 'relative', background: '#0f1117', borderRadius: '12px', overflow: 'hidden', border: '0.5px solid rgba(174,168,236,0.2)', transition: 'border-color 0.15s, background 0.15s', cursor: 'pointer' },
-  allToolsCardContent: { padding: '28px 20px', textAlign: 'center', color: '#e2e8f0' },
-  allToolsIcon: { fontSize: '36px', marginBottom: '12px' },
-  allToolsTitle: { fontSize: '17px', fontWeight: '500', marginBottom: '6px', color: '#CECBF6' },
-  allToolsDesc: { fontSize: '13px', opacity: 0.6, marginBottom: '16px', color: '#e2e8f0' },
+  /* ── All tools card ── */
+  allToolsCard: {
+    position: 'relative', background: '#1a1a1a', borderRadius: '10px', overflow: 'hidden',
+    border: '1px solid rgba(255,255,255,0.08)', transition: 'border-color 0.15s', cursor: 'pointer',
+  },
+  allToolsCardContent: { padding: '24px 18px', textAlign: 'center' },
+  allToolsIcon: { fontSize: '28px', marginBottom: '10px' },
+  allToolsTitle: { fontSize: '15px', fontWeight: '500', marginBottom: '4px', color: '#ececec' },
+  allToolsDesc: { fontSize: '12px', color: '#8e8ea0', marginBottom: '14px' },
 
   /* ── Buttons ── */
-  yellowBtn: { background: '#BA7517', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '8px', fontSize: '13px', fontWeight: '500', cursor: 'pointer', transition: 'background 0.15s', width: '100%' },
-  yellowBtnSmall: { background: 'transparent', color: '#BA7517', border: '0.5px solid #BA7517', padding: '6px 14px', borderRadius: '7px', fontSize: '12px', fontWeight: '500', cursor: 'pointer', transition: 'background 0.15s, color 0.15s' },
+  yellowBtn: {
+    background: '#d97706', color: '#fff', border: 'none',
+    padding: '9px 18px', borderRadius: '8px',
+    fontSize: '13px', fontWeight: '500', cursor: 'pointer',
+    transition: 'background 0.15s', width: '100%',
+  },
+  yellowBtnSmall: {
+    background: 'transparent', color: '#d97706',
+    border: '1px solid #d97706',
+    padding: '5px 12px', borderRadius: '7px',
+    fontSize: '12px', fontWeight: '500', cursor: 'pointer',
+    transition: 'background 0.15s',
+  },
 
-  /* ── Recent List ── */
-  recentList: { background: '#fff', borderRadius: '12px', border: '0.5px solid rgba(0,0,0,0.08)' },
-  recentItem: { display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 16px', borderRadius: '8px', transition: 'background 0.12s', cursor: 'pointer' },
-  recentIcon: { fontSize: '24px', flexShrink: 0 },
+  /* ── Recent list ── */
+  recentList: {
+    background: '#fff', borderRadius: '10px', border: '1px solid #ebebeb',
+  },
+  recentItem: {
+    display: 'flex', alignItems: 'center', gap: '12px',
+    padding: '12px 14px', transition: 'background 0.12s', cursor: 'pointer',
+    borderRadius: '8px',
+  },
+  recentIcon: { fontSize: '20px', flexShrink: 0 },
   recentInfo: { flex: 1, minWidth: 0 },
-  recentTitle: { fontSize: '14px', fontWeight: '500', color: '#1a1a18', marginBottom: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
-  recentMeta: { fontSize: '12px', color: '#9ca3af' },
-  quickActionBtn: { background: 'transparent', border: '0.5px solid rgba(0,0,0,0.15)', color: '#534AB7', padding: '6px 14px', borderRadius: '7px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
+  recentTitle: {
+    fontSize: '13px', fontWeight: '500', color: '#1a1a1a',
+    marginBottom: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+  },
+  recentMeta: { fontSize: '11px', color: '#aeaeb8' },
+  quickActionBtn: {
+    background: 'transparent', border: '1px solid #ebebeb',
+    color: '#8b5cf6', padding: '5px 12px', borderRadius: '7px',
+    fontSize: '12px', fontWeight: '500', cursor: 'pointer',
+  },
 
-  /* ── Page Header ── */
-  pageHeader: { display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '28px' },
-  backBtn: { background: '#fff', border: '0.5px solid rgba(0,0,0,0.15)', color: '#6b7280', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: '400', cursor: 'pointer', transition: 'border-color 0.15s' },
-  pageTitle: { fontSize: '22px', fontWeight: '500', color: '#1a1a18', marginBottom: '2px' },
-  pageSubtitle: { fontSize: '13px', color: '#6b7280' },
+  /* ── Page header ── */
+  pageHeader: { display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '24px' },
+  backBtn: {
+    background: '#fff', border: '1px solid #ebebeb', color: '#6b6b80',
+    padding: '7px 14px', borderRadius: '8px',
+    fontSize: '13px', fontWeight: '400', cursor: 'pointer', transition: 'border-color 0.15s',
+  },
+  pageTitle: { fontSize: '20px', fontWeight: '500', color: '#1a1a1a', marginBottom: '2px' },
+  pageSubtitle: { fontSize: '13px', color: '#6b6b80' },
 
   /* ── Search ── */
-  searchBar: { display: 'flex', gap: '10px', marginBottom: '24px' },
-  searchInput: { flex: 1, padding: '11px 16px', border: '0.5px solid rgba(0,0,0,0.15)', borderRadius: '8px', fontSize: '14px', outline: 'none', background: '#fff', transition: 'border-color 0.15s', color: '#1a1a18' },
-  searchBtn: { background: '#534AB7', color: '#fff', border: 'none', padding: '11px 18px', borderRadius: '8px', fontSize: '16px', cursor: 'pointer' },
+  searchBar: { display: 'flex', gap: '8px', marginBottom: '20px' },
+  searchInput: {
+    flex: 1, padding: '10px 14px',
+    border: '1px solid #ebebeb', borderRadius: '8px',
+    fontSize: '13px', outline: 'none', background: '#fff',
+    color: '#1a1a1a', transition: 'border-color 0.15s',
+  },
+  searchBtn: {
+    background: '#8b5cf6', color: '#fff', border: 'none',
+    padding: '10px 16px', borderRadius: '8px', fontSize: '15px', cursor: 'pointer',
+  },
 
-  /* ── Files Grid ── */
-  filesGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '16px' },
-  fileCard: { background: '#fff', borderRadius: '12px', overflow: 'hidden', border: '0.5px solid rgba(0,0,0,0.08)', transition: 'border-color 0.15s, background 0.15s', cursor: 'pointer' },
-  fileCardActive: { borderColor: 'rgba(83,74,183,0.5)' },
+  /* ── Files grid ── */
+  filesGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '12px' },
+  fileCard: {
+    background: '#fff', borderRadius: '10px', overflow: 'hidden',
+    border: '1px solid #ebebeb', transition: 'border-color 0.15s', cursor: 'pointer',
+  },
+  fileCardActive: { borderColor: '#8b5cf6' },
   fileCardHeader: { position: 'relative' },
-  filePreview: { height: '140px', background: '#f4f2ef', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  filePreviewIcon: { fontSize: '40px' },
-  favBtn: { position: 'absolute', top: '10px', right: '10px', background: 'rgba(255,255,255,0.88)', border: 'none', width: '30px', height: '30px', borderRadius: '50%', fontSize: '14px', cursor: 'pointer' },
-  fileCardBody: { padding: '14px 14px 10px' },
-  fileCardTitle: { fontSize: '14px', fontWeight: '500', color: '#1a1a18', marginBottom: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
-  fileCardMeta: { fontSize: '12px', color: '#9ca3af', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
-  fileCardFooter: { padding: '10px 14px 14px', borderTop: '0.5px solid rgba(0,0,0,0.06)' },
+  filePreview: {
+    height: '120px', background: '#f9f9f8',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+  },
+  filePreviewIcon: { fontSize: '36px' },
+  favBtn: {
+    position: 'absolute', top: '8px', right: '8px',
+    background: 'rgba(255,255,255,0.9)', border: 'none',
+    width: '28px', height: '28px', borderRadius: '50%',
+    fontSize: '13px', cursor: 'pointer',
+  },
+  fileCardBody: { padding: '12px 12px 8px' },
+  fileCardTitle: {
+    fontSize: '13px', fontWeight: '500', color: '#1a1a1a',
+    marginBottom: '3px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+  },
+  fileCardMeta: {
+    fontSize: '11px', color: '#aeaeb8',
+    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+  },
+  fileCardFooter: { padding: '8px 12px 12px', borderTop: '1px solid #f0f0f0' },
 
   /* ── Modal ── */
-  modal: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: '20px' },
-  modalContent: { background: '#fff', borderRadius: '14px', width: '90vw', maxWidth: '1400px', height: '92vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', border: '0.5px solid rgba(0,0,0,0.1)' },
-  modalHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '0.5px solid rgba(0,0,0,0.08)', minHeight: '48px' },
-  modalTitle: { fontSize: '15px', fontWeight: '500', color: '#1a1a18', flex: 1, marginRight: '16px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+  modal: {
+    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    zIndex: 200, padding: '20px',
+  },
+  modalContent: {
+    background: '#fff', borderRadius: '12px',
+    width: '90vw', maxWidth: '1400px', height: '92vh',
+    display: 'flex', flexDirection: 'column', overflow: 'hidden',
+    border: '1px solid #e5e5e5',
+  },
+  modalHeader: {
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    padding: '10px 14px', borderBottom: '1px solid #ebebeb', minHeight: '46px',
+  },
+  modalTitle: {
+    fontSize: '14px', fontWeight: '500', color: '#1a1a1a',
+    flex: 1, marginRight: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+  },
   modalHeaderButtons: { display: 'flex', gap: '6px', alignItems: 'center' },
-  iconBtn: { background: '#0F6E56', color: '#fff', border: 'none', width: '30px', height: '30px', borderRadius: '7px', fontSize: '14px', cursor: 'pointer', transition: 'background 0.15s', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  modalClose: { background: 'transparent', border: '0.5px solid rgba(0,0,0,0.12)', fontSize: '16px', color: '#6b7280', cursor: 'pointer', width: '30px', height: '30px', borderRadius: '7px', transition: 'border-color 0.15s', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  zoomBtn: { background: '#1a1a18', color: '#fff', border: 'none', width: '30px', height: '30px', borderRadius: '7px', fontSize: '16px', fontWeight: '400', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.15s', lineHeight: 1 },
-  zoomLabel: { fontSize: '12px', fontWeight: '400', color: '#6b7280', minWidth: '38px', textAlign: 'center', cursor: 'pointer', userSelect: 'none' },
-  modalDivider: { width: '0.5px', height: '20px', background: 'rgba(0,0,0,0.12)', margin: '0 2px' },
+  iconBtn: {
+    background: '#059669', color: '#fff', border: 'none',
+    width: '28px', height: '28px', borderRadius: '6px',
+    fontSize: '13px', cursor: 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    transition: 'background 0.15s',
+  },
+  modalClose: {
+    background: 'transparent', border: '1px solid #ebebeb',
+    fontSize: '14px', color: '#8e8ea0', cursor: 'pointer',
+    width: '28px', height: '28px', borderRadius: '6px',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    transition: 'border-color 0.15s',
+  },
+  zoomBtn: {
+    background: '#1a1a1a', color: '#fff', border: 'none',
+    width: '28px', height: '28px', borderRadius: '6px',
+    fontSize: '14px', cursor: 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    transition: 'background 0.15s', lineHeight: 1,
+  },
+  zoomLabel: {
+    fontSize: '11px', color: '#6b6b80',
+    minWidth: '36px', textAlign: 'center', cursor: 'pointer', userSelect: 'none',
+  },
+  modalDivider: { width: '1px', height: '18px', background: '#ebebeb', margin: '0 2px' },
   modalBody: { flex: 1, overflow: 'hidden' },
   pdfViewer: { width: '100%', height: '100%', border: 'none' },
 
-  /* ── States ── */
-  loadingState: { gridColumn: '1 / -1', textAlign: 'center', padding: '48px 20px', color: '#9ca3af', fontSize: '14px' },
+  /* ── Empty / loading states ── */
+  loadingState: {
+    gridColumn: '1 / -1', textAlign: 'center',
+    padding: '48px 20px', color: '#aeaeb8', fontSize: '13px',
+  },
   emptyState: { gridColumn: '1 / -1', textAlign: 'center', padding: '48px 20px' },
-  emptyIcon: { fontSize: '48px', marginBottom: '14px' },
-  emptyText: { color: '#9ca3af', fontSize: '14px' },
+  emptyIcon: { fontSize: '40px', marginBottom: '12px' },
+  emptyText: { color: '#aeaeb8', fontSize: '13px' },
 };
