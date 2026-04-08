@@ -483,7 +483,7 @@ export default function Home() {
                       <div style={styles.fileCardHeader}>
                         <div style={styles.filePreview}><span style={styles.filePreviewIcon}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span></div>
                         <button onClick={(e) => { e.stopPropagation(); toggleFavorite(file); }} style={styles.favBtn}>
-                          {favorites.some(f => f.id === file.id) ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>'}
+                          {favorites.some(f => f.id === file.id) ? '★' : '☆'}
                         </button>
                       </div>
                       <div style={styles.fileCardBody}>
@@ -588,7 +588,7 @@ export default function Home() {
                 <button onClick={openAllTools} style={styles.backBtn}>← Πίσω στα Εργαλεία</button>
                 <div>
                   <h1 style={styles.pageTitle}>
-                    {currentToolCategory === '__recent__' ? '🕐 Πρόσφατα' : getCategoryIcon(currentToolCategory) + ' ' + currentToolCategory}
+                    {currentToolCategory === '__recent__' ? 'Πρόσφατα' : currentToolCategory}
                   </h1>
                   <p style={styles.pageSubtitle}>{filteredCategoryTools.length} {filteredCategoryTools.length === 1 ? 'εργαλείο' : 'εργαλεία'}</p>
                 </div>
@@ -612,7 +612,7 @@ export default function Home() {
                         <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start'}}>
                           <div style={styles.toolIconWrapper}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></div>
                           <button onClick={(e) => { e.stopPropagation(); toggleFavoriteTool(tool); }} style={styles.favBtn} title="Αγαπημένο">
-                            {favoriteTools.some(t => t.file === tool.file) ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>'}
+                            {favoriteTools.some(t => t.file === tool.file) ? '★' : '☆'}
                           </button>
                         </div>
                         <h3 style={styles.toolCardTitle}>{tool.name}</h3>
@@ -685,7 +685,7 @@ export default function Home() {
                       <div style={styles.fileCardHeader}>
                         <div style={styles.filePreview}><span style={styles.filePreviewIcon}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span></div>
                         <button onClick={(e) => { e.stopPropagation(); toggleFavorite(file); }} style={styles.favBtn}>
-                          {favorites.some(f => f.id === file.id) ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>'}
+                          {favorites.some(f => f.id === file.id) ? '★' : '☆'}
                         </button>
                       </div>
                       <div style={styles.fileCardBody}>
@@ -734,7 +734,7 @@ export default function Home() {
         <div style={styles.modal} onClick={() => { setCurrentTool(null); zoomReset(); }}>
           <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
             <div style={styles.modalHeader}>
-              <h2 style={styles.modalTitle}>{currentTool.icon || '🔧'} {currentTool.name}</h2>
+              <h2 style={styles.modalTitle}>{currentTool.name}</h2>
               <div style={styles.modalHeaderButtons}>
                 <button onClick={zoomOut} style={styles.zoomBtn} title="Σμίκρυνση">−</button>
                 <span style={styles.zoomLabel} onClick={zoomReset} title="Επαναφορά">{modalZoom}%</span>
