@@ -210,7 +210,7 @@ export default function Home() {
         input[type=search]:focus { border-color: #8b5cf6 !important; box-shadow: 0 0 0 3px rgba(139,92,246,0.12) !important; }
         button:focus-visible { outline: 2px solid #8b5cf6; outline-offset: 2px; }
         @keyframes spin { to { transform: rotate(360deg); } }
-      \`}</style>
+      `}</style>
 
       {/* Sidebar */}
       <aside style={{...styles.sidebar, width: sidebarCollapsed ? '70px' : '260px'}}>
@@ -619,7 +619,7 @@ export default function Home() {
                 <button onClick={openAllTools} style={styles.backBtn}>← Πίσω στα Εργαλεία</button>
                 <div>
                   <h1 style={styles.pageTitle}>
-                    {currentToolCategory === '__recent__' ? '🕐 Πρόσφατα' : `${getCategoryIcon(currentToolCategory)} ${currentToolCategory}`}
+                    {currentToolCategory === '__recent__' ? '🕐 Πρόσφατα' : getCategoryIcon(currentToolCategory) + ' ' + currentToolCategory}
                   </h1>
                   <p style={styles.pageSubtitle}>{filteredCategoryTools.length} {filteredCategoryTools.length === 1 ? 'εργαλείο' : 'εργαλεία'}</p>
                 </div>
