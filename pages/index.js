@@ -343,7 +343,7 @@ export default function Home() {
                       <div style={styles.statValue}>{favorites.length}</div>
                       <div style={styles.statSubtext}>Επιλεγμένα αρχεία</div>
                     </div>
-                    <div style={{...styles.statIcon, background:'linear-gradient(135deg,#f59e0b,#d97706)'}}>⭐</div>
+                    <div style={{...styles.statIcon, background:'#fef3c7'}}>⭐</div>
                   </div>
                 </div>
 
@@ -354,7 +354,7 @@ export default function Home() {
                       <div style={styles.statValue}>{recentFiles.length}</div>
                       <div style={styles.statSubtext}>Τελευταία αρχεία</div>
                     </div>
-                    <div style={{...styles.statIcon, background:'linear-gradient(135deg,#f093fb,#f5576c)'}}>🕐</div>
+                    <div style={{...styles.statIcon, background:'#fce7f3'}}>🕐</div>
                   </div>
                 </div>
 
@@ -365,7 +365,7 @@ export default function Home() {
                       <div style={styles.statValue}>📄</div>
                       <div style={styles.statSubtext}>Κείμενα &amp; Βιβλία</div>
                     </div>
-                    <div style={{...styles.statIcon, background:'linear-gradient(135deg,#3b82f6,#1d4ed8)'}}>📚</div>
+                    <div style={{...styles.statIcon, background:'#ede9fe'}}>📚</div>
                   </div>
                 </div>
               </div>
@@ -398,9 +398,9 @@ export default function Home() {
                   <div style={styles.cardsGrid}>
                     {recentTools.length > 0 && (
                       <div className="card-hover" style={styles.categoryCard} onClick={() => openToolCategory('__recent__')}>
-                        <div style={{...styles.categoryCardAccent, background:'linear-gradient(90deg,#f59e0b,#ef4444)'}}></div>
+                        <div style={{...styles.categoryCardAccent, background:'#d97706'}}></div>
                         <div style={styles.categoryCardContent}>
-                          <div style={{...styles.categoryIconWrapper, background:'linear-gradient(135deg,#fef3c7,#fde68a)'}}>
+                          <div style={{...styles.categoryIconWrapper, background:'#fffbeb'}}>
                             <span style={styles.categoryIcon}>🕐</span>
                           </div>
                           <h3 style={styles.categoryCardTitle}>Πρόσφατα</h3>
