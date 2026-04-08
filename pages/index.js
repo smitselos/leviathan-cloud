@@ -1171,4 +1171,3 @@ const styles = {
   emptyIcon: { fontSize: '40px', marginBottom: '12px' },
   emptyText: { color: '#aeaeb8', fontSize: '13px' },
 };
-
