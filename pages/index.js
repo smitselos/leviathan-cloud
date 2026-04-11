@@ -481,7 +481,7 @@ export default function Home() {
                       style={{...styles.fileCard, ...(currentFile?.id === file.id ? styles.fileCardActive : {})}}
                       onClick={() => openFile(file)}>
                       <div style={styles.fileCardHeader}>
-                        <div style={styles.filePreview}><img src={`https://drive.google.com/thumbnail?id=${file.id}&sz=w400`} alt={file.title} style={{width:'100%',height:'100%',objectFit:'cover'}} onError={(e)=>{e.target.style.display='none';e.target.parentNode.innerHTML='<span style="font-size:36px">📄</span>'}} /></div>
+                        <div style={styles.filePreview}><img src={`/api/thumbnail/${file.id}`} alt={file.title} style={{width:'100%',height:'100%',objectFit:'cover'}} onError={(e)=>{e.target.style.display='none';e.target.parentNode.innerHTML='<span style="font-size:36px">📄</span>'}} /></div>
                         <button onClick={(e) => { e.stopPropagation(); toggleFavorite(file); }} style={styles.favBtn}>
                           {favorites.some(f => f.id === file.id) ? '★' : '☆'}
                         </button>
@@ -533,7 +533,7 @@ export default function Home() {
                         <div key={tool.file} className="card-hover card-hover-tool" style={styles.toolCard} onClick={() => openTool(tool)}>
                           <div style={styles.toolCardAccent}></div>
                           <div style={styles.toolCardContent}>
-                            <div style={{...styles.toolIconWrapper, overflow:'hidden', padding:0}}><img src={`https://drive.google.com/thumbnail?id=${tool.driveId || tool.file}&sz=w400`} alt={tool.name} style={{width:'100%',height:'100%',objectFit:'cover'}} onError={(e)=>{e.target.style.display='none';e.target.parentNode.style.background='#fffbeb';e.target.parentNode.innerHTML='<span style="font-size:22px;display:flex;align-items:center;justify-content:center;width:100%;height:100%">' + (tool.icon||'🔧') + '</span>'}} /></div>
+                            <div style={{...styles.toolIconWrapper, overflow:'hidden', padding:0}}><img src={`/api/thumbnail/${tool.driveId || tool.file}`} alt={tool.name} style={{width:'100%',height:'100%',objectFit:'cover'}} onError={(e)=>{e.target.style.display='none';e.target.parentNode.style.background='#fffbeb';e.target.parentNode.innerHTML='<span style="font-size:22px;display:flex;align-items:center;justify-content:center;width:100%;height:100%">' + (tool.icon||'🔧') + '</span>'}} /></div>
                             <h3 style={styles.toolCardTitle}>{tool.name}</h3>
                             <p style={styles.toolCardDesc}>Διαδραστικό εργαλείο για εκπαιδευτική χρήση</p>
                             <button style={styles.yellowBtnSmall}>Εκκίνηση →</button>
@@ -560,7 +560,7 @@ export default function Home() {
                         <div key={tool.file} className="card-hover card-hover-tool" style={styles.toolCard} onClick={() => openTool(tool)}>
                           <div style={styles.toolCardAccent}></div>
                           <div style={styles.toolCardContent}>
-                            <div style={{...styles.toolIconWrapper, overflow:'hidden', padding:0}}><img src={`https://drive.google.com/thumbnail?id=${tool.driveId || tool.file}&sz=w400`} alt={tool.name} style={{width:'100%',height:'100%',objectFit:'cover'}} onError={(e)=>{e.target.style.display='none';e.target.parentNode.style.background='#fffbeb';e.target.parentNode.innerHTML='<span style="font-size:22px;display:flex;align-items:center;justify-content:center;width:100%;height:100%">' + (tool.icon||'🔧') + '</span>'}} /></div>
+                            <div style={{...styles.toolIconWrapper, overflow:'hidden', padding:0}}><img src={`/api/thumbnail/${tool.driveId || tool.file}`} alt={tool.name} style={{width:'100%',height:'100%',objectFit:'cover'}} onError={(e)=>{e.target.style.display='none';e.target.parentNode.style.background='#fffbeb';e.target.parentNode.innerHTML='<span style="font-size:22px;display:flex;align-items:center;justify-content:center;width:100%;height:100%">' + (tool.icon||'🔧') + '</span>'}} /></div>
                             <h3 style={styles.toolCardTitle}>{tool.name}</h3>
                             <p style={styles.toolCardDesc}>Διαδραστικό εργαλείο για εκπαιδευτική χρήση</p>
                             <button style={styles.yellowBtnSmall}>Εκκίνηση →</button>
@@ -610,7 +610,7 @@ export default function Home() {
                       <div style={styles.toolCardAccent}></div>
                       <div style={styles.toolCardContent}>
                         <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start'}}>
-                          <div style={{...styles.toolIconWrapper, overflow:'hidden', padding:0}}><img src={`https://drive.google.com/thumbnail?id=${tool.driveId || tool.file}&sz=w400`} alt={tool.name} style={{width:'100%',height:'100%',objectFit:'cover'}} onError={(e)=>{e.target.style.display='none';e.target.parentNode.style.background='#fffbeb';e.target.parentNode.innerHTML='<span style="font-size:22px;display:flex;align-items:center;justify-content:center;width:100%;height:100%">' + (tool.icon||'🔧') + '</span>'}} /></div>
+                          <div style={{...styles.toolIconWrapper, overflow:'hidden', padding:0}}><img src={`/api/thumbnail/${tool.driveId || tool.file}`} alt={tool.name} style={{width:'100%',height:'100%',objectFit:'cover'}} onError={(e)=>{e.target.style.display='none';e.target.parentNode.style.background='#fffbeb';e.target.parentNode.innerHTML='<span style="font-size:22px;display:flex;align-items:center;justify-content:center;width:100%;height:100%">' + (tool.icon||'🔧') + '</span>'}} /></div>
                           <button onClick={(e) => { e.stopPropagation(); toggleFavoriteTool(tool); }} style={styles.favBtn} title="Αγαπημένο">
                             {favoriteTools.some(t => t.file === tool.file) ? '★' : '☆'}
                           </button>
@@ -646,7 +646,7 @@ export default function Home() {
                   favorites.map(file => (
                     <div key={file.id} className="card-hover card-hover-file" style={styles.fileCard} onClick={() => openFile(file)}>
                       <div style={styles.fileCardHeader}>
-                        <div style={styles.filePreview}><img src={`https://drive.google.com/thumbnail?id=${file.id}&sz=w400`} alt={file.title} style={{width:'100%',height:'100%',objectFit:'cover'}} onError={(e)=>{e.target.style.display='none';e.target.parentNode.innerHTML='<span style="font-size:36px">📄</span>'}} /></div>
+                        <div style={styles.filePreview}><img src={`/api/thumbnail/${file.id}`} alt={file.title} style={{width:'100%',height:'100%',objectFit:'cover'}} onError={(e)=>{e.target.style.display='none';e.target.parentNode.innerHTML='<span style="font-size:36px">📄</span>'}} /></div>
                         <button onClick={(e) => { e.stopPropagation(); toggleFavorite(file); }} style={styles.favBtn}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
                       </div>
                       <div style={styles.fileCardBody}>
@@ -683,7 +683,7 @@ export default function Home() {
                   recentFiles.map(file => (
                     <div key={file.id} className="card-hover card-hover-file" style={styles.fileCard} onClick={() => openFile(file)}>
                       <div style={styles.fileCardHeader}>
-                        <div style={styles.filePreview}><img src={`https://drive.google.com/thumbnail?id=${file.id}&sz=w400`} alt={file.title} style={{width:'100%',height:'100%',objectFit:'cover'}} onError={(e)=>{e.target.style.display='none';e.target.parentNode.innerHTML='<span style="font-size:36px">📄</span>'}} /></div>
+                        <div style={styles.filePreview}><img src={`/api/thumbnail/${file.id}`} alt={file.title} style={{width:'100%',height:'100%',objectFit:'cover'}} onError={(e)=>{e.target.style.display='none';e.target.parentNode.innerHTML='<span style="font-size:36px">📄</span>'}} /></div>
                         <button onClick={(e) => { e.stopPropagation(); toggleFavorite(file); }} style={styles.favBtn}>
                           {favorites.some(f => f.id === file.id) ? '★' : '☆'}
                         </button>
@@ -1148,3 +1148,4 @@ const styles = {
   emptyIcon: { fontSize: '40px', marginBottom: '12px' },
   emptyText: { color: '#aeaeb8', fontSize: '13px' },
 };
+
