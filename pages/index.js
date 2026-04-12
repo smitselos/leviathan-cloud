@@ -1,21 +1,32 @@
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/router';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 const FOLDERS = {
   keimena: { name: 'Κείμενα', icon: null, color: '#3b82f6', desc: 'Εκπαιδευτικά κείμενα και υλικό' },
-  biblia:  { name: 'Βιβλία', icon: null, color: '#8b5cf6', desc: 'Βιβλία αναφοράς και μελέτης' }
+  biblia:  { name: 'Βιβλία', icon: null, color: '#8b5cf6', desc: 'Βιβλία αναφοράς και μελέτης' },
+  diktya:  { name: 'Δίκτυα Κειμένων', icon: null, color: '#16a34a', desc: 'Έτοιμα δίκτυα κειμένων' },
 };
 
-// Παράγει νέο μοναδικό id για ερώτηση
-const newQid = () => Math.random().toString(36).slice(2, 8);
+const SUGGESTED_TAGS = [
+  'Γλώσσα','Λογοτεχνία','Ιστορία','Αρχαία','Λατινικά',
+  'Έκθεση','Γραμματική','Λεξιλόγιο','Ανάλυση','Αξιολόγηση',
+  'Α΄ Λυκείου','Β΄ Λυκείου','Γ΄ Λυκείου',
+];
 
-// Ταξινομεί ερωτήσεις: Α < Β < Γ < Δ < ..., μετά αριθμός
-const sortCode = (code) => {
-  const m = code.match(/^([Α-Ωα-ω]+)(\d*)$/u);
-  if (!m) return code;
-  return m[1].charCodeAt(0) * 1000 + (parseInt(m[2]) || 0);
-};
+const TAG_COLORS = [
+  { bg:'#ede9fe', text:'#6d28d9' },
+  { bg:'#dcfce7', text:'#15803d' },
+  { bg:'#fef3c7', text:'#b45309' },
+  { bg:'#dbeafe', text:'#1d4ed8' },
+  { bg:'#fce7f3', text:'#9d174d' },
+  { bg:'#e0f2fe', text:'#0369a1' },
+  { bg:'#f3f4f6', text:'#374151' },
+];
+
+const tagColor = (tag) => TAG_COLORS[Math.abs([...tag].reduce((a,c)=>a+c.charCodeAt(0),0)) % TAG_COLORS.length];
+const newQid   = () => Math.random().toString(36).slice(2,8);
+const sortCode = (code) => { const m=code.match(/^([Α-Ωα-ω]+)(\d*)$/u); if(!m)return 9999; return m[1].charCodeAt(0)*1000+(parseInt(m[2])||0); };
 
 export default function Home() {
   const { data: session, status } = useSession();
@@ -37,456 +48,320 @@ export default function Home() {
   const [modalZoom, setModalZoom]               = useState(100);
   const [favoriteTools, setFavoriteTools]       = useState([]);
 
-  // Networks
-  const [networks, setNetworks]                     = useState([]);
-  const [currentNetwork, setCurrentNetwork]         = useState(null);
-  const [networkSaving, setNetworkSaving]           = useState(false);
-  const [networkMsg, setNetworkMsg]                 = useState('');
-  const [showNewNetworkForm, setShowNewNetworkForm] = useState(false);
-  const [newNetworkName, setNewNetworkName]         = useState('');
-  const [pickingFile, setPickingFile]               = useState(false);
-  const [allFiles, setAllFiles]                     = useState([]);
-  const [pickerSearch, setPickerSearch]             = useState('');
-  // accordion open state: { [fileId]: boolean }
-  const [openAccordions, setOpenAccordions]         = useState({});
+  // Tags + comments
+  const [metadata, setMetadata]               = useState({});
+  const [metaSaving, setMetaSaving]           = useState(false);
+  const [activeTagFilter, setActiveTagFilter] = useState(null);
+  const [showCommentPanel, setShowCommentPanel] = useState(false);
+  const [tagInput, setTagInput]               = useState('');
+  const [showTagSuggest, setShowTagSuggest]   = useState(false);
+  const tagInputRef = useRef(null);
+  const saveTimer   = useRef(null);
 
-  const zoomIn    = () => setModalZoom(z => Math.min(z + 10, 200));
-  const zoomOut   = () => setModalZoom(z => Math.max(z - 10, 50));
+  // Linked app for diktya modal (split view)
+  const [linkedApp, setLinkedApp]         = useState(null);  // tool object
+  const [showLinkedApp, setShowLinkedApp] = useState(false); // toggle split
+  const [showAppPicker, setShowAppPicker] = useState(false); // picker modal
+
+  // Network builder state
+  const [netBuilderActive, setNetBuilderActive]   = useState(false); // true = Δημιουργία Δικτύου view
+  const [networks, setNetworks]                   = useState([]);
+  const [currentNetwork, setCurrentNetwork]       = useState(null);
+  const [netSaving, setNetSaving]                 = useState(false);
+  const [netMsg, setNetMsg]                       = useState('');
+  const [merging, setMerging]                     = useState(false);
+  const [showNewNetForm, setShowNewNetForm]        = useState(false);
+  const [newNetName, setNewNetName]               = useState('');
+  const [pickingFile, setPickingFile]             = useState(false);
+  const [allFiles, setAllFiles]                   = useState([]);
+  const [pickerSearch, setPickerSearch]           = useState('');
+  const [openAccordions, setOpenAccordions]       = useState({});
+
+  const zoomIn    = () => setModalZoom(z=>Math.min(z+10,200));
+  const zoomOut   = () => setModalZoom(z=>Math.max(z-10,50));
   const zoomReset = () => setModalZoom(100);
 
-  const recentTools = [...tools]
-    .filter(t => t.addedAt)
-    .sort((a, b) => new Date(b.addedAt) - new Date(a.addedAt))
-    .slice(0, 5);
+  const recentTools = [...tools].filter(t=>t.addedAt).sort((a,b)=>new Date(b.addedAt)-new Date(a.addedAt)).slice(0,5);
 
-  useEffect(() => { if (status === 'unauthenticated') router.push('/login'); }, [status, router]);
+  useEffect(()=>{ if(status==='unauthenticated') router.push('/login'); },[status,router]);
 
-  useEffect(() => {
-    const sf  = localStorage.getItem('leviathan-favorites');
-    const sr  = localStorage.getItem('leviathan-recent');
-    const sft = localStorage.getItem('leviathan-favorite-tools');
-    if (sf)  setFavorites(JSON.parse(sf));
-    if (sr)  setRecentFiles(JSON.parse(sr));
-    if (sft) setFavoriteTools(JSON.parse(sft));
-  }, []);
+  useEffect(()=>{
+    const sf=localStorage.getItem('leviathan-favorites');
+    const sr=localStorage.getItem('leviathan-recent');
+    const sft=localStorage.getItem('leviathan-favorite-tools');
+    if(sf) setFavorites(JSON.parse(sf));
+    if(sr) setRecentFiles(JSON.parse(sr));
+    if(sft) setFavoriteTools(JSON.parse(sft));
+    // restore linked app per file from localStorage
+  },[]);
 
-  useEffect(() => {
-    if (session) { loadTools(); loadNetworks(); loadAllFiles(); }
-  }, [session]);
+  useEffect(()=>{ if(session){ loadTools(); loadMetadata(); loadAllFiles(); loadNetworks(); } },[session]);
 
-  const loadTools = async () => {
-    try { const res = await fetch('/api/tools'); const data = await res.json(); setTools(data.tools || []); } catch (e) { console.error(e); }
-  };
-  const loadNetworks = async () => {
-    try { const res = await fetch('/api/networks'); const data = await res.json(); setNetworks(data.networks || []); } catch (e) { console.error(e); }
-  };
-  const loadAllFiles = async () => {
-    try {
-      const results = await Promise.all(Object.keys(FOLDERS).map(fid => fetch(`/api/files/${fid}`).then(r => r.json())));
-      setAllFiles(results.flatMap(r => r.files || []));
-    } catch (e) { console.error(e); }
-  };
+  const loadTools = async()=>{ try{ const r=await fetch('/api/tools'); const d=await r.json(); setTools(d.tools||[]); }catch(e){} };
+  const loadMetadata = async()=>{ try{ const r=await fetch('/api/metadata'); const d=await r.json(); setMetadata(d.metadata||{}); }catch(e){} };
+  const loadAllFiles = async()=>{ try{ const results=await Promise.all(['keimena','biblia','diktya'].map(fid=>fetch(`/api/files/${fid}`).then(r=>r.json()))); setAllFiles(results.flatMap(r=>r.files||[])); }catch(e){} };
+  const loadNetworks = async()=>{ try{ const r=await fetch('/api/networks'); const d=await r.json(); setNetworks(d.networks||[]); }catch(e){} };
 
-  const getToolCategories = () => {
-    const cats = {};
-    tools.forEach(t => { if (!t.category) return; if (!cats[t.category]) cats[t.category] = []; cats[t.category].push(t); });
-    return cats;
-  };
+  const persistMetadata = useCallback(async(updated)=>{
+    setMetaSaving(true);
+    try{ await fetch('/api/metadata',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({metadata:updated})}); setMetadata(updated); }catch(e){}
+    setMetaSaving(false);
+  },[]);
 
-  const loadFiles = useCallback(async (folderId) => {
+  const scheduleMetaSave=(updated)=>{ setMetadata(updated); if(saveTimer.current)clearTimeout(saveTimer.current); saveTimer.current=setTimeout(()=>persistMetadata(updated),900); };
+
+  const getToolCategories=()=>{ const cats={}; tools.forEach(t=>{ if(!t.category)return; if(!cats[t.category])cats[t.category]=[]; cats[t.category].push(t); }); return cats; };
+
+  const loadFiles=useCallback(async(folderId)=>{
     setLoading(true);
-    try { const res = await fetch(`/api/files/${folderId}`); const data = await res.json(); setFiles(data.files || []); }
-    catch (e) { setFiles([]); }
+    try{ const r=await fetch(`/api/files/${folderId}`); const d=await r.json(); setFiles(d.files||[]); }catch(e){ setFiles([]); }
     setLoading(false);
-  }, []);
+  },[]);
 
-  const openFolder      = (id) => { setCurrentFolder(id); setActiveView('folder'); setCurrentFile(null); loadFiles(id); };
-  const openTool        = (t)  => setCurrentTool(t);
-  const openAllTools    = async () => { setActiveView('allTools'); setCurrentFolder(null); setCurrentFile(null); setCurrentToolCategory(null); await loadTools(); };
-  const openToolCategory= (c)  => { setCurrentToolCategory(c); setActiveView('toolCategory'); setCurrentFolder(null); setCurrentFile(null); };
-  const goHome          = ()   => { setActiveView('home'); setCurrentFolder(null); setCurrentFile(null); setCurrentTool(null); setCurrentToolCategory(null); setCurrentNetwork(null); };
+  const openFolder=(id)=>{ setCurrentFolder(id); setActiveView('folder'); setCurrentFile(null); setActiveTagFilter(null); setNetBuilderActive(false); loadFiles(id); };
+  const openTool=(t)=>setCurrentTool(t);
+  const openAllTools=async()=>{ setActiveView('allTools'); setCurrentFolder(null); setCurrentFile(null); setCurrentToolCategory(null); setNetBuilderActive(false); await loadTools(); };
+  const openToolCategory=(c)=>{ setCurrentToolCategory(c); setActiveView('toolCategory'); setCurrentFolder(null); setCurrentFile(null); };
 
-  const openFile = (file) => {
-    setCurrentFile(file);
-    const updated = [file, ...recentFiles.filter(f => f.id !== file.id)].slice(0, 5);
-    setRecentFiles(updated);
-    localStorage.setItem('leviathan-recent', JSON.stringify(updated));
-  };
-  const toggleFavorite = (file) => {
-    const isFav = favorites.some(f => f.id === file.id);
-    const updated = isFav ? favorites.filter(f => f.id !== file.id) : [...favorites, file];
-    setFavorites(updated); localStorage.setItem('leviathan-favorites', JSON.stringify(updated));
-  };
-  const toggleFavoriteTool = (tool) => {
-    const isFav = favoriteTools.some(t => t.file === tool.file);
-    const updated = isFav ? favoriteTools.filter(t => t.file !== tool.file) : [...favoriteTools, tool];
-    setFavoriteTools(updated); localStorage.setItem('leviathan-favorite-tools', JSON.stringify(updated));
+  const goHome=()=>{
+    setActiveView('home'); setCurrentFolder(null); setCurrentFile(null); setCurrentTool(null);
+    setCurrentToolCategory(null); setActiveTagFilter(null); setNetBuilderActive(false); setCurrentNetwork(null);
   };
 
-  const filteredFiles = files.filter(f => { if (!searchQuery) return true; const q = searchQuery.toLowerCase(); return f.title.toLowerCase().includes(q) || f.name.toLowerCase().includes(q); });
-  const filteredTools = tools.filter(t => { if (!toolsSearchQuery) return true; return t.name.toLowerCase().includes(toolsSearchQuery.toLowerCase()); });
-  const filteredCategoryTools = currentToolCategory
-    ? (currentToolCategory === '__recent__' ? recentTools : tools.filter(t => t.category === currentToolCategory))
-        .filter(t => !toolsSearchQuery || t.name.toLowerCase().includes(toolsSearchQuery.toLowerCase()))
-    : [];
-
-  // ── Network helpers ───────────────────────────────────────────────────────
-  const persistNetworks = async (updated) => {
-    setNetworkSaving(true); setNetworkMsg('');
-    try {
-      const res = await fetch('/api/networks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ networks: updated }) });
-      setNetworks(updated);
-      setNetworkMsg(res.ok ? '✓ Αποθηκεύτηκε' : '✗ Σφάλμα');
-    } catch { setNetworkMsg('✗ Σφάλμα σύνδεσης'); }
-    setNetworkSaving(false);
-    setTimeout(() => setNetworkMsg(''), 2500);
+  const openFile=(file)=>{
+    setCurrentFile(file); setShowCommentPanel(false); setShowLinkedApp(false);
+    // restore linked app for this file
+    const saved=localStorage.getItem(`linked-app-${file.id}`);
+    if(saved){ try{ setLinkedApp(JSON.parse(saved)); }catch(e){ setLinkedApp(null); } } else { setLinkedApp(null); }
+    const updated=[file,...recentFiles.filter(f=>f.id!==file.id)].slice(0,5);
+    setRecentFiles(updated); localStorage.setItem('leviathan-recent',JSON.stringify(updated));
   };
 
-  const createNetwork = () => {
-    if (!newNetworkName.trim()) return;
-    // items: [{ fileId, title, name, questions: [{id, code, text}] }]
-    const newNet = { id: Date.now().toString(), name: newNetworkName.trim(), items: [] };
-    const updated = [...networks, newNet];
-    setNewNetworkName(''); setShowNewNetworkForm(false);
-    persistNetworks(updated);
-    setCurrentNetwork(newNet); setActiveView('network');
+  const toggleFavorite=(file)=>{ const isFav=favorites.some(f=>f.id===file.id); const updated=isFav?favorites.filter(f=>f.id!==file.id):[...favorites,file]; setFavorites(updated); localStorage.setItem('leviathan-favorites',JSON.stringify(updated)); };
+  const toggleFavoriteTool=(tool)=>{ const isFav=favoriteTools.some(t=>t.file===tool.file); const updated=isFav?favoriteTools.filter(t=>t.file!==tool.file):[...favoriteTools,tool]; setFavoriteTools(updated); localStorage.setItem('leviathan-favorite-tools',JSON.stringify(updated)); };
+
+  // Tag helpers
+  const fileMeta=(id)=>metadata[id]||{tags:[],comment:''};
+  const fileTags=(id)=>fileMeta(id).tags||[];
+  const fileComment=(id)=>fileMeta(id).comment||'';
+  const addTag=(fileId,tag)=>{ const t=tag.trim(); if(!t)return; const cur=fileMeta(fileId); if(cur.tags.includes(t))return; const updated={...metadata,[fileId]:{...cur,tags:[...cur.tags,t]}}; persistMetadata(updated); setTagInput(''); setShowTagSuggest(false); };
+  const removeTag=(fileId,tag)=>{ const cur=fileMeta(fileId); const updated={...metadata,[fileId]:{...cur,tags:cur.tags.filter(t=>t!==tag)}}; persistMetadata(updated); };
+  const updateComment=(fileId,value)=>{ const cur=fileMeta(fileId); scheduleMetaSave({...metadata,[fileId]:{...cur,comment:value}}); };
+  const allTagsInFolder=()=>{ const set=new Set(); files.forEach(f=>fileTags(f.id).forEach(t=>set.add(t))); return[...set].sort(); };
+
+  const filteredFiles=files.filter(f=>{ const matchQ=!searchQuery||f.title.toLowerCase().includes(searchQuery.toLowerCase())||f.name.toLowerCase().includes(searchQuery.toLowerCase()); const matchTag=!activeTagFilter||fileTags(f.id).includes(activeTagFilter); return matchQ&&matchTag; });
+  const filteredTools=tools.filter(t=>!toolsSearchQuery||t.name.toLowerCase().includes(toolsSearchQuery.toLowerCase()));
+  const filteredCategoryTools=currentToolCategory?(currentToolCategory==='__recent__'?recentTools:tools.filter(t=>t.category===currentToolCategory)).filter(t=>!toolsSearchQuery||t.name.toLowerCase().includes(toolsSearchQuery.toLowerCase())):[];
+  const suggestedTags=SUGGESTED_TAGS.filter(t=>t.toLowerCase().includes(tagInput.toLowerCase())&&!fileTags(currentFile?.id||'').includes(t));
+
+  // Linked app (diktya)
+  const linkAppToFile=(tool)=>{
+    setLinkedApp(tool);
+    if(currentFile) localStorage.setItem(`linked-app-${currentFile.id}`,JSON.stringify(tool));
+    setShowAppPicker(false);
+  };
+  const unlinkApp=()=>{ setLinkedApp(null); setShowLinkedApp(false); if(currentFile) localStorage.removeItem(`linked-app-${currentFile.id}`); };
+
+  // ── Network builder ───────────────────────────────────────────────────────
+  const saveNetwork=async(net)=>{
+    setNetSaving(true); setNetMsg('');
+    try{
+      const r=await fetch('/api/networks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(net)});
+      const d=await r.json();
+      if(r.ok){ setNetMsg('✓ Αποθηκεύτηκε'); setTimeout(()=>setNetMsg(''),2000); return d.driveFileId; }
+      else setNetMsg('✗ Σφάλμα');
+    }catch{ setNetMsg('✗ Σφάλμα'); }
+    setNetSaving(false);
   };
 
-  const deleteNetwork = (netId) => {
-    if (!confirm('Διαγραφή δικτύου;')) return;
-    const updated = networks.filter(n => n.id !== netId);
-    persistNetworks(updated);
-    if (currentNetwork?.id === netId) { setCurrentNetwork(null); setActiveView('networksList'); }
+  const createNetwork=async()=>{
+    if(!newNetName.trim())return;
+    const net={id:Date.now().toString(),name:newNetName.trim(),items:[],pdfFileId:null};
+    setNewNetName(''); setShowNewNetForm(false);
+    const driveFileId=await saveNetwork(net);
+    const newNet={...net,driveFileId};
+    setNetworks(prev=>[newNet,...prev]);
+    setCurrentNetwork(newNet);
+    setNetSaving(false);
   };
 
-  const addFileToNetwork = (file) => {
-    if (!currentNetwork) return;
-    if (currentNetwork.items.some(i => i.fileId === file.id)) { setPickingFile(false); return; }
-    const item       = { fileId: file.id, title: file.title, name: file.name, questions: [] };
-    const updatedNet = { ...currentNetwork, items: [...currentNetwork.items, item] };
-    const updatedAll = networks.map(n => n.id === currentNetwork.id ? updatedNet : n);
-    setCurrentNetwork(updatedNet); persistNetworks(updatedAll);
-    // ανοίγουμε αυτόματα το accordion
-    setOpenAccordions(prev => ({ ...prev, [file.id]: true }));
+  const deleteNetwork=async(net)=>{
+    if(!confirm(`Διαγραφή δικτύου «${net.name}»;`))return;
+    try{ await fetch('/api/networks',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({driveFileId:net.driveFileId})}); setNetworks(prev=>prev.filter(n=>n.id!==net.id)); if(currentNetwork?.id===net.id)setCurrentNetwork(null); }catch(e){ alert('Σφάλμα διαγραφής'); }
+  };
+
+  const updateNet=(updated)=>{ setCurrentNetwork(updated); setNetworks(prev=>prev.map(n=>n.id===updated.id?updated:n)); };
+
+  const addFileToNetwork=(file)=>{
+    if(!currentNetwork)return;
+    if(currentNetwork.items.some(i=>i.fileId===file.id)){ setPickingFile(false); return; }
+    const item={fileId:file.id,title:file.title,name:file.name,questions:[]};
+    const updated={...currentNetwork,items:[...currentNetwork.items,item]};
+    updateNet(updated); saveNetwork(updated);
+    setOpenAccordions(prev=>({...prev,[file.id]:true}));
     setPickingFile(false); setPickerSearch('');
   };
 
-  const removeFromNetwork = (fileId) => {
-    const updatedNet = { ...currentNetwork, items: currentNetwork.items.filter(i => i.fileId !== fileId) };
-    const updatedAll = networks.map(n => n.id === currentNetwork.id ? updatedNet : n);
-    setCurrentNetwork(updatedNet); persistNetworks(updatedAll);
-  };
+  const removeFromNetwork=(fileId)=>{ const updated={...currentNetwork,items:currentNetwork.items.filter(i=>i.fileId!==fileId)}; updateNet(updated); saveNetwork(updated); };
 
-  const moveItem = (idx, dir) => {
-    const items = [...currentNetwork.items]; const target = idx + dir;
-    if (target < 0 || target >= items.length) return;
-    [items[idx], items[target]] = [items[target], items[idx]];
-    const updatedNet = { ...currentNetwork, items };
-    const updatedAll = networks.map(n => n.id === currentNetwork.id ? updatedNet : n);
-    setCurrentNetwork(updatedNet); persistNetworks(updatedAll);
-  };
+  const moveItem=(idx,dir)=>{ const items=[...currentNetwork.items]; const target=idx+dir; if(target<0||target>=items.length)return; [items[idx],items[target]]=[items[target],items[idx]]; const updated={...currentNetwork,items}; updateNet(updated); saveNetwork(updated); };
 
-  // ── Question helpers ──────────────────────────────────────────────────────
-  const addQuestion = (fileId) => {
-    const items = currentNetwork.items.map(item => {
-      if (item.fileId !== fileId) return item;
-      return { ...item, questions: [...item.questions, { id: newQid(), code: '', text: '' }] };
-    });
-    const updatedNet = { ...currentNetwork, items };
-    const updatedAll = networks.map(n => n.id === currentNetwork.id ? updatedNet : n);
-    setCurrentNetwork(updatedNet); setNetworks(updatedAll);
-  };
+  const addQuestion=(fileId)=>{ const items=currentNetwork.items.map(item=>item.fileId!==fileId?item:{...item,questions:[...item.questions,{id:newQid(),code:'',text:''}]}); const updated={...currentNetwork,items}; updateNet(updated); };
+  const updateQuestion=(fileId,qid,field,value)=>{ const items=currentNetwork.items.map(item=>item.fileId!==fileId?item:{...item,questions:item.questions.map(q=>q.id===qid?{...q,[field]:value}:q)}); const updated={...currentNetwork,items}; updateNet(updated); };
+  const removeQuestion=(fileId,qid)=>{ const items=currentNetwork.items.map(item=>item.fileId!==fileId?item:{...item,questions:item.questions.filter(q=>q.id!==qid)}); const updated={...currentNetwork,items}; updateNet(updated); saveNetwork(updated); };
+  const saveQuestionsNow=()=>{ if(currentNetwork){ const all=networks.map(n=>n.id===currentNetwork.id?currentNetwork:n); setNetworks(all); saveNetwork(currentNetwork); } };
+  const toggleAccordion=(fileId)=>setOpenAccordions(prev=>({...prev,[fileId]:!prev[fileId]}));
 
-  const updateQuestion = (fileId, qid, field, value) => {
-    const items = currentNetwork.items.map(item => {
-      if (item.fileId !== fileId) return item;
-      return { ...item, questions: item.questions.map(q => q.id === qid ? { ...q, [field]: value } : q) };
-    });
-    const updatedNet = { ...currentNetwork, items };
-    const updatedAll = networks.map(n => n.id === currentNetwork.id ? updatedNet : n);
-    setCurrentNetwork(updatedNet); setNetworks(updatedAll);
-  };
-
-  const removeQuestion = (fileId, qid) => {
-    const items = currentNetwork.items.map(item => {
-      if (item.fileId !== fileId) return item;
-      return { ...item, questions: item.questions.filter(q => q.id !== qid) };
-    });
-    const updatedNet = { ...currentNetwork, items };
-    const updatedAll = networks.map(n => n.id === currentNetwork.id ? updatedNet : n);
-    setCurrentNetwork(updatedNet); persistNetworks(updatedAll);
-  };
-
-  const saveNetworkState = () => {
-    const updatedAll = networks.map(n => n.id === currentNetwork.id ? currentNetwork : n);
-    persistNetworks(updatedAll);
-  };
-
-  const toggleAccordion = (fileId) => setOpenAccordions(prev => ({ ...prev, [fileId]: !prev[fileId] }));
-
-  // ── Print ─────────────────────────────────────────────────────────────────
-  const printNetwork = (net) => {
-    const w = window.open('', '_blank');
-    if (!w) return;
-
-    // Κείμενα HTML
-    const textsHtml = net.items.map((item, idx) => `
-      <div class="text-block">
-        <h2 class="text-label">Κείμενο ${idx + 1}</h2>
-        <div class="text-subtitle">${item.title}</div>
-        <div class="pdf-wrapper">
-          <iframe src="/api/files/pdf/${item.fileId}" class="pdf-frame"></iframe>
-        </div>
-      </div>`).join('');
-
-    // Συλλογή όλων των ερωτήσεων — ομαδοποίηση ανά γράμμα κωδικού
-    const allQuestions = [];
-    net.items.forEach((item, idx) => {
-      (item.questions || []).forEach(q => {
-        if (q.code.trim() && q.text.trim()) {
-          allQuestions.push({ code: q.code.trim(), text: q.text.trim(), sourceIdx: idx + 1, sourceTitle: item.title });
-        }
-      });
-    });
-
-    // Ομαδοποίηση ανά αρχικό γράμμα κωδικού (Α, Β, Γ, Δ...)
-    const groups = {};
-    allQuestions.forEach(q => {
-      const letter = q.code.charAt(0).toUpperCase();
-      if (!groups[letter]) groups[letter] = [];
-      groups[letter].push(q);
-    });
-
-    // Ταξινόμηση γραμμάτων και ερωτήσεων εντός κάθε ομάδας
-    const sortedLetters = Object.keys(groups).sort((a, b) => a.charCodeAt(0) - b.charCodeAt(0));
-    sortedLetters.forEach(letter => {
-      groups[letter].sort((a, b) => sortCode(a.code) - sortCode(b.code));
-    });
-
-    const questionsHtml = sortedLetters.map(letter => {
-      const qs = groups[letter];
-      return qs.map(q => `
-        <div class="q-block">
-          <div class="q-code">${q.code}</div>
-          <div class="q-body">
-            <div class="q-source">Κείμενο ${q.sourceIdx}: ${q.sourceTitle}</div>
-            <div class="q-text">${q.text.replace(/\n/g, '<br>')}</div>
-          </div>
-        </div>`).join('');
-    }).join('<div class="q-group-divider"></div>');
-
-    const hasQuestions = allQuestions.length > 0;
-
-    w.document.write(`<!DOCTYPE html>
-<html lang="el"><head><meta charset="UTF-8"><title>${net.name}</title>
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: "Georgia", serif; color: #1a1a1a; background: #fff; }
-
-  /* ── Εξώφυλλο ── */
-  .cover { padding: 52px 64px 32px; border-bottom: 3px solid #1a1a1a; margin-bottom: 0; }
-  .cover-eyebrow { font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: #888; margin-bottom: 10px; font-family: sans-serif; }
-  .cover-title   { font-size: 30px; font-weight: 700; line-height: 1.2; }
-  .cover-meta    { margin-top: 8px; font-size: 13px; color: #555; font-family: sans-serif; }
-
-  /* ── Επικεφαλίδα ενότητας ── */
-  .section-header { padding: 28px 64px 18px; background: #1a1a1a; color: #fff; margin-bottom: 0; }
-  .section-title  { font-size: 13px; letter-spacing: .14em; text-transform: uppercase; font-family: sans-serif; font-weight: 600; }
-
-  /* ── Κείμενα ── */
-  .text-block { padding: 32px 64px 48px; page-break-after: always; }
-  .text-block:last-of-type { page-break-after: auto; }
-  .text-label    { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
-  .text-subtitle { font-size: 13px; color: #555; font-family: sans-serif; margin-bottom: 20px; }
-  .pdf-wrapper { width: 100%; height: 860px; border: 1px solid #ddd; border-radius: 6px; overflow: hidden; background: #f9f9f8; }
-  .pdf-frame   { width: 100%; height: 100%; border: none; }
-
-  /* ── Θέματα ── */
-  .themes-wrapper { padding: 32px 64px 64px; }
-  .q-group-divider { height: 1px; background: #e8e8e8; margin: 24px 0; }
-  .q-block { display: flex; gap: 18px; margin-bottom: 22px; }
-  .q-code  { font-size: 15px; font-weight: 700; min-width: 40px; color: #1a1a1a; padding-top: 2px; }
-  .q-body  { flex: 1; }
-  .q-source{ font-size: 11px; color: #888; font-family: sans-serif; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 6px; }
-  .q-text  { font-size: 14.5px; line-height: 1.85; }
-
-  @media print {
-    .cover          { padding: 36px 48px 24px; }
-    .section-header { padding: 20px 48px 14px; }
-    .text-block     { padding: 24px 48px 40px; }
-    .pdf-wrapper    { height: 780px; }
-    .themes-wrapper { padding: 24px 48px 48px; }
-  }
-</style></head><body>
-
-  <div class="cover">
-    <div class="cover-eyebrow">ΛΕΒΙΑΘΑΝ Cloud</div>
-    <div class="cover-title">ΔΙΚΤΥΟ ΚΕΙΜΕΝΩΝ<br><span style="font-weight:400;font-size:22px">${net.name}</span></div>
-    <div class="cover-meta">${net.items.length} κείμενα &nbsp;·&nbsp; ${new Date().toLocaleDateString('el-GR')}</div>
-  </div>
-
-  <div class="section-header"><div class="section-title">Κείμενα</div></div>
-  ${textsHtml}
-
-  ${hasQuestions ? `
-  <div class="section-header" style="page-break-before:always"><div class="section-title">Θέματα</div></div>
-  <div class="themes-wrapper">${questionsHtml}</div>
-  ` : ''}
-
-  <script>
-    const frames = document.querySelectorAll('iframe');
-    let loaded = 0;
-    if (!frames.length) { window.print(); }
-    else {
-      frames.forEach(f => f.addEventListener('load', () => { if (++loaded === frames.length) window.print(); }));
-      setTimeout(() => window.print(), 6000);
-    }
-  <\/script>
-</body></html>`);
-    w.document.close();
+  const mergeAndSave=async()=>{
+    if(!currentNetwork?.items?.length){ alert('Προσθέστε κείμενα πρώτα.'); return; }
+    setMerging(true); setNetMsg('');
+    try{
+      const r=await fetch('/api/networks/merge',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({network:currentNetwork})});
+      const d=await r.json();
+      if(r.ok){ const updated={...currentNetwork,pdfFileId:d.pdfFileId,pdfFilename:d.pdfFilename}; updateNet(updated); setNetMsg('✓ PDF αποθηκεύτηκε'); }
+      else setNetMsg(`✗ ${d.error||'Σφάλμα'}`);
+    }catch{ setNetMsg('✗ Σφάλμα σύνδεσης'); }
+    setMerging(false); setTimeout(()=>setNetMsg(''),4000);
   };
 
   // ─────────────────────────────────────────────────────────────────────────
-  if (status === 'loading') return (
-    <div style={S.loadingScreen}><div style={S.spinner}></div><div style={S.loadingText}>Φόρτωση ΛΕΒΙΑΘΑΝ Cloud...</div></div>
-  );
-  if (!session) return null;
+  if(status==='loading') return <div style={S.loadingScreen}><div style={S.spinner}/><div style={S.loadingText}>Φόρτωση ΛΕΒΙΑΘΑΝ Cloud...</div></div>;
+  if(!session) return null;
 
-  const toolCategories = getToolCategories();
+  const toolCategories=getToolCategories();
+  const modalFile=currentFile;
+  const isDiktya=currentFolder==='diktya';
 
   return (
     <div style={S.app}>
       <style>{`
-        * { box-sizing: border-box; }
-        .ch:hover  { border-color: #c4b5fd !important; }
-        .cht:hover { border-color: #fcd34d !important; }
-        .chf:hover { border-color: #c4b5fd !important; }
-        .chn:hover { border-color: #6ee7b7 !important; }
-        .nav-h:hover   { background: rgba(255,255,255,0.06) !important; color: #ececec !important; }
-        .ri-h:hover    { background: #f9f9f8 !important; }
-        .picker-h:hover{ background: #f0fdf4 !important; }
-        .net-h:hover   { background: #f4fdf9 !important; }
-        input:focus, textarea:focus { border-color: #8b5cf6 !important; outline: none; box-shadow: 0 0 0 3px rgba(139,92,246,0.1) !important; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .acc-toggle { cursor:pointer; user-select:none; }
-        .acc-toggle:hover { background: #f0fdf4 !important; }
+        *{box-sizing:border-box;}
+        .ch:hover{border-color:#c4b5fd!important;}
+        .cht:hover{border-color:#fcd34d!important;}
+        .chf:hover{border-color:#c4b5fd!important;}
+        .chd:hover{border-color:#6ee7b7!important;}
+        .nav-h:hover{background:rgba(255,255,255,0.06)!important;color:#ececec!important;}
+        .ri-h:hover{background:#f9f9f8!important;}
+        .picker-h:hover{background:#f0fdf4!important;}
+        .tag-chip:hover .tag-x{opacity:1!important;}
+        .acc-h:hover{background:#f0fdf4!important;}
+        input:focus,textarea:focus{border-color:#8b5cf6!important;outline:none;box-shadow:0 0 0 3px rgba(139,92,246,0.1)!important;}
+        @keyframes spin{to{transform:rotate(360deg);}}
+        .suggest-item:hover{background:#f5f3ff!important;cursor:pointer;}
+        .tag-filter:hover{opacity:0.85;}
+        @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
       `}</style>
 
       {/* ── Sidebar ── */}
-      <aside style={{ ...S.sidebar, width: sidebarCollapsed ? '70px' : '260px' }}>
+      <aside style={{...S.sidebar,width:sidebarCollapsed?'70px':'260px'}}>
         <div style={S.sidebarHeader}>
-          {!sidebarCollapsed && <span style={S.logoText}>ΛΕΒΙΑΘΑΝ</span>}
-          <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} style={S.collapseBtn}>
-            {sidebarCollapsed
-              ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-              : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>}
+          {!sidebarCollapsed&&<span style={S.logoText}>ΛΕΒΙΑΘΑΝ</span>}
+          <button onClick={()=>setSidebarCollapsed(!sidebarCollapsed)} style={S.collapseBtn}>
+            {sidebarCollapsed?<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>}
           </button>
         </div>
         <nav style={S.nav}>
-          <button onClick={goHome} className="nav-h" style={{ ...S.navItem, ...(activeView === 'home' ? S.navActive : {}) }}>
+
+          {/* Αρχική */}
+          <button onClick={goHome} className="nav-h" style={{...S.navItem,...(activeView==='home'?S.navActive:{})}}>
             <span style={S.navIcon}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg></span>
-            {!sidebarCollapsed && <span>Αρχική</span>}
+            {!sidebarCollapsed&&<span>Αρχική</span>}
           </button>
-          <div style={S.navDiv}></div>
-          <button className="nav-h" onClick={() => { setActiveView('allDocs'); setCurrentFolder(null); }}
-            style={{ ...S.navItem, ...(['allDocs','folder','favorites','recent'].includes(activeView) ? S.navActive : {}) }}>
+          <div style={S.navDiv}/>
+
+          {/* Κείμενα & Βιβλία */}
+          <button className="nav-h" onClick={()=>{setActiveView('allDocs');setCurrentFolder(null);setNetBuilderActive(false);}}
+            style={{...S.navItem,...(['allDocs','favorites','recent'].includes(activeView)||(activeView==='folder'&&currentFolder!=='diktya')?S.navActive:{})}}>
             <span style={S.navIcon}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/><rect x="1" y="3" width="4" height="4" rx="0.5"/><rect x="1" y="9" width="4" height="4" rx="0.5"/><rect x="1" y="15" width="4" height="4" rx="0.5"/></svg></span>
-            {!sidebarCollapsed && <span>Κείμενα &amp; Βιβλία</span>}
+            {!sidebarCollapsed&&<span>Κείμενα &amp; Βιβλία</span>}
           </button>
-          <div style={S.navDiv}></div>
-          <button className="nav-h" onClick={() => { setActiveView('networksList'); setCurrentFolder(null); setCurrentFile(null); }}
-            style={{ ...S.navItem, ...(['networksList','network'].includes(activeView) ? S.navActive : {}) }}>
+          <div style={S.navDiv}/>
+
+          {/* Δίκτυα Κειμένων */}
+          <button className="nav-h" onClick={()=>{ openFolder('diktya'); }}
+            style={{...S.navItem,...(activeView==='folder'&&currentFolder==='diktya'?S.navActive:{})}}>
             <span style={S.navIcon}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/>
                 <line x1="12" y1="7" x2="5" y2="17"/><line x1="12" y1="7" x2="19" y2="17"/><line x1="5" y1="19" x2="19" y2="19"/>
               </svg>
             </span>
-            {!sidebarCollapsed && <><span style={{ flex:1, textAlign:'left' }}>Δίκτυα Κειμένων</span>{networks.length > 0 && <span style={S.badge}>{networks.length}</span>}</>}
+            {!sidebarCollapsed&&<span>Δίκτυα Κειμένων</span>}
           </button>
-          <div style={S.navDiv}></div>
-          {tools.length > 0 && (
+
+          {/* Δημιουργία Δικτύου */}
+          <button className="nav-h" onClick={()=>{ setNetBuilderActive(true); setActiveView('netBuilder'); setCurrentFolder(null); setCurrentFile(null); }}
+            style={{...S.navItem,...(activeView==='netBuilder'?S.navActive:{})}}>
+            <span style={S.navIcon}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                <circle cx="12" cy="12" r="9"/>
+              </svg>
+            </span>
+            {!sidebarCollapsed&&<span>Δημιουργία Δικτύου</span>}
+          </button>
+          <div style={S.navDiv}/>
+
+          {/* Εφαρμογές */}
+          {tools.length>0&&(
             <button className="nav-h" onClick={openAllTools}
-              style={{ ...S.navItem, ...(['allTools','toolCategory'].includes(activeView) ? S.navActive : {}) }}>
+              style={{...S.navItem,...(['allTools','toolCategory'].includes(activeView)?S.navActive:{})}}>
               <span style={S.navIcon}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>
-              {!sidebarCollapsed && <><span style={{ flex:1, textAlign:'left' }}>Εφαρμογές</span><span style={S.badge}>{tools.length}</span></>}
+              {!sidebarCollapsed&&<><span style={{flex:1,textAlign:'left'}}>Εφαρμογές</span><span style={S.badge}>{tools.length}</span></>}
             </button>
           )}
         </nav>
         <div style={S.sidebarFooter}>
           <div style={S.userCard}>
             <div style={S.userAvatar}>{session.user?.email?.charAt(0).toUpperCase()}</div>
-            {!sidebarCollapsed && (
-              <div style={S.userInfo}>
-                <div style={S.userName}>{session.user?.email?.split('@')[0]}</div>
-                <button onClick={() => signOut()} style={S.logoutLink}>Αποσύνδεση</button>
-              </div>
-            )}
+            {!sidebarCollapsed&&(<div style={S.userInfo}><div style={S.userName}>{session.user?.email?.split('@')[0]}</div><button onClick={()=>signOut()} style={S.logoutLink}>Αποσύνδεση</button></div>)}
           </div>
         </div>
       </aside>
 
       {/* ── Main ── */}
-      <main style={{ ...S.main, marginLeft: sidebarCollapsed ? '70px' : '260px' }}>
+      <main style={{...S.main,marginLeft:sidebarCollapsed?'70px':'260px'}}>
         <div style={S.container}>
 
           {/* Home */}
-          {activeView === 'home' && (
+          {activeView==='home'&&(
             <>
-              <div style={S.welcomeSec}>
-                <h1 style={S.welcomeTitle}>Γεια σου, {session.user?.email?.split('@')[0]}! 👋</h1>
-                <p style={S.welcomeSub}>Ας συνεχίσουμε από εκεί που σταματήσαμε</p>
-              </div>
+              <div style={S.welcomeSec}><h1 style={S.welcomeTitle}>Γεια σου, {session.user?.email?.split('@')[0]}! 👋</h1><p style={S.welcomeSub}>Ας συνεχίσουμε από εκεί που σταματήσαμε</p></div>
               <div style={S.statsGrid}>
                 {[
-                  { label:'Αγαπημένα', value:favorites.length,  sub:'Επιλεγμένα αρχεία', view:'favorites',    bg:'#f0f0f0', icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> },
-                  { label:'Πρόσφατα',  value:recentFiles.length, sub:'Τελευταία αρχεία',  view:'recent',       bg:'#f0f0f0', icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> },
-                  { label:'Δίκτυα',    value:networks.length,    sub:'Ομάδες κειμένων',  view:'networksList', bg:'#f0fdf4', icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><line x1="12" y1="7" x2="5" y2="17"/><line x1="12" y1="7" x2="19" y2="17"/><line x1="5" y1="19" x2="19" y2="19"/></svg> },
-                ].map(s => (
-                  <div key={s.view} className="ch" style={{ ...S.statCard, cursor:'pointer' }} onClick={() => setActiveView(s.view)}>
-                    <div style={S.statInner}>
-                      <div><div style={S.statLabel}>{s.label}</div><div style={S.statVal}>{s.value}</div><div style={S.statSub}>{s.sub}</div></div>
-                      <div style={{ ...S.statIcon, background:s.bg }}>{s.icon}</div>
-                    </div>
+                  {label:'Αγαπημένα',value:favorites.length,sub:'Επιλεγμένα αρχεία',view:'favorites',bg:'#f0f0f0',icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>},
+                  {label:'Πρόσφατα',value:recentFiles.length,sub:'Τελευταία αρχεία',view:'recent',bg:'#f0f0f0',icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>},
+                  {label:'Ετικέτες',value:Object.values(metadata).flatMap(m=>m.tags||[]).filter((v,i,a)=>a.indexOf(v)===i).length,sub:'Μοναδικές ετικέτες',view:'allDocs',bg:'#fdf4ff',icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9333ea" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>},
+                ].map(s=>(
+                  <div key={s.view} className="ch" style={{...S.statCard,cursor:'pointer'}} onClick={()=>setActiveView(s.view)}>
+                    <div style={S.statInner}><div><div style={S.statLabel}>{s.label}</div><div style={S.statVal}>{s.value}</div><div style={S.statSub}>{s.sub}</div></div><div style={{...S.statIcon,background:s.bg}}>{s.icon}</div></div>
                   </div>
                 ))}
               </div>
               <section style={S.section}>
-                <h2 style={S.secTitle}>Φάκελοι Εγγράφων</h2>
+                <h2 style={S.secTitle}>Φάκελοι</h2>
                 <div style={S.cardsGrid}>
-                  {Object.entries(FOLDERS).map(([id, f]) => (
-                    <div key={id} className="ch" style={S.folderCard} onClick={() => openFolder(id)}>
-                      <div style={S.folderCardTop}><div style={S.folderIcon}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div></div>
+                  {Object.entries(FOLDERS).map(([id,f])=>(
+                    <div key={id} className="ch" style={S.folderCard} onClick={()=>openFolder(id)}>
+                      <div style={S.folderTop}><div style={{...S.folderIcon,background:id==='diktya'?'#f0fdf4':'#f4f4f4',color:id==='diktya'?'#16a34a':'#444'}}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div></div>
                       <h3 style={S.folderTitle}>{f.name}</h3><p style={S.folderDesc}>{f.desc}</p>
                       <div style={S.folderFoot}><button style={S.linkBtn}>Προβολή →</button></div>
                     </div>
                   ))}
                 </div>
               </section>
-              {recentFiles.length > 0 && (
-                <section style={S.section}>
-                  <h2 style={S.secTitle}>Πρόσφατα Αρχεία</h2>
-                  <div style={S.recentList}>
-                    {recentFiles.map(file => (
-                      <div key={file.id} className="ri-h" style={S.recentItem} onClick={() => openFile(file)}>
-                        <div style={S.recentInfo}><div style={S.recentTitle}>{file.title}</div><div style={S.recentMeta}>{file.name}</div></div>
-                        <button style={S.quickBtn}>Άνοιγμα →</button>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              )}
+              {recentFiles.length>0&&(<section style={S.section}><h2 style={S.secTitle}>Πρόσφατα Αρχεία</h2><div style={S.recentList}>{recentFiles.map(file=>(<div key={file.id} className="ri-h" style={S.recentItem} onClick={()=>openFile(file)}><div style={S.recentInfo}><div style={S.recentTitle}>{file.title}</div><div style={S.recentMeta}>{file.name}</div></div><button style={S.quickBtn}>Άνοιγμα →</button></div>))}</div></section>)}
             </>
           )}
 
           {/* All Docs */}
-          {activeView === 'allDocs' && (
+          {activeView==='allDocs'&&(
             <>
-              <div style={S.pageHeader}><button onClick={goHome} style={S.backBtn}>← Πίσω</button><div><h1 style={S.pageTitle}>Όλα τα Έγγραφα</h1></div></div>
+              <div style={S.pageHeader}><button onClick={goHome} style={S.backBtn}>← Πίσω</button><div><h1 style={S.pageTitle}>Κείμενα &amp; Βιβλία</h1></div></div>
               <div style={S.cardsGrid}>
-                {Object.entries(FOLDERS).map(([id, f]) => (
-                  <div key={id} className="ch" style={S.folderCard} onClick={() => openFolder(id)}>
-                    <div style={S.folderCardTop}><div style={S.folderIcon}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div></div>
+                {[['keimena',FOLDERS.keimena],['biblia',FOLDERS.biblia]].map(([id,f])=>(
+                  <div key={id} className="ch" style={S.folderCard} onClick={()=>openFolder(id)}>
+                    <div style={S.folderTop}><div style={S.folderIcon}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div></div>
                     <h3 style={S.folderTitle}>{f.name}</h3><p style={S.folderDesc}>{f.desc}</p>
                     <div style={S.folderFoot}><button style={S.linkBtn}>Προβολή →</button></div>
                   </div>
@@ -495,330 +370,286 @@ export default function Home() {
             </>
           )}
 
-          {/* Folder */}
-          {activeView === 'folder' && currentFolder && (
+          {/* Folder view (keimena / biblia / diktya) */}
+          {activeView==='folder'&&currentFolder&&(
             <>
               <div style={S.pageHeader}>
                 <button onClick={goHome} style={S.backBtn}>← Πίσω</button>
-                <div><h1 style={S.pageTitle}>{FOLDERS[currentFolder].name}</h1><p style={S.pageSub}>{filteredFiles.length} αρχεία</p></div>
+                <div style={{flex:1}}>
+                  <h1 style={S.pageTitle}>{FOLDERS[currentFolder].name}</h1>
+                  <p style={S.pageSub}>{filteredFiles.length} αρχεία{activeTagFilter&&<span style={S.filterBadge}> · #{activeTagFilter} <button onClick={()=>setActiveTagFilter(null)} style={S.clearFilterBtn}>✕</button></span>}</p>
+                </div>
               </div>
-              <div style={S.searchBar}><input type="search" placeholder="Αναζήτηση..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} style={S.searchInput} /></div>
+              {allTagsInFolder().length>0&&(
+                <div style={S.tagFilterBar}>
+                  <span style={S.tagFilterLabel}>Φίλτρο:</span>
+                  {allTagsInFolder().map(t=>{ const c=tagColor(t); const active=activeTagFilter===t; return <button key={t} className="tag-filter" onClick={()=>setActiveTagFilter(active?null:t)} style={{...S.tagFilterChip,background:active?c.text:c.bg,color:active?'#fff':c.text,fontWeight:active?600:400}}>#{t}</button>; })}
+                </div>
+              )}
+              <div style={S.searchBar}><input type="search" placeholder="Αναζήτηση..." value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} style={S.searchInput}/></div>
               <div style={S.filesGrid}>
-                {loading ? <div style={S.empty}>Φόρτωση...</div>
-                  : filteredFiles.length === 0 ? <div style={S.empty}>Δεν βρέθηκαν αρχεία</div>
-                  : filteredFiles.map(file => (
-                    <div key={file.id} className="ch chf" style={{ ...S.fileCard, ...(currentFile?.id === file.id ? S.fileCardActive : {}) }} onClick={() => openFile(file)}>
+                {loading?<div style={S.empty}>Φόρτωση...</div>:filteredFiles.length===0?<div style={S.empty}>Δεν βρέθηκαν αρχεία</div>
+                  :filteredFiles.map(file=>{ const tags=fileTags(file.id); const hasComment=!!fileComment(file.id).trim(); return (
+                    <div key={file.id} className={`ch chf${isDiktya?' chd':''}`} style={{...S.fileCard,...(currentFile?.id===file.id?S.fileCardActive:{})}} onClick={()=>openFile(file)}>
                       <div style={S.fileCardTop}>
-                        <div style={S.filePreview}><img src={`/api/thumbnail/${file.id}`} alt={file.title} style={{ width:'100%', height:'100%', objectFit:'cover' }} onError={e => { e.target.style.display='none'; e.target.parentNode.innerHTML='<span style="font-size:36px">📄</span>'; }} /></div>
-                        <button onClick={e => { e.stopPropagation(); toggleFavorite(file); }} style={S.favBtn}>{favorites.some(f => f.id === file.id) ? '★' : '☆'}</button>
+                        <div style={S.filePreview}><img src={`/api/thumbnail/${file.id}`} alt={file.title} style={{width:'100%',height:'100%',objectFit:'cover'}} onError={e=>{e.target.style.display='none';e.target.parentNode.innerHTML='<span style="font-size:36px">📄</span>';}}/></div>
+                        <div style={S.fileCardBadges}>
+                          <button onClick={e=>{e.stopPropagation();toggleFavorite(file);}} style={S.favBtn}>{favorites.some(f=>f.id===file.id)?'★':'☆'}</button>
+                          {hasComment&&<span style={S.commentDot}>💬</span>}
+                          {/* Show linked app indicator for diktya */}
+                          {isDiktya&&metadata[file.id]?.linkedApp&&<span style={{...S.commentDot,background:'rgba(255,255,255,0.9)'}} title="Συνδεδεμένη εφαρμογή">🔗</span>}
+                        </div>
                       </div>
-                      <div style={S.fileCardBody}><h3 style={S.fileCardTitle}>{file.title}</h3><p style={S.fileCardMeta}>{file.name}</p></div>
+                      <div style={S.fileCardBody}>
+                        <h3 style={S.fileCardTitle}>{file.title}</h3>
+                        <p style={S.fileCardMeta}>{file.name}</p>
+                        {tags.length>0&&(<div style={S.cardTags} onClick={e=>e.stopPropagation()}>{tags.map(t=>{ const c=tagColor(t); return <span key={t} className="tag-chip" style={{...S.tagChip,background:c.bg,color:c.text}}>#{t}<span className="tag-x" style={S.tagX} onClick={e=>{e.stopPropagation();removeTag(file.id,t);}}>✕</span></span>; })}</div>)}
+                      </div>
                       <div style={S.fileCardFoot}><button style={S.yellowSmall}>Προβολή →</button></div>
                     </div>
-                  ))}
+                  );})}
               </div>
             </>
           )}
 
-          {/* Networks List */}
-          {activeView === 'networksList' && (
+          {/* ── Network Builder ── */}
+          {activeView==='netBuilder'&&(
             <>
               <div style={S.pageHeader}>
                 <button onClick={goHome} style={S.backBtn}>← Πίσω</button>
-                <div style={{ flex:1 }}><h1 style={S.pageTitle}>Δίκτυα Κειμένων</h1><p style={S.pageSub}>Κείμενα · Ερωτήσεις · Εκτύπωση ενιαία</p></div>
-                <button onClick={() => setShowNewNetworkForm(true)} style={S.greenBtn}>+ Νέο Δίκτυο</button>
+                <div style={{flex:1}}><h1 style={S.pageTitle}>Δημιουργία Δικτύου</h1><p style={S.pageSub}>Σύνθεση κειμένων + ερωτήσεων → αποθήκευση PDF στο Drive</p></div>
+                <button onClick={()=>setShowNewNetForm(true)} style={S.greenBtn}>+ Νέο Δίκτυο</button>
               </div>
-              {showNewNetworkForm && (
+
+              {showNewNetForm&&(
                 <div style={S.newNetForm}>
-                  <input autoFocus type="text" placeholder="Όνομα δικτύου (π.χ. Ενότητα 3 — Περιβάλλον)"
-                    value={newNetworkName} onChange={e => setNewNetworkName(e.target.value)}
-                    onKeyDown={e => { if (e.key==='Enter') createNetwork(); if (e.key==='Escape') setShowNewNetworkForm(false); }}
-                    style={S.newNetInput} />
+                  <input autoFocus type="text" placeholder="Όνομα δικτύου…" value={newNetName} onChange={e=>setNewNetName(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')createNetwork();if(e.key==='Escape')setShowNewNetForm(false);}} style={S.newNetInput}/>
                   <button onClick={createNetwork} style={S.greenBtn}>Δημιουργία</button>
-                  <button onClick={() => setShowNewNetworkForm(false)} style={S.cancelBtn}>Ακύρωση</button>
+                  <button onClick={()=>setShowNewNetForm(false)} style={S.cancelBtn}>Ακύρωση</button>
                 </div>
               )}
-              {networks.length === 0 ? (
-                <div style={{ ...S.emptyBlock, paddingTop:'60px' }}>
-                  <div style={{ fontSize:'48px', marginBottom:'16px' }}>🕸️</div>
-                  <div style={S.emptyTxt}>Δεν υπάρχουν δίκτυα ακόμα</div>
-                </div>
-              ) : (
-                <div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
-                  {networks.map(net => (
-                    <div key={net.id} className="ch chn" style={S.netListCard}>
-                      <div style={S.netListLeft}>
-                        <div style={S.netListIcon}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><line x1="12" y1="7" x2="5" y2="17"/><line x1="12" y1="7" x2="19" y2="17"/><line x1="5" y1="19" x2="19" y2="19"/></svg></div>
-                        <div><div style={S.netListName}>{net.name}</div><div style={S.netListMeta}>{net.items.length} {net.items.length===1?'κείμενο':'κείμενα'}</div></div>
+
+              {/* Networks list */}
+              {!currentNetwork&&(
+                networks.length===0
+                  ?<div style={{textAlign:'center',paddingTop:'48px'}}><div style={{fontSize:'48px',marginBottom:'12px'}}>🕸️</div><div style={{color:'#aeaeb8',fontSize:'13px'}}>Δεν υπάρχουν δίκτυα ακόμα</div></div>
+                  :<div style={{display:'flex',flexDirection:'column',gap:'10px'}}>
+                    {networks.map(net=>(
+                      <div key={net.id} className="ch" style={S.netListCard}>
+                        <div style={S.netListLeft}>
+                          <div style={S.netListIcon}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><line x1="12" y1="7" x2="5" y2="17"/><line x1="12" y1="7" x2="19" y2="17"/><line x1="5" y1="19" x2="19" y2="19"/></svg></div>
+                          <div><div style={S.netListName}>{net.name}</div><div style={S.netListMeta}>{net.items.length} κείμενα{net.pdfFileId&&<span style={{color:'#16a34a',marginLeft:'8px'}}>· PDF ✓</span>}</div></div>
+                        </div>
+                        <div style={{display:'flex',gap:'8px',alignItems:'center'}}>
+                          <button onClick={()=>setCurrentNetwork(net)} style={S.greenSmall}>Επεξεργασία →</button>
+                          {net.pdfFileId&&<button onClick={()=>window.open(`/api/files/pdf/${net.pdfFileId}`,'_blank')} style={S.pdfBtn}>📄 PDF</button>}
+                          <button onClick={()=>deleteNetwork(net)} style={S.deleteSmall}>✕</button>
+                        </div>
                       </div>
-                      <div style={{ display:'flex', gap:'8px', alignItems:'center' }}>
-                        <button onClick={() => { setCurrentNetwork(net); setActiveView('network'); }} style={S.greenSmall}>Επεξεργασία →</button>
-                        {net.items.length > 0 && <button onClick={() => printNetwork(net)} style={S.printSmall}>🖨️</button>}
-                        <button onClick={() => deleteNetwork(net.id)} style={S.deleteSmall}>✕</button>
-                      </div>
+                    ))}
+                  </div>
+              )}
+
+              {/* Network editor */}
+              {currentNetwork&&(
+                <>
+                  <div style={{...S.pageHeader,marginBottom:'16px'}}>
+                    <button onClick={()=>setCurrentNetwork(null)} style={S.backBtn}>← Λίστα</button>
+                    <div style={{flex:1}}>
+                      <h2 style={{fontSize:'17px',fontWeight:'600',color:'#1a1a1a',marginBottom:'2px'}}>{currentNetwork.name}</h2>
+                      <p style={S.pageSub}>
+                        {currentNetwork.items.length} κείμενα
+                        {netSaving&&<span style={{marginLeft:'8px',color:'#16a34a',fontSize:'12px'}}>· Αποθήκευση…</span>}
+                        {netMsg&&<span style={{marginLeft:'8px',color:netMsg.startsWith('✓')?'#16a34a':'#dc2626',fontSize:'12px'}}>{netMsg}</span>}
+                      </p>
                     </div>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
+                    <div style={{display:'flex',gap:'8px'}}>
+                      <button onClick={()=>setPickingFile(true)} style={S.greenBtn}>+ Κείμενο</button>
+                      {currentNetwork.pdfFileId&&<button onClick={()=>window.open(`/api/files/pdf/${currentNetwork.pdfFileId}`,'_blank')} style={S.pdfBtn}>📄 PDF</button>}
+                      <button onClick={mergeAndSave} disabled={merging||!currentNetwork.items.length} style={{...S.mergeBtn,opacity:(merging||!currentNetwork.items.length)?0.6:1}}>
+                        {merging?'⏳ Δημιουργία…':`💾 ${currentNetwork.pdfFileId?'Ενημέρωση PDF':'Αποθήκευση PDF'}`}
+                      </button>
+                    </div>
+                  </div>
 
-          {/* Network Editor */}
-          {activeView === 'network' && currentNetwork && (
-            <>
-              <div style={S.pageHeader}>
-                <button onClick={() => setActiveView('networksList')} style={S.backBtn}>← Δίκτυα</button>
-                <div style={{ flex:1 }}>
-                  <h1 style={S.pageTitle}>{currentNetwork.name}</h1>
-                  <p style={S.pageSub}>
-                    {currentNetwork.items.length} {currentNetwork.items.length===1?'κείμενο':'κείμενα'}
-                    {networkSaving && <span style={{ marginLeft:'10px', color:'#16a34a', fontSize:'12px' }}>· Αποθήκευση…</span>}
-                    {networkMsg   && <span style={{ marginLeft:'10px', color: networkMsg.startsWith('✓')?'#16a34a':'#dc2626', fontSize:'12px' }}>{networkMsg}</span>}
-                  </p>
-                </div>
-                <div style={{ display:'flex', gap:'8px' }}>
-                  <button onClick={() => setPickingFile(true)} style={S.greenBtn}>+ Προσθήκη κειμένου</button>
-                  {currentNetwork.items.length > 0 && <button onClick={() => printNetwork(currentNetwork)} style={S.printBtn}>🖨️ Εκτύπωση</button>}
-                </div>
-              </div>
-
-              {currentNetwork.items.length === 0 ? (
-                <div style={{ ...S.emptyBlock, paddingTop:'40px' }}>
-                  <div style={{ fontSize:'40px', marginBottom:'12px' }}>📎</div>
-                  <div style={S.emptyTxt}>Πάτησε «+ Προσθήκη κειμένου» για να ξεκινήσεις</div>
-                </div>
-              ) : (
-                <div style={{ display:'flex', flexDirection:'column', gap:'12px' }}>
-                  {currentNetwork.items.map((item, idx) => {
-                    const isOpen = !!openAccordions[item.fileId];
-                    return (
-                      <div key={item.fileId} style={S.netItemCard}>
-                        {/* Header */}
-                        <div style={S.netItemHeader}>
-                          <div style={S.netItemNum}>{idx + 1}</div>
-                          <div style={S.netItemTitle}>{item.title}</div>
-                          <div style={{ display:'flex', gap:'6px', alignItems:'center', flexShrink:0 }}>
-                            <button onClick={() => moveItem(idx,-1)} disabled={idx===0} style={{ ...S.moveBtn, opacity:idx===0?0.3:1 }}>↑</button>
-                            <button onClick={() => moveItem(idx,1)} disabled={idx===currentNetwork.items.length-1} style={{ ...S.moveBtn, opacity:idx===currentNetwork.items.length-1?0.3:1 }}>↓</button>
-                            <button onClick={() => openFile({ id:item.fileId, title:item.title, name:item.name })} style={S.viewSmall}>👁</button>
-                            <button onClick={() => removeFromNetwork(item.fileId)} style={S.deleteSmall}>✕</button>
+                  {currentNetwork.items.length===0
+                    ?<div style={{textAlign:'center',padding:'32px',color:'#aeaeb8',fontSize:'13px'}}>Πάτησε «+ Κείμενο» για να ξεκινήσεις</div>
+                    :<div style={{display:'flex',flexDirection:'column',gap:'10px'}}>
+                      {currentNetwork.items.map((item,idx)=>{ const isOpen=!!openAccordions[item.fileId]; return (
+                        <div key={item.fileId} style={S.netItemCard}>
+                          <div style={S.netItemHeader}>
+                            <div style={S.netItemNum}>{idx+1}</div>
+                            <div style={S.netItemTitle}>{item.title}</div>
+                            <div style={{display:'flex',gap:'5px',alignItems:'center',flexShrink:0}}>
+                              <button onClick={()=>moveItem(idx,-1)} disabled={idx===0} style={{...S.moveBtn,opacity:idx===0?0.3:1}}>↑</button>
+                              <button onClick={()=>moveItem(idx,1)} disabled={idx===currentNetwork.items.length-1} style={{...S.moveBtn,opacity:idx===currentNetwork.items.length-1?0.3:1}}>↓</button>
+                              <button onClick={()=>openFile({id:item.fileId,title:item.title,name:item.name})} style={S.viewSmall}>👁</button>
+                              <button onClick={()=>removeFromNetwork(item.fileId)} style={S.deleteSmall}>✕</button>
+                            </div>
                           </div>
-                        </div>
-
-                        {/* Accordion toggle */}
-                        <div className="acc-toggle" style={{ ...S.accToggle, background: isOpen ? '#f0fdf4' : '#fafaf9' }}
-                          onClick={() => toggleAccordion(item.fileId)}>
-                          <span style={S.accLabel}>Ερωτήσεις</span>
-                          <span style={S.accCount}>{item.questions.length} {item.questions.length===1?'ερώτηση':'ερωτήσεις'}</span>
-                          <span style={{ fontSize:'12px', color:'#6b6b80', marginLeft:'6px' }}>{isOpen ? '▲' : '▼'}</span>
-                        </div>
-
-                        {/* Accordion body */}
-                        {isOpen && (
-                          <div style={S.accBody}>
-                            {item.questions.length === 0 && (
-                              <div style={{ fontSize:'13px', color:'#aeaeb8', marginBottom:'12px' }}>
-                                Δεν υπάρχουν ερωτήσεις ακόμα. Πάτησε «+ Ερώτηση».
-                              </div>
-                            )}
-                            {item.questions.map((q, qi) => (
-                              <div key={q.id} style={S.qRow}>
-                                <input
-                                  type="text"
-                                  placeholder="Κωδ. (π.χ. Α1)"
-                                  value={q.code}
-                                  onChange={e => updateQuestion(item.fileId, q.id, 'code', e.target.value)}
-                                  onBlur={saveNetworkState}
-                                  style={S.qCodeInput}
-                                />
-                                <textarea
-                                  rows={3}
-                                  placeholder="Κείμενο ερώτησης…"
-                                  value={q.text}
-                                  onChange={e => updateQuestion(item.fileId, q.id, 'text', e.target.value)}
-                                  onBlur={saveNetworkState}
-                                  style={S.qTextInput}
-                                />
-                                <button onClick={() => removeQuestion(item.fileId, q.id)} style={S.qDelBtn} title="Διαγραφή">✕</button>
-                              </div>
-                            ))}
-                            <button onClick={() => addQuestion(item.fileId)} style={S.addQBtn}>+ Ερώτηση</button>
+                          <div className="acc-h" style={{...S.accToggle,cursor:'pointer',background:isOpen?'#f0fdf4':'#fafaf9'}} onClick={()=>toggleAccordion(item.fileId)}>
+                            <span style={S.accLabel}>Ερωτήσεις</span>
+                            <span style={{fontSize:'11px',color:'#6b6b80'}}>{item.questions.length} {item.questions.length===1?'ερώτηση':'ερωτήσεις'}</span>
+                            <span style={{fontSize:'11px',color:'#6b6b80',marginLeft:'6px'}}>{isOpen?'▲':'▼'}</span>
                           </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+                          {isOpen&&(
+                            <div style={S.accBody}>
+                              {item.questions.length===0&&<div style={{fontSize:'13px',color:'#aeaeb8',marginBottom:'10px'}}>Δεν υπάρχουν ερωτήσεις. Πάτησε «+ Ερώτηση».</div>}
+                              {item.questions.map(q=>(
+                                <div key={q.id} style={S.qRow}>
+                                  <input type="text" placeholder="Κωδ." value={q.code} onChange={e=>updateQuestion(item.fileId,q.id,'code',e.target.value)} onBlur={saveQuestionsNow} style={S.qCodeInput}/>
+                                  <textarea rows={3} placeholder="Κείμενο ερώτησης…" value={q.text} onChange={e=>updateQuestion(item.fileId,q.id,'text',e.target.value)} onBlur={saveQuestionsNow} style={S.qTextInput}/>
+                                  <button onClick={()=>removeQuestion(item.fileId,q.id)} style={S.qDelBtn}>✕</button>
+                                </div>
+                              ))}
+                              <button onClick={()=>addQuestion(item.fileId)} style={S.addQBtn}>+ Ερώτηση</button>
+                            </div>
+                          )}
+                        </div>
+                      );})}
+                    </div>
+                  }
+                </>
               )}
             </>
           )}
 
           {/* Favorites */}
-          {activeView === 'favorites' && (
-            <>
-              <div style={S.pageHeader}><button onClick={goHome} style={S.backBtn}>← Πίσω</button><div><h1 style={S.pageTitle}>Αγαπημένα</h1><p style={S.pageSub}>{favorites.length} αρχεία</p></div></div>
-              <div style={S.filesGrid}>
-                {favorites.length === 0 ? <div style={S.empty}>Δεν έχεις αγαπημένα ακόμα</div>
-                  : favorites.map(file => (
-                    <div key={file.id} className="ch chf" style={S.fileCard} onClick={() => openFile(file)}>
-                      <div style={S.fileCardTop}><div style={S.filePreview}><img src={`/api/thumbnail/${file.id}`} alt={file.title} style={{ width:'100%',height:'100%',objectFit:'cover' }} onError={e=>{e.target.style.display='none';e.target.parentNode.innerHTML='<span style="font-size:36px">📄</span>';}}/></div><button onClick={e=>{e.stopPropagation();toggleFavorite(file);}} style={S.favBtn}>★</button></div>
-                      <div style={S.fileCardBody}><h3 style={S.fileCardTitle}>{file.title}</h3><p style={S.fileCardMeta}>{file.name}</p></div>
-                      <div style={S.fileCardFoot}><button style={S.yellowSmall}>Προβολή →</button></div>
-                    </div>
-                  ))}
-              </div>
-            </>
-          )}
+          {activeView==='favorites'&&(<><div style={S.pageHeader}><button onClick={goHome} style={S.backBtn}>← Πίσω</button><div><h1 style={S.pageTitle}>Αγαπημένα</h1><p style={S.pageSub}>{favorites.length} αρχεία</p></div></div><div style={S.filesGrid}>{favorites.length===0?<div style={S.empty}>Δεν έχεις αγαπημένα ακόμα</div>:favorites.map(file=>(<div key={file.id} className="ch chf" style={S.fileCard} onClick={()=>openFile(file)}><div style={S.fileCardTop}><div style={S.filePreview}><img src={`/api/thumbnail/${file.id}`} alt={file.title} style={{width:'100%',height:'100%',objectFit:'cover'}} onError={e=>{e.target.style.display='none';e.target.parentNode.innerHTML='<span style="font-size:36px">📄</span>';}}/></div><button onClick={e=>{e.stopPropagation();toggleFavorite(file);}} style={{...S.favBtn,position:'static',background:'transparent',border:'none'}}>★</button></div><div style={S.fileCardBody}><h3 style={S.fileCardTitle}>{file.title}</h3><p style={S.fileCardMeta}>{file.name}</p></div><div style={S.fileCardFoot}><button style={S.yellowSmall}>Προβολή →</button></div></div>))}</div></>)}
 
           {/* Recent */}
-          {activeView === 'recent' && (
-            <>
-              <div style={S.pageHeader}><button onClick={goHome} style={S.backBtn}>← Πίσω</button><div><h1 style={S.pageTitle}>Πρόσφατα</h1><p style={S.pageSub}>{recentFiles.length} αρχεία</p></div></div>
-              <div style={S.filesGrid}>
-                {recentFiles.length === 0 ? <div style={S.empty}>Δεν έχεις ανοίξει αρχεία ακόμα</div>
-                  : recentFiles.map(file => (
-                    <div key={file.id} className="ch chf" style={S.fileCard} onClick={() => openFile(file)}>
-                      <div style={S.fileCardTop}><div style={S.filePreview}><img src={`/api/thumbnail/${file.id}`} alt={file.title} style={{ width:'100%',height:'100%',objectFit:'cover' }} onError={e=>{e.target.style.display='none';e.target.parentNode.innerHTML='<span style="font-size:36px">📄</span>';}}/></div><button onClick={e=>{e.stopPropagation();toggleFavorite(file);}} style={S.favBtn}>{favorites.some(f=>f.id===file.id)?'★':'☆'}</button></div>
-                      <div style={S.fileCardBody}><h3 style={S.fileCardTitle}>{file.title}</h3><p style={S.fileCardMeta}>{file.name}</p></div>
-                      <div style={S.fileCardFoot}><button style={S.yellowSmall}>Προβολή →</button></div>
-                    </div>
-                  ))}
-              </div>
-            </>
-          )}
+          {activeView==='recent'&&(<><div style={S.pageHeader}><button onClick={goHome} style={S.backBtn}>← Πίσω</button><div><h1 style={S.pageTitle}>Πρόσφατα</h1><p style={S.pageSub}>{recentFiles.length} αρχεία</p></div></div><div style={S.filesGrid}>{recentFiles.length===0?<div style={S.empty}>Δεν έχεις ανοίξει αρχεία ακόμα</div>:recentFiles.map(file=>(<div key={file.id} className="ch chf" style={S.fileCard} onClick={()=>openFile(file)}><div style={S.fileCardTop}><div style={S.filePreview}><img src={`/api/thumbnail/${file.id}`} alt={file.title} style={{width:'100%',height:'100%',objectFit:'cover'}} onError={e=>{e.target.style.display='none';e.target.parentNode.innerHTML='<span style="font-size:36px">📄</span>';}}/></div><button onClick={e=>{e.stopPropagation();toggleFavorite(file);}} style={S.favBtn}>{favorites.some(f=>f.id===file.id)?'★':'☆'}</button></div><div style={S.fileCardBody}><h3 style={S.fileCardTitle}>{file.title}</h3><p style={S.fileCardMeta}>{file.name}</p></div><div style={S.fileCardFoot}><button style={S.yellowSmall}>Προβολή →</button></div></div>))}</div></>)}
 
           {/* All Tools */}
-          {activeView === 'allTools' && (
-            <>
-              <div style={S.pageHeader}><button onClick={goHome} style={S.backBtn}>← Πίσω</button><div><h1 style={S.pageTitle}>Όλα τα Εργαλεία</h1><p style={S.pageSub}>{filteredTools.length} εργαλεία</p></div></div>
-              <div style={S.searchBar}><input type="search" placeholder="Αναζήτηση εργαλείων..." value={toolsSearchQuery} onChange={e=>setToolsSearchQuery(e.target.value)} style={S.searchInput}/></div>
-              {Object.entries(toolCategories).map(([cat, catTools]) => {
-                const vis = catTools.filter(t => !toolsSearchQuery || t.name.toLowerCase().includes(toolsSearchQuery.toLowerCase()));
-                if (!vis.length) return null;
-                return (
-                  <section key={cat} style={S.section}>
-                    <h2 style={S.secTitle}>{cat}</h2>
-                    <div style={S.filesGrid}>
-                      {vis.map(tool => (
-                        <div key={tool.file} className="ch cht" style={S.toolCard} onClick={() => openTool(tool)}>
-                          <div style={S.toolAccent}></div>
-                          <div style={S.toolContent}>
-                            <div style={S.toolThumb}><img src={`/api/thumbnail/${tool.driveId||tool.file}`} alt={tool.name} style={{width:'100%',height:'100%',objectFit:'cover'}} onError={e=>{e.target.style.display='none';e.target.parentNode.style.background='#fffbeb';e.target.parentNode.innerHTML=`<span style="font-size:22px;display:flex;align-items:center;justify-content:center;width:100%;height:100%">${tool.icon||'🔧'}</span>`;}}/></div>
-                            <h3 style={S.toolTitle}>{tool.name}</h3>
-                            <button style={S.yellowSmall}>Εκκίνηση →</button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </section>
-                );
-              })}
-              {filteredTools.length===0 && <div style={S.empty}>Δεν βρέθηκαν εργαλεία</div>}
-            </>
-          )}
+          {activeView==='allTools'&&(<><div style={S.pageHeader}><button onClick={goHome} style={S.backBtn}>← Πίσω</button><div><h1 style={S.pageTitle}>Εφαρμογές</h1><p style={S.pageSub}>{filteredTools.length} εφαρμογές</p></div></div><div style={S.searchBar}><input type="search" placeholder="Αναζήτηση..." value={toolsSearchQuery} onChange={e=>setToolsSearchQuery(e.target.value)} style={S.searchInput}/></div>{Object.entries(toolCategories).map(([cat,catTools])=>{ const vis=catTools.filter(t=>!toolsSearchQuery||t.name.toLowerCase().includes(toolsSearchQuery.toLowerCase())); if(!vis.length)return null; return(<section key={cat} style={S.section}><h2 style={S.secTitle}>{cat}</h2><div style={S.filesGrid}>{vis.map(tool=>(<div key={tool.file} className="ch cht" style={S.toolCard} onClick={()=>openTool(tool)}><div style={S.toolAccent}/><div style={S.toolContent}><div style={S.toolThumb}><img src={`/api/thumbnail/${tool.driveId||tool.file}`} alt={tool.name} style={{width:'100%',height:'100%',objectFit:'cover'}} onError={e=>{e.target.style.display='none';e.target.parentNode.style.background='#fffbeb';e.target.parentNode.innerHTML=`<span style="font-size:22px;display:flex;align-items:center;justify-content:center;width:100%;height:100%">${tool.icon||'🔧'}</span>`;}} /></div><h3 style={S.toolTitle}>{tool.name}</h3><button style={S.yellowSmall}>Εκκίνηση →</button></div></div>))}</div></section>);})}{ filteredTools.length===0&&<div style={S.empty}>Δεν βρέθηκαν</div>}</>)}
 
           {/* Tool Category */}
-          {activeView === 'toolCategory' && currentToolCategory && (
-            <>
-              <div style={S.pageHeader}><button onClick={openAllTools} style={S.backBtn}>← Εργαλεία</button><div><h1 style={S.pageTitle}>{currentToolCategory==='__recent__'?'Πρόσφατα':currentToolCategory}</h1></div></div>
-              <div style={S.filesGrid}>
-                {filteredCategoryTools.map(tool => (
-                  <div key={tool.file} className="ch cht" style={S.toolCard} onClick={() => openTool(tool)}>
-                    <div style={S.toolAccent}></div>
-                    <div style={S.toolContent}>
-                      <div style={S.toolThumb}><img src={`/api/thumbnail/${tool.driveId||tool.file}`} alt={tool.name} style={{width:'100%',height:'100%',objectFit:'cover'}} onError={e=>{e.target.style.display='none';e.target.parentNode.style.background='#fffbeb';e.target.parentNode.innerHTML=`<span style="font-size:22px;display:flex;align-items:center;justify-content:center;width:100%;height:100%">${tool.icon||'🔧'}</span>`;}} /></div>
-                      <h3 style={S.toolTitle}>{tool.name}</h3>
-                      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                        <button style={S.yellowSmall}>Εκκίνηση →</button>
-                        <button onClick={e=>{e.stopPropagation();toggleFavoriteTool(tool);}} style={S.favBtn}>{favoriteTools.some(t=>t.file===tool.file)?'★':'☆'}</button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
+          {activeView==='toolCategory'&&currentToolCategory&&(<><div style={S.pageHeader}><button onClick={openAllTools} style={S.backBtn}>← Εφαρμογές</button><div><h1 style={S.pageTitle}>{currentToolCategory==='__recent__'?'Πρόσφατα':currentToolCategory}</h1></div></div><div style={S.filesGrid}>{filteredCategoryTools.map(tool=>(<div key={tool.file} className="ch cht" style={S.toolCard} onClick={()=>openTool(tool)}><div style={S.toolAccent}/><div style={S.toolContent}><div style={S.toolThumb}><img src={`/api/thumbnail/${tool.driveId||tool.file}`} alt={tool.name} style={{width:'100%',height:'100%',objectFit:'cover'}} onError={e=>{e.target.style.display='none';e.target.parentNode.style.background='#fffbeb';e.target.parentNode.innerHTML=`<span style="font-size:22px;display:flex;align-items:center;justify-content:center;width:100%;height:100%">${tool.icon||'🔧'}</span>`;}} /></div><h3 style={S.toolTitle}>{tool.name}</h3><div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}><button style={S.yellowSmall}>Εκκίνηση →</button><button onClick={e=>{e.stopPropagation();toggleFavoriteTool(tool);}} style={{...S.favBtn,position:'static',background:'transparent',border:'none'}}>{favoriteTools.some(t=>t.file===tool.file)?'★':'☆'}</button></div></div></div>))}</div></>)}
 
         </div>
       </main>
 
-      {/* PDF Modal */}
-      {currentFile && (
-        <div style={S.modal} onClick={() => { setCurrentFile(null); zoomReset(); }}>
-          <div style={S.modalBox} onClick={e => e.stopPropagation()}>
+      {/* ── PDF Modal ── */}
+      {modalFile&&(
+        <div style={S.modal} onClick={()=>{setCurrentFile(null);zoomReset();setShowCommentPanel(false);setShowLinkedApp(false);}}>
+          <div style={S.modalBox} onClick={e=>e.stopPropagation()}>
             <div style={S.modalHead}>
-              <h2 style={S.modalTitle}>{currentFile.title}</h2>
+              <h2 style={S.modalTitle}>{modalFile.title}</h2>
               <div style={S.modalBtns}>
                 <button onClick={zoomOut} style={S.zoomBtn}>−</button>
                 <span style={S.zoomLabel} onClick={zoomReset}>{modalZoom}%</span>
                 <button onClick={zoomIn} style={S.zoomBtn}>+</button>
-                <div style={S.modalDiv}></div>
-                <button onClick={() => window.open(`/api/files/pdf/${currentFile.id}`,'_blank')} style={S.iconBtn}>↗</button>
-                <button onClick={() => { setCurrentFile(null); zoomReset(); }} style={S.closeBtn}>✕</button>
+                <div style={S.modalDiv}/>
+                <button onClick={()=>window.open(`/api/files/pdf/${modalFile.id}`,'_blank')} style={S.iconBtn}>↗</button>
+                {/* Linked app buttons — only for diktya */}
+                {isDiktya&&(
+                  <>
+                    {linkedApp
+                      ?<>
+                        <button onClick={()=>setShowLinkedApp(p=>!p)} style={{...S.iconBtn,background:showLinkedApp?'#f0fdf4':'#f4f4f4',borderColor:showLinkedApp?'#16a34a':'#e0e0e0',color:showLinkedApp?'#16a34a':'#444'}} title={linkedApp.name}>🔗</button>
+                        <button onClick={unlinkApp} style={{...S.iconBtn,fontSize:'10px',color:'#dc2626',borderColor:'#fca5a5'}} title="Αποσύνδεση εφαρμογής">✕🔗</button>
+                      </>
+                      :<button onClick={()=>setShowAppPicker(true)} style={{...S.iconBtn,fontSize:'11px'}} title="Σύνδεση εφαρμογής">+🔗</button>
+                    }
+                  </>
+                )}
+                <button onClick={()=>setShowCommentPanel(p=>!p)} style={{...S.iconBtn,background:showCommentPanel?'#f5f3ff':'#f4f4f4',borderColor:showCommentPanel?'#8b5cf6':'#e0e0e0',color:showCommentPanel?'#7c3aed':'#444'}} title="Ετικέτες &amp; Σχόλια">🏷️</button>
+                <button onClick={()=>{setCurrentFile(null);zoomReset();setShowCommentPanel(false);setShowLinkedApp(false);}} style={S.closeBtn}>✕</button>
               </div>
             </div>
-            <div style={{ ...S.modalBody, overflow:'auto' }}>
-              <div style={{ transform:`scale(${modalZoom/100})`, transformOrigin:'top center', height:modalZoom>100?`${modalZoom}%`:'100%', width:modalZoom>100?`${10000/modalZoom}%`:'100%' }}>
-                <iframe src={`/api/files/pdf/${currentFile.id}`} style={S.iframe} title="PDF Viewer" />
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* Tool Modal */}
-      {currentTool && !currentFile && (
-        <div style={S.modal} onClick={() => { setCurrentTool(null); zoomReset(); }}>
-          <div style={S.modalBox} onClick={e => e.stopPropagation()}>
-            <div style={S.modalHead}>
-              <h2 style={S.modalTitle}>{currentTool.name}</h2>
-              <div style={S.modalBtns}>
-                <button onClick={zoomOut} style={S.zoomBtn}>−</button>
-                <span style={S.zoomLabel} onClick={zoomReset}>{modalZoom}%</span>
-                <button onClick={zoomIn} style={S.zoomBtn}>+</button>
-                <div style={S.modalDiv}></div>
-                <button onClick={() => window.open(`/api/tool/${currentTool.driveId||currentTool.file}`,'_blank')} style={S.iconBtn}>↗</button>
-                <button onClick={() => { setCurrentTool(null); zoomReset(); }} style={S.closeBtn}>✕</button>
+            {/* Body */}
+            <div style={{flex:1,display:'flex',overflow:'hidden'}}>
+              {/* PDF */}
+              <div style={{flex:1,overflow:'auto',minWidth:0}}>
+                <div style={{transform:`scale(${modalZoom/100})`,transformOrigin:'top center',height:modalZoom>100?`${modalZoom}%`:'100%',width:modalZoom>100?`${10000/modalZoom}%`:'100%'}}>
+                  <iframe src={`/api/files/pdf/${modalFile.id}`} style={S.iframe} title="PDF Viewer"/>
+                </div>
               </div>
-            </div>
-            <div style={{ ...S.modalBody, overflow:'auto' }}>
-              <div style={{ transform:`scale(${modalZoom/100})`, transformOrigin:'top center', height:modalZoom>100?`${modalZoom}%`:'100%', width:modalZoom>100?`${10000/modalZoom}%`:'100%' }}>
-                <iframe src={`/api/tool/${currentTool.driveId||currentTool.file}`} style={S.iframe} title={currentTool.name} />
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* File Picker Modal */}
-      {pickingFile && (
-        <div style={S.modal} onClick={() => { setPickingFile(false); setPickerSearch(''); }}>
-          <div style={{ ...S.modalBox, maxWidth:'580px', height:'65vh' }} onClick={e => e.stopPropagation()}>
-            <div style={S.modalHead}>
-              <h2 style={S.modalTitle}>Επιλογή κειμένου</h2>
-              <button onClick={() => { setPickingFile(false); setPickerSearch(''); }} style={S.closeBtn}>✕</button>
-            </div>
-            <div style={{ padding:'10px 14px', borderBottom:'1px solid #ebebeb' }}>
-              <input type="search" placeholder="Αναζήτηση κειμένου..." value={pickerSearch} onChange={e => setPickerSearch(e.target.value)} style={{ ...S.searchInput, width:'100%' }} autoFocus />
-            </div>
-            <div style={{ flex:1, overflowY:'auto', padding:'8px' }}>
-              {allFiles.filter(f => !pickerSearch || f.title.toLowerCase().includes(pickerSearch.toLowerCase())).map(file => {
-                const already = currentNetwork?.items.some(i => i.fileId === file.id);
-                return (
-                  <div key={file.id} className="picker-h"
-                    style={{ ...S.pickerItem, opacity:already?0.45:1, cursor:already?'default':'pointer' }}
-                    onClick={() => !already && addFileToNetwork(file)}>
-                    <div style={{ fontSize:'20px', flexShrink:0 }}>📄</div>
-                    <div style={{ flex:1, minWidth:0 }}>
-                      <div style={S.pickerTitle}>{file.title}</div>
-                      <div style={S.pickerMeta}>{file.name}</div>
-                    </div>
-                    {already
-                      ? <span style={{ fontSize:'11px', color:'#16a34a', fontWeight:500, flexShrink:0 }}>✓ Έχει προστεθεί</span>
-                      : <span style={{ fontSize:'12px', color:'#16a34a', flexShrink:0 }}>+ Προσθήκη</span>}
+              {/* Linked app panel (split view) */}
+              {showLinkedApp&&linkedApp&&(
+                <div style={S.linkedAppPanel}>
+                  <div style={S.linkedAppHeader}>
+                    <span style={{fontSize:'12px',fontWeight:'600',color:'#16a34a'}}>🔗 {linkedApp.name}</span>
+                    <button onClick={()=>window.open(`/api/tool/${linkedApp.driveId||linkedApp.file}`,'_blank')} style={{...S.iconBtn,width:'24px',height:'24px',fontSize:'11px'}}>↗</button>
                   </div>
-                );
-              })}
+                  <iframe src={`/api/tool/${linkedApp.driveId||linkedApp.file}`} style={{...S.iframe,flex:1}} title={linkedApp.name}/>
+                </div>
+              )}
+
+              {/* Comment panel */}
+              {showCommentPanel&&(
+                <div style={S.commentPanel}>
+                  <div style={S.cpHeader}><span style={S.cpTitle}>Ετικέτες &amp; Σχόλια</span>{metaSaving&&<span style={{fontSize:'11px',color:'#8b5cf6'}}>Αποθήκευση…</span>}</div>
+                  <div style={S.cpSection}>
+                    <div style={S.cpSectionLabel}>Ετικέτες</div>
+                    <div style={S.tagsWrap}>{fileTags(modalFile.id).map(t=>{ const c=tagColor(t); return <span key={t} className="tag-chip" style={{...S.tagChip,background:c.bg,color:c.text}}>#{t}<span className="tag-x" style={S.tagX} onClick={()=>removeTag(modalFile.id,t)}>✕</span></span>; })}</div>
+                    <div style={{position:'relative'}}>
+                      <div style={S.tagInputWrap}>
+                        <input ref={tagInputRef} type="text" placeholder="Νέα ετικέτα…" value={tagInput} onChange={e=>{setTagInput(e.target.value);setShowTagSuggest(true);}} onKeyDown={e=>{if(e.key==='Enter')addTag(modalFile.id,tagInput);if(e.key==='Escape')setShowTagSuggest(false);}} style={S.tagInputField}/>
+                        {tagInput.trim()&&<button onClick={()=>addTag(modalFile.id,tagInput)} style={S.tagAddBtn}>+</button>}
+                      </div>
+                      {showTagSuggest&&tagInput&&suggestedTags.length>0&&<div style={S.suggestBox}>{suggestedTags.slice(0,6).map(t=>(<div key={t} className="suggest-item" style={S.suggestItem} onClick={()=>addTag(modalFile.id,t)}><span style={{color:'#8b5cf6'}}>#</span>{t}</div>))}</div>}
+                      {!tagInput&&<div style={{marginTop:'8px'}}><div style={{fontSize:'11px',color:'#aeaeb8',marginBottom:'6px'}}>Προτεινόμενες:</div><div style={{display:'flex',flexWrap:'wrap',gap:'4px'}}>{SUGGESTED_TAGS.filter(t=>!fileTags(modalFile.id).includes(t)).map(t=>{ const c=tagColor(t); return <span key={t} style={{...S.tagChip,background:c.bg,color:c.text,cursor:'pointer'}} onClick={()=>addTag(modalFile.id,t)}>+{t}</span>; })}</div></div>}
+                    </div>
+                  </div>
+                  <div style={{...S.cpSection,flex:1,display:'flex',flexDirection:'column'}}>
+                    <div style={S.cpSectionLabel}>Σχόλια</div>
+                    <textarea placeholder="Σημειώσεις για το αρχείο…" value={fileComment(modalFile.id)} onChange={e=>updateComment(modalFile.id,e.target.value)} style={{...S.commentTextarea,flex:1}}/>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Tool Modal ── */}
+      {currentTool&&!currentFile&&(
+        <div style={S.modal} onClick={()=>{setCurrentTool(null);zoomReset();}}>
+          <div style={S.modalBox} onClick={e=>e.stopPropagation()}>
+            <div style={S.modalHead}><h2 style={S.modalTitle}>{currentTool.name}</h2><div style={S.modalBtns}><button onClick={zoomOut} style={S.zoomBtn}>−</button><span style={S.zoomLabel} onClick={zoomReset}>{modalZoom}%</span><button onClick={zoomIn} style={S.zoomBtn}>+</button><div style={S.modalDiv}/><button onClick={()=>window.open(`/api/tool/${currentTool.driveId||currentTool.file}`,'_blank')} style={S.iconBtn}>↗</button><button onClick={()=>{setCurrentTool(null);zoomReset();}} style={S.closeBtn}>✕</button></div></div>
+            <div style={{flex:1,overflow:'auto'}}><div style={{transform:`scale(${modalZoom/100})`,transformOrigin:'top center',height:modalZoom>100?`${modalZoom}%`:'100%',width:modalZoom>100?`${10000/modalZoom}%`:'100%'}}><iframe src={`/api/tool/${currentTool.driveId||currentTool.file}`} style={S.iframe} title={currentTool.name}/></div></div>
+          </div>
+        </div>
+      )}
+
+      {/* ── App Picker Modal (για diktya) ── */}
+      {showAppPicker&&(
+        <div style={S.modal} onClick={()=>setShowAppPicker(false)}>
+          <div style={{...S.modalBox,maxWidth:'520px',height:'60vh'}} onClick={e=>e.stopPropagation()}>
+            <div style={S.modalHead}><h2 style={S.modalTitle}>Επιλογή εφαρμογής για σύνδεση</h2><button onClick={()=>setShowAppPicker(false)} style={S.closeBtn}>✕</button></div>
+            <div style={{flex:1,overflowY:'auto',padding:'12px'}}>
+              {tools.length===0?<div style={{textAlign:'center',padding:'32px',color:'#aeaeb8',fontSize:'13px'}}>Δεν υπάρχουν εφαρμογές</div>
+                :tools.map(tool=>(
+                  <div key={tool.file} className="picker-h" style={{display:'flex',alignItems:'center',gap:'12px',padding:'10px 12px',borderRadius:'8px',cursor:'pointer',marginBottom:'4px'}} onClick={()=>linkAppToFile(tool)}>
+                    <div style={{width:'36px',height:'36px',borderRadius:'6px',background:'#fffbeb',overflow:'hidden',flexShrink:0}}>
+                      <img src={`/api/thumbnail/${tool.driveId||tool.file}`} alt={tool.name} style={{width:'100%',height:'100%',objectFit:'cover'}} onError={e=>{e.target.style.display='none';e.target.parentNode.innerHTML=`<span style="font-size:18px;display:flex;align-items:center;justify-content:center;width:100%;height:100%">${tool.icon||'🔧'}</span>`;}}/>
+                    </div>
+                    <div style={{flex:1}}><div style={{fontSize:'13px',fontWeight:'500',color:'#1a1a1a'}}>{tool.name}</div>{tool.category&&<div style={{fontSize:'11px',color:'#aeaeb8'}}>{tool.category}</div>}</div>
+                    <span style={{fontSize:'12px',color:'#16a34a'}}>+ Σύνδεση</span>
+                  </div>
+                ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── File Picker (network builder) ── */}
+      {pickingFile&&(
+        <div style={S.modal} onClick={()=>{setPickingFile(false);setPickerSearch('');}}>
+          <div style={{...S.modalBox,maxWidth:'560px',height:'65vh'}} onClick={e=>e.stopPropagation()}>
+            <div style={S.modalHead}><h2 style={S.modalTitle}>Επιλογή κειμένου</h2><button onClick={()=>{setPickingFile(false);setPickerSearch('');}} style={S.closeBtn}>✕</button></div>
+            <div style={{padding:'10px 14px',borderBottom:'1px solid #ebebeb'}}><input type="search" placeholder="Αναζήτηση…" value={pickerSearch} onChange={e=>setPickerSearch(e.target.value)} style={{...S.searchInput,width:'100%'}} autoFocus/></div>
+            <div style={{flex:1,overflowY:'auto',padding:'8px'}}>
+              {allFiles.filter(f=>!pickerSearch||f.title.toLowerCase().includes(pickerSearch.toLowerCase())).map(file=>{ const already=currentNetwork?.items.some(i=>i.fileId===file.id); return (
+                <div key={file.id} className="picker-h" style={{display:'flex',alignItems:'center',gap:'10px',padding:'10px 12px',borderRadius:'8px',marginBottom:'2px',opacity:already?0.45:1,cursor:already?'default':'pointer'}} onClick={()=>!already&&addFileToNetwork(file)}>
+                  <div style={{fontSize:'20px',flexShrink:0}}>📄</div>
+                  <div style={{flex:1,minWidth:0}}><div style={{fontSize:'13px',fontWeight:'500',color:'#1a1a1a',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{file.title}</div><div style={{fontSize:'11px',color:'#aeaeb8'}}>{file.name}</div></div>
+                  {already?<span style={{fontSize:'11px',color:'#16a34a',fontWeight:500,flexShrink:0}}>✓ Έχει προστεθεί</span>:<span style={{fontSize:'12px',color:'#16a34a',flexShrink:0}}>+ Προσθήκη</span>}
+                </div>
+              );})}
             </div>
           </div>
         </div>
@@ -827,127 +658,140 @@ export default function Home() {
   );
 }
 
-// ── Styles ────────────────────────────────────────────────────────────────────
 const S = {
-  loadingScreen:{ minHeight:'100vh', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', background:'#1a1a1a', color:'#ececec', fontFamily:'"Söhne",ui-sans-serif,system-ui,-apple-system,sans-serif' },
-  spinner:{ width:'36px', height:'36px', border:'2px solid rgba(255,255,255,0.12)', borderTop:'2px solid #c5b4e3', borderRadius:'50%', animation:'spin 0.9s linear infinite', marginBottom:'16px' },
-  loadingText:{ fontSize:'14px', color:'#8e8ea0' },
-  app:{ display:'flex', minHeight:'100vh', background:'#f9f9f8', fontFamily:'"Söhne",ui-sans-serif,system-ui,-apple-system,sans-serif', color:'#1a1a1a' },
-  sidebar:{ position:'fixed', left:0, top:0, bottom:0, background:'#1a1a1a', display:'flex', flexDirection:'column', transition:'width 0.2s ease', zIndex:100, borderRight:'1px solid rgba(255,255,255,0.06)' },
-  sidebarHeader:{ padding:'16px 12px', display:'flex', alignItems:'center', justifyContent:'space-between', borderBottom:'1px solid rgba(255,255,255,0.06)' },
-  logoText:{ fontSize:'15px', fontWeight:'500', color:'#ececec' },
-  collapseBtn:{ background:'transparent', border:'1px solid rgba(255,255,255,0.1)', color:'#8e8ea0', width:'28px', height:'28px', borderRadius:'6px', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' },
-  nav:{ flex:1, padding:'8px', overflowY:'auto' },
-  navItem:{ width:'100%', display:'flex', alignItems:'center', gap:'10px', padding:'8px 10px', background:'transparent', border:'none', borderRadius:'8px', color:'#8e8ea0', fontSize:'13px', cursor:'pointer', marginBottom:'1px', textAlign:'left' },
-  navActive:{ background:'rgba(255,255,255,0.08)', color:'#ececec' },
-  navIcon:{ flexShrink:0, width:'18px', display:'flex', alignItems:'center', justifyContent:'center' },
-  badge:{ marginLeft:'auto', background:'rgba(255,255,255,0.07)', color:'#8e8ea0', fontSize:'11px', padding:'1px 6px', borderRadius:'10px' },
-  navDiv:{ height:'1px', background:'rgba(255,255,255,0.06)', margin:'8px 4px' },
-  sidebarFooter:{ padding:'10px', borderTop:'1px solid rgba(255,255,255,0.06)' },
-  userCard:{ display:'flex', alignItems:'center', gap:'10px', padding:'8px 10px', background:'rgba(255,255,255,0.04)', borderRadius:'8px' },
-  userAvatar:{ width:'30px', height:'30px', borderRadius:'50%', background:'#c5b4e3', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'12px', fontWeight:'500', color:'#1a1a1a', flexShrink:0 },
-  userInfo:{ flex:1, minWidth:0 },
-  userName:{ fontSize:'12px', color:'#ececec', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' },
-  logoutLink:{ fontSize:'11px', color:'#555560', background:'none', border:'none', padding:0, cursor:'pointer', textDecoration:'underline' },
-  main:{ flex:1, transition:'margin-left 0.2s ease' },
-  container:{ maxWidth:'1280px', margin:'0 auto', padding:'32px 40px' },
-  welcomeSec:{ marginBottom:'32px' },
-  welcomeTitle:{ fontSize:'24px', fontWeight:'500', color:'#1a1a1a', marginBottom:'6px' },
-  welcomeSub:{ fontSize:'14px', color:'#6b6b80', lineHeight:'1.5' },
-  statsGrid:{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))', gap:'12px', marginBottom:'36px' },
-  statCard:{ background:'#fff', borderRadius:'10px', padding:'18px', border:'1px solid #ebebeb', transition:'border-color 0.15s' },
-  statInner:{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' },
-  statLabel:{ fontSize:'12px', color:'#6b6b80', marginBottom:'6px' },
-  statVal:{ fontSize:'28px', fontWeight:'500', color:'#1a1a1a', marginBottom:'2px' },
-  statSub:{ fontSize:'11px', color:'#aeaeb8' },
-  statIcon:{ width:'36px', height:'36px', borderRadius:'7px', display:'flex', alignItems:'center', justifyContent:'center' },
-  section:{ marginBottom:'40px' },
-  secTitle:{ fontSize:'16px', fontWeight:'500', color:'#1a1a1a', marginBottom:'16px' },
-  cardsGrid:{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))', gap:'12px' },
-  folderCard:{ background:'#fff', borderRadius:'10px', padding:'18px', border:'1px solid #ebebeb', cursor:'pointer', transition:'border-color 0.15s' },
-  folderCardTop:{ marginBottom:'12px' },
-  folderIcon:{ width:'40px', height:'40px', borderRadius:'8px', background:'#f4f4f4', color:'#444', display:'flex', alignItems:'center', justifyContent:'center' },
-  folderTitle:{ fontSize:'15px', fontWeight:'500', color:'#1a1a1a', marginBottom:'4px' },
-  folderDesc:{ fontSize:'13px', color:'#6b6b80', lineHeight:'1.55', marginBottom:'14px' },
-  folderFoot:{ display:'flex', justifyContent:'flex-end', paddingTop:'12px', borderTop:'1px solid #f0f0f0' },
-  linkBtn:{ background:'transparent', border:'none', color:'#8b5cf6', fontSize:'12px', fontWeight:'500', cursor:'pointer' },
-  filesGrid:{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(240px,1fr))', gap:'12px' },
-  fileCard:{ background:'#fff', borderRadius:'10px', overflow:'hidden', border:'1px solid #ebebeb', cursor:'pointer', transition:'border-color 0.15s' },
-  fileCardActive:{ borderColor:'#8b5cf6' },
-  fileCardTop:{ position:'relative' },
-  filePreview:{ height:'120px', background:'#f9f9f8', display:'flex', alignItems:'center', justifyContent:'center' },
-  favBtn:{ position:'absolute', top:'8px', right:'8px', background:'rgba(255,255,255,0.9)', border:'none', width:'28px', height:'28px', borderRadius:'50%', fontSize:'13px', cursor:'pointer' },
-  fileCardBody:{ padding:'12px 12px 8px' },
-  fileCardTitle:{ fontSize:'13px', fontWeight:'500', color:'#1a1a1a', marginBottom:'3px', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' },
-  fileCardMeta:{ fontSize:'11px', color:'#aeaeb8', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' },
-  fileCardFoot:{ padding:'8px 12px 12px', borderTop:'1px solid #f0f0f0' },
-  toolCard:{ position:'relative', background:'#fff', borderRadius:'10px', overflow:'hidden', border:'1px solid #ebebeb', cursor:'pointer', transition:'border-color 0.15s' },
-  toolAccent:{ height:'3px', background:'#e0e0e0' },
-  toolContent:{ padding:'18px' },
-  toolThumb:{ width:'calc(100% + 36px)', height:'120px', marginLeft:'-18px', marginRight:'-18px', marginTop:'-18px', background:'#f4f4f4', overflow:'hidden', marginBottom:'12px' },
-  toolTitle:{ fontSize:'14px', fontWeight:'500', color:'#1a1a1a', marginBottom:'12px' },
-  recentList:{ background:'#fff', borderRadius:'10px', border:'1px solid #ebebeb' },
-  recentItem:{ display:'flex', alignItems:'center', gap:'12px', padding:'12px 14px', cursor:'pointer', borderRadius:'8px' },
-  recentInfo:{ flex:1, minWidth:0 },
-  recentTitle:{ fontSize:'13px', fontWeight:'500', color:'#1a1a1a', marginBottom:'2px', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' },
-  recentMeta:{ fontSize:'11px', color:'#aeaeb8' },
-  quickBtn:{ background:'transparent', border:'1px solid #ebebeb', color:'#8b5cf6', padding:'5px 12px', borderRadius:'7px', fontSize:'12px', fontWeight:'500', cursor:'pointer', flexShrink:0 },
-  pageHeader:{ display:'flex', alignItems:'center', gap:'14px', marginBottom:'24px', flexWrap:'wrap' },
-  backBtn:{ background:'#fff', border:'1px solid #ebebeb', color:'#6b6b80', padding:'7px 14px', borderRadius:'8px', fontSize:'13px', cursor:'pointer' },
-  pageTitle:{ fontSize:'20px', fontWeight:'500', color:'#1a1a1a', marginBottom:'2px' },
-  pageSub:{ fontSize:'13px', color:'#6b6b80' },
-  searchBar:{ display:'flex', gap:'8px', marginBottom:'20px' },
-  searchInput:{ flex:1, padding:'10px 14px', border:'1px solid #ebebeb', borderRadius:'8px', fontSize:'13px', background:'#fff', color:'#1a1a1a' },
-  empty:{ gridColumn:'1/-1', textAlign:'center', padding:'48px 20px', color:'#aeaeb8', fontSize:'13px' },
-  emptyBlock:{ textAlign:'center', padding:'48px 20px' },
-  emptyTxt:{ color:'#aeaeb8', fontSize:'13px' },
-  yellowSmall:{ background:'transparent', color:'#d97706', border:'1px solid #d97706', padding:'5px 12px', borderRadius:'7px', fontSize:'12px', fontWeight:'500', cursor:'pointer' },
-  // Network
-  greenBtn:     { background:'#16a34a', color:'#fff', border:'none', padding:'8px 16px', borderRadius:'8px', fontSize:'13px', fontWeight:'500', cursor:'pointer', whiteSpace:'nowrap' },
-  greenSmall:   { background:'transparent', color:'#16a34a', border:'1px solid #16a34a', padding:'5px 12px', borderRadius:'7px', fontSize:'12px', fontWeight:'500', cursor:'pointer', whiteSpace:'nowrap' },
-  printBtn:     { background:'#1a1a1a', color:'#fff', border:'none', padding:'8px 16px', borderRadius:'8px', fontSize:'13px', fontWeight:'500', cursor:'pointer', whiteSpace:'nowrap' },
-  printSmall:   { background:'transparent', border:'1px solid #ddd', padding:'5px 10px', borderRadius:'7px', fontSize:'13px', cursor:'pointer' },
-  deleteSmall:  { background:'transparent', border:'1px solid #fca5a5', color:'#dc2626', padding:'5px 10px', borderRadius:'7px', fontSize:'12px', cursor:'pointer' },
-  cancelBtn:    { background:'transparent', border:'1px solid #ebebeb', color:'#6b6b80', padding:'8px 14px', borderRadius:'8px', fontSize:'13px', cursor:'pointer' },
-  moveBtn:      { background:'#f4f4f4', border:'1px solid #e0e0e0', color:'#444', width:'28px', height:'28px', borderRadius:'6px', fontSize:'13px', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' },
-  viewSmall:    { background:'#f4f4f4', border:'1px solid #e0e0e0', padding:'5px 8px', borderRadius:'7px', fontSize:'13px', cursor:'pointer' },
-  newNetForm:   { display:'flex', gap:'10px', alignItems:'center', marginBottom:'24px', padding:'16px', background:'#f0fdf4', borderRadius:'10px', border:'1px solid #bbf7d0', flexWrap:'wrap' },
-  newNetInput:  { flex:1, minWidth:'200px', padding:'9px 14px', border:'1px solid #bbf7d0', borderRadius:'8px', fontSize:'14px', background:'#fff', color:'#1a1a1a' },
-  netListCard:  { background:'#fff', borderRadius:'10px', padding:'16px 18px', border:'1px solid #ebebeb', display:'flex', alignItems:'center', justifyContent:'space-between', gap:'12px', flexWrap:'wrap', transition:'border-color 0.15s' },
-  netListLeft:  { display:'flex', alignItems:'center', gap:'12px', flex:1, minWidth:0 },
-  netListIcon:  { width:'36px', height:'36px', borderRadius:'8px', background:'#f0fdf4', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 },
-  netListName:  { fontSize:'14px', fontWeight:'500', color:'#1a1a1a', marginBottom:'2px' },
-  netListMeta:  { fontSize:'12px', color:'#6b6b80' },
-  netItemCard:  { background:'#fff', borderRadius:'10px', border:'1px solid #ebebeb', overflow:'hidden' },
-  netItemHeader:{ display:'flex', alignItems:'center', gap:'10px', padding:'14px 16px', borderBottom:'1px solid #f0f0f0', background:'#fafaf9' },
-  netItemNum:   { width:'24px', height:'24px', borderRadius:'50%', background:'#1a1a1a', color:'#fff', fontSize:'11px', fontWeight:'600', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 },
-  netItemTitle: { flex:1, fontSize:'14px', fontWeight:'500', color:'#1a1a1a', minWidth:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' },
-  // Accordion
-  accToggle:    { display:'flex', alignItems:'center', gap:'8px', padding:'10px 16px', borderBottom:'1px solid #f0f0f0', transition:'background 0.12s' },
-  accLabel:     { fontSize:'12px', fontWeight:'600', color:'#16a34a', textTransform:'uppercase', letterSpacing:'0.08em', flex:1 },
-  accCount:     { fontSize:'11px', color:'#6b6b80' },
-  accBody:      { padding:'14px 16px 16px' },
-  // Questions
-  qRow:    { display:'flex', gap:'8px', alignItems:'flex-start', marginBottom:'10px' },
-  qCodeInput:{ width:'72px', flexShrink:0, padding:'8px 10px', border:'1px solid #e0e0e0', borderRadius:'7px', fontSize:'13px', fontWeight:'600', color:'#1a1a1a', background:'#fff', textAlign:'center' },
-  qTextInput:{ flex:1, padding:'8px 10px', border:'1px solid #e0e0e0', borderRadius:'7px', fontSize:'13px', lineHeight:'1.6', color:'#1a1a1a', background:'#fafaf9', resize:'vertical', fontFamily:'inherit' },
-  qDelBtn:   { background:'transparent', border:'1px solid #fca5a5', color:'#dc2626', width:'28px', height:'28px', borderRadius:'6px', fontSize:'12px', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, marginTop:'4px' },
-  addQBtn:   { background:'transparent', color:'#16a34a', border:'1px dashed #86efac', padding:'6px 14px', borderRadius:'7px', fontSize:'12px', fontWeight:'500', cursor:'pointer', marginTop:'4px' },
-  // Picker
-  pickerItem: { display:'flex', alignItems:'center', gap:'10px', padding:'10px 12px', borderRadius:'8px', marginBottom:'2px' },
-  pickerTitle:{ fontSize:'13px', fontWeight:'500', color:'#1a1a1a', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' },
-  pickerMeta: { fontSize:'11px', color:'#aeaeb8' },
-  // Modals
-  modal:     { position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:200, padding:'20px' },
-  modalBox:  { background:'#fff', borderRadius:'12px', width:'90vw', maxWidth:'1400px', height:'92vh', display:'flex', flexDirection:'column', overflow:'hidden', border:'1px solid #e5e5e5' },
-  modalHead: { display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 14px', borderBottom:'1px solid #ebebeb', minHeight:'46px' },
-  modalTitle:{ fontSize:'14px', fontWeight:'500', color:'#1a1a1a', flex:1, marginRight:'14px', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' },
-  modalBtns: { display:'flex', gap:'6px', alignItems:'center' },
-  iconBtn:   { background:'#f4f4f4', color:'#444', border:'1px solid #e0e0e0', width:'28px', height:'28px', borderRadius:'6px', fontSize:'13px', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' },
-  closeBtn:  { background:'transparent', border:'1px solid #ebebeb', fontSize:'14px', color:'#8e8ea0', cursor:'pointer', width:'28px', height:'28px', borderRadius:'6px', display:'flex', alignItems:'center', justifyContent:'center' },
-  zoomBtn:   { background:'#1a1a1a', color:'#fff', border:'none', width:'28px', height:'28px', borderRadius:'6px', fontSize:'14px', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' },
-  zoomLabel: { fontSize:'11px', color:'#6b6b80', minWidth:'36px', textAlign:'center', cursor:'pointer', userSelect:'none' },
-  modalDiv:  { width:'1px', height:'18px', background:'#ebebeb', margin:'0 2px' },
-  modalBody: { flex:1, overflow:'hidden' },
-  iframe:    { width:'100%', height:'100%', border:'none' },
+  loadingScreen:{minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',background:'#1a1a1a',color:'#ececec',fontFamily:'"Söhne",ui-sans-serif,system-ui,-apple-system,sans-serif'},
+  spinner:{width:'36px',height:'36px',border:'2px solid rgba(255,255,255,0.12)',borderTop:'2px solid #c5b4e3',borderRadius:'50%',animation:'spin 0.9s linear infinite',marginBottom:'16px'},
+  loadingText:{fontSize:'14px',color:'#8e8ea0'},
+  app:{display:'flex',minHeight:'100vh',background:'#f9f9f8',fontFamily:'"Söhne",ui-sans-serif,system-ui,-apple-system,sans-serif',color:'#1a1a1a'},
+  sidebar:{position:'fixed',left:0,top:0,bottom:0,background:'#1a1a1a',display:'flex',flexDirection:'column',transition:'width 0.2s ease',zIndex:100,borderRight:'1px solid rgba(255,255,255,0.06)'},
+  sidebarHeader:{padding:'16px 12px',display:'flex',alignItems:'center',justifyContent:'space-between',borderBottom:'1px solid rgba(255,255,255,0.06)'},
+  logoText:{fontSize:'15px',fontWeight:'500',color:'#ececec'},
+  collapseBtn:{background:'transparent',border:'1px solid rgba(255,255,255,0.1)',color:'#8e8ea0',width:'28px',height:'28px',borderRadius:'6px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'},
+  nav:{flex:1,padding:'8px',overflowY:'auto'},
+  navItem:{width:'100%',display:'flex',alignItems:'center',gap:'10px',padding:'8px 10px',background:'transparent',border:'none',borderRadius:'8px',color:'#8e8ea0',fontSize:'13px',cursor:'pointer',marginBottom:'1px',textAlign:'left'},
+  navActive:{background:'rgba(255,255,255,0.08)',color:'#ececec'},
+  navIcon:{flexShrink:0,width:'18px',display:'flex',alignItems:'center',justifyContent:'center'},
+  badge:{marginLeft:'auto',background:'rgba(255,255,255,0.07)',color:'#8e8ea0',fontSize:'11px',padding:'1px 6px',borderRadius:'10px'},
+  navDiv:{height:'1px',background:'rgba(255,255,255,0.06)',margin:'8px 4px'},
+  sidebarFooter:{padding:'10px',borderTop:'1px solid rgba(255,255,255,0.06)'},
+  userCard:{display:'flex',alignItems:'center',gap:'10px',padding:'8px 10px',background:'rgba(255,255,255,0.04)',borderRadius:'8px'},
+  userAvatar:{width:'30px',height:'30px',borderRadius:'50%',background:'#c5b4e3',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'12px',fontWeight:'500',color:'#1a1a1a',flexShrink:0},
+  userInfo:{flex:1,minWidth:0},
+  userName:{fontSize:'12px',color:'#ececec',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'},
+  logoutLink:{fontSize:'11px',color:'#555560',background:'none',border:'none',padding:0,cursor:'pointer',textDecoration:'underline'},
+  main:{flex:1,transition:'margin-left 0.2s ease'},
+  container:{maxWidth:'1280px',margin:'0 auto',padding:'32px 40px'},
+  welcomeSec:{marginBottom:'32px'},
+  welcomeTitle:{fontSize:'24px',fontWeight:'500',color:'#1a1a1a',marginBottom:'6px'},
+  welcomeSub:{fontSize:'14px',color:'#6b6b80',lineHeight:'1.5'},
+  statsGrid:{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))',gap:'12px',marginBottom:'36px'},
+  statCard:{background:'#fff',borderRadius:'10px',padding:'18px',border:'1px solid #ebebeb',transition:'border-color 0.15s'},
+  statInner:{display:'flex',justifyContent:'space-between',alignItems:'flex-start'},
+  statLabel:{fontSize:'12px',color:'#6b6b80',marginBottom:'6px'},
+  statVal:{fontSize:'28px',fontWeight:'500',color:'#1a1a1a',marginBottom:'2px'},
+  statSub:{fontSize:'11px',color:'#aeaeb8'},
+  statIcon:{width:'36px',height:'36px',borderRadius:'7px',display:'flex',alignItems:'center',justifyContent:'center'},
+  section:{marginBottom:'40px'},
+  secTitle:{fontSize:'16px',fontWeight:'500',color:'#1a1a1a',marginBottom:'16px'},
+  cardsGrid:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:'12px'},
+  folderCard:{background:'#fff',borderRadius:'10px',padding:'18px',border:'1px solid #ebebeb',cursor:'pointer',transition:'border-color 0.15s'},
+  folderTop:{marginBottom:'12px'},
+  folderIcon:{width:'40px',height:'40px',borderRadius:'8px',background:'#f4f4f4',color:'#444',display:'flex',alignItems:'center',justifyContent:'center'},
+  folderTitle:{fontSize:'15px',fontWeight:'500',color:'#1a1a1a',marginBottom:'4px'},
+  folderDesc:{fontSize:'13px',color:'#6b6b80',lineHeight:'1.55',marginBottom:'14px'},
+  folderFoot:{display:'flex',justifyContent:'flex-end',paddingTop:'12px',borderTop:'1px solid #f0f0f0'},
+  linkBtn:{background:'transparent',border:'none',color:'#8b5cf6',fontSize:'12px',fontWeight:'500',cursor:'pointer'},
+  tagFilterBar:{display:'flex',alignItems:'center',gap:'6px',flexWrap:'wrap',marginBottom:'14px',padding:'10px 14px',background:'#fff',borderRadius:'8px',border:'1px solid #ebebeb'},
+  tagFilterLabel:{fontSize:'12px',color:'#6b6b80',fontWeight:'500',flexShrink:0},
+  tagFilterChip:{border:'none',padding:'4px 10px',borderRadius:'20px',fontSize:'12px',cursor:'pointer',transition:'all 0.15s'},
+  filterBadge:{fontSize:'13px',color:'#8b5cf6'},
+  clearFilterBtn:{background:'none',border:'none',cursor:'pointer',color:'#8b5cf6',fontSize:'12px',marginLeft:'2px',padding:0},
+  searchBar:{display:'flex',gap:'8px',marginBottom:'20px'},
+  searchInput:{flex:1,padding:'10px 14px',border:'1px solid #ebebeb',borderRadius:'8px',fontSize:'13px',background:'#fff',color:'#1a1a1a'},
+  filesGrid:{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(240px,1fr))',gap:'12px'},
+  fileCard:{background:'#fff',borderRadius:'10px',overflow:'hidden',border:'1px solid #ebebeb',cursor:'pointer',transition:'border-color 0.15s'},
+  fileCardActive:{borderColor:'#8b5cf6'},
+  fileCardTop:{position:'relative'},
+  filePreview:{height:'120px',background:'#f9f9f8',display:'flex',alignItems:'center',justifyContent:'center'},
+  fileCardBadges:{position:'absolute',top:'8px',right:'8px',display:'flex',gap:'4px',alignItems:'center'},
+  favBtn:{background:'rgba(255,255,255,0.9)',border:'none',width:'28px',height:'28px',borderRadius:'50%',fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'},
+  commentDot:{background:'rgba(255,255,255,0.9)',borderRadius:'50%',width:'24px',height:'24px',fontSize:'11px',display:'flex',alignItems:'center',justifyContent:'center'},
+  fileCardBody:{padding:'10px 12px 6px'},
+  fileCardTitle:{fontSize:'13px',fontWeight:'500',color:'#1a1a1a',marginBottom:'3px',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'},
+  fileCardMeta:{fontSize:'11px',color:'#aeaeb8',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',marginBottom:'6px'},
+  cardTags:{display:'flex',flexWrap:'wrap',gap:'4px',marginTop:'4px'},
+  tagChip:{display:'inline-flex',alignItems:'center',gap:'3px',padding:'2px 8px',borderRadius:'20px',fontSize:'11px',fontWeight:'500'},
+  tagX:{fontSize:'10px',cursor:'pointer',opacity:0,transition:'opacity 0.15s',marginLeft:'2px'},
+  fileCardFoot:{padding:'8px 12px 12px',borderTop:'1px solid #f0f0f0'},
+  toolCard:{position:'relative',background:'#fff',borderRadius:'10px',overflow:'hidden',border:'1px solid #ebebeb',cursor:'pointer',transition:'border-color 0.15s'},
+  toolAccent:{height:'3px',background:'#e0e0e0'},
+  toolContent:{padding:'18px'},
+  toolThumb:{width:'calc(100% + 36px)',height:'120px',marginLeft:'-18px',marginRight:'-18px',marginTop:'-18px',background:'#f4f4f4',overflow:'hidden',marginBottom:'12px'},
+  toolTitle:{fontSize:'14px',fontWeight:'500',color:'#1a1a1a',marginBottom:'12px'},
+  recentList:{background:'#fff',borderRadius:'10px',border:'1px solid #ebebeb'},
+  recentItem:{display:'flex',alignItems:'center',gap:'12px',padding:'12px 14px',cursor:'pointer',borderRadius:'8px'},
+  recentInfo:{flex:1,minWidth:0},
+  recentTitle:{fontSize:'13px',fontWeight:'500',color:'#1a1a1a',marginBottom:'2px',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'},
+  recentMeta:{fontSize:'11px',color:'#aeaeb8'},
+  quickBtn:{background:'transparent',border:'1px solid #ebebeb',color:'#8b5cf6',padding:'5px 12px',borderRadius:'7px',fontSize:'12px',fontWeight:'500',cursor:'pointer',flexShrink:0},
+  pageHeader:{display:'flex',alignItems:'center',gap:'14px',marginBottom:'24px',flexWrap:'wrap'},
+  backBtn:{background:'#fff',border:'1px solid #ebebeb',color:'#6b6b80',padding:'7px 14px',borderRadius:'8px',fontSize:'13px',cursor:'pointer'},
+  pageTitle:{fontSize:'20px',fontWeight:'500',color:'#1a1a1a',marginBottom:'2px'},
+  pageSub:{fontSize:'13px',color:'#6b6b80'},
+  empty:{gridColumn:'1/-1',textAlign:'center',padding:'48px 20px',color:'#aeaeb8',fontSize:'13px'},
+  yellowSmall:{background:'transparent',color:'#d97706',border:'1px solid #d97706',padding:'5px 12px',borderRadius:'7px',fontSize:'12px',fontWeight:'500',cursor:'pointer'},
+  modal:{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:200,padding:'20px'},
+  modalBox:{background:'#fff',borderRadius:'12px',width:'90vw',maxWidth:'1400px',height:'92vh',display:'flex',flexDirection:'column',overflow:'hidden',border:'1px solid #e5e5e5'},
+  modalHead:{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 14px',borderBottom:'1px solid #ebebeb',minHeight:'46px',flexShrink:0},
+  modalTitle:{fontSize:'14px',fontWeight:'500',color:'#1a1a1a',flex:1,marginRight:'14px',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'},
+  modalBtns:{display:'flex',gap:'6px',alignItems:'center'},
+  iconBtn:{background:'#f4f4f4',color:'#444',border:'1px solid #e0e0e0',width:'28px',height:'28px',borderRadius:'6px',fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'},
+  closeBtn:{background:'transparent',border:'1px solid #ebebeb',fontSize:'14px',color:'#8e8ea0',cursor:'pointer',width:'28px',height:'28px',borderRadius:'6px',display:'flex',alignItems:'center',justifyContent:'center'},
+  zoomBtn:{background:'#1a1a1a',color:'#fff',border:'none',width:'28px',height:'28px',borderRadius:'6px',fontSize:'14px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'},
+  zoomLabel:{fontSize:'11px',color:'#6b6b80',minWidth:'36px',textAlign:'center',cursor:'pointer',userSelect:'none'},
+  modalDiv:{width:'1px',height:'18px',background:'#ebebeb',margin:'0 2px'},
+  iframe:{width:'100%',height:'100%',border:'none'},
+  commentPanel:{width:'280px',flexShrink:0,borderLeft:'1px solid #ebebeb',display:'flex',flexDirection:'column',background:'#fff',overflow:'hidden'},
+  cpHeader:{padding:'12px 14px',borderBottom:'1px solid #ebebeb',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0},
+  cpTitle:{fontSize:'13px',fontWeight:'600',color:'#1a1a1a'},
+  cpSection:{padding:'12px 14px',borderBottom:'1px solid #f0f0f0'},
+  cpSectionLabel:{fontSize:'11px',fontWeight:'600',color:'#888',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:'8px'},
+  tagsWrap:{display:'flex',flexWrap:'wrap',gap:'4px',marginBottom:'8px'},
+  tagInputWrap:{display:'flex',gap:'6px',alignItems:'center'},
+  tagInputField:{flex:1,padding:'7px 10px',border:'1px solid #e0e0e0',borderRadius:'7px',fontSize:'12px',color:'#1a1a1a',background:'#fff'},
+  tagAddBtn:{background:'#8b5cf6',color:'#fff',border:'none',width:'28px',height:'28px',borderRadius:'6px',fontSize:'16px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0},
+  suggestBox:{position:'absolute',top:'100%',left:0,right:0,background:'#fff',border:'1px solid #e0e0e0',borderRadius:'8px',boxShadow:'0 4px 16px rgba(0,0,0,0.1)',zIndex:10,marginTop:'4px'},
+  suggestItem:{padding:'8px 12px',fontSize:'12px',color:'#1a1a1a'},
+  commentTextarea:{width:'100%',padding:'10px 12px',border:'1px solid #e0e0e0',borderRadius:'8px',fontSize:'13px',lineHeight:'1.65',color:'#1a1a1a',background:'#fafaf9',resize:'none',fontFamily:'inherit',minHeight:'120px'},
+  // Linked app panel
+  linkedAppPanel:{width:'45%',flexShrink:0,borderLeft:'1px solid #ebebeb',display:'flex',flexDirection:'column',background:'#fff'},
+  linkedAppHeader:{padding:'8px 12px',borderBottom:'1px solid #ebebeb',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0,background:'#f0fdf4'},
+  // Network builder
+  greenBtn:{background:'#16a34a',color:'#fff',border:'none',padding:'8px 16px',borderRadius:'8px',fontSize:'13px',fontWeight:'500',cursor:'pointer',whiteSpace:'nowrap'},
+  greenSmall:{background:'transparent',color:'#16a34a',border:'1px solid #16a34a',padding:'5px 12px',borderRadius:'7px',fontSize:'12px',fontWeight:'500',cursor:'pointer',whiteSpace:'nowrap'},
+  pdfBtn:{background:'transparent',color:'#1a1a1a',border:'1px solid #ddd',padding:'5px 12px',borderRadius:'7px',fontSize:'12px',cursor:'pointer',whiteSpace:'nowrap'},
+  mergeBtn:{background:'#1a1a1a',color:'#fff',border:'none',padding:'8px 16px',borderRadius:'8px',fontSize:'13px',fontWeight:'500',cursor:'pointer',whiteSpace:'nowrap'},
+  deleteSmall:{background:'transparent',border:'1px solid #fca5a5',color:'#dc2626',padding:'5px 10px',borderRadius:'7px',fontSize:'12px',cursor:'pointer'},
+  cancelBtn:{background:'transparent',border:'1px solid #ebebeb',color:'#6b6b80',padding:'8px 14px',borderRadius:'8px',fontSize:'13px',cursor:'pointer'},
+  moveBtn:{background:'#f4f4f4',border:'1px solid #e0e0e0',color:'#444',width:'28px',height:'28px',borderRadius:'6px',fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'},
+  viewSmall:{background:'#f4f4f4',border:'1px solid #e0e0e0',padding:'5px 8px',borderRadius:'7px',fontSize:'13px',cursor:'pointer'},
+  newNetForm:{display:'flex',gap:'10px',alignItems:'center',marginBottom:'24px',padding:'16px',background:'#f0fdf4',borderRadius:'10px',border:'1px solid #bbf7d0',flexWrap:'wrap'},
+  newNetInput:{flex:1,minWidth:'200px',padding:'9px 14px',border:'1px solid #bbf7d0',borderRadius:'8px',fontSize:'14px',background:'#fff',color:'#1a1a1a'},
+  netListCard:{background:'#fff',borderRadius:'10px',padding:'16px 18px',border:'1px solid #ebebeb',display:'flex',alignItems:'center',justifyContent:'space-between',gap:'12px',flexWrap:'wrap'},
+  netListLeft:{display:'flex',alignItems:'center',gap:'12px',flex:1,minWidth:0},
+  netListIcon:{width:'36px',height:'36px',borderRadius:'8px',background:'#f0fdf4',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0},
+  netListName:{fontSize:'14px',fontWeight:'500',color:'#1a1a1a',marginBottom:'2px'},
+  netListMeta:{fontSize:'12px',color:'#6b6b80'},
+  netItemCard:{background:'#fff',borderRadius:'10px',border:'1px solid #ebebeb',overflow:'hidden'},
+  netItemHeader:{display:'flex',alignItems:'center',gap:'10px',padding:'12px 14px',borderBottom:'1px solid #f0f0f0',background:'#fafaf9'},
+  netItemNum:{width:'24px',height:'24px',borderRadius:'50%',background:'#1a1a1a',color:'#fff',fontSize:'11px',fontWeight:'600',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0},
+  netItemTitle:{flex:1,fontSize:'14px',fontWeight:'500',color:'#1a1a1a',minWidth:0,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'},
+  accToggle:{display:'flex',alignItems:'center',gap:'8px',padding:'10px 14px',borderBottom:'1px solid #f0f0f0',transition:'background 0.12s'},
+  accLabel:{fontSize:'11px',fontWeight:'700',color:'#16a34a',textTransform:'uppercase',letterSpacing:'0.08em',flex:1},
+  accBody:{padding:'12px 14px 14px'},
+  qRow:{display:'flex',gap:'8px',alignItems:'flex-start',marginBottom:'8px'},
+  qCodeInput:{width:'68px',flexShrink:0,padding:'7px 8px',border:'1px solid #e0e0e0',borderRadius:'7px',fontSize:'13px',fontWeight:'600',color:'#1a1a1a',background:'#fff',textAlign:'center'},
+  qTextInput:{flex:1,padding:'7px 10px',border:'1px solid #e0e0e0',borderRadius:'7px',fontSize:'13px',lineHeight:'1.6',color:'#1a1a1a',background:'#fafaf9',resize:'vertical',fontFamily:'inherit'},
+  qDelBtn:{background:'transparent',border:'1px solid #fca5a5',color:'#dc2626',width:'26px',height:'26px',borderRadius:'6px',fontSize:'11px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,marginTop:'4px'},
+  addQBtn:{background:'transparent',color:'#16a34a',border:'1px dashed #86efac',padding:'5px 12px',borderRadius:'7px',fontSize:'12px',fontWeight:'500',cursor:'pointer',marginTop:'4px'},
 };
