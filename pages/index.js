@@ -235,7 +235,7 @@ if(status==='loading' || Date.now() % 1000 < 700)
     <div style={S.loadingScreen}>
 
       <img 
-        src="/logos/logo-white.png"
+        src="/logo-white.png"
         alt="Leviathan"
         style={{ 
           height: '48px', 
