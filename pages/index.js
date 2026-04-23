@@ -230,7 +230,29 @@ export default function Home() {
   };
 
   // ─────────────────────────────────────────────────────────────────────────
-  if(status==='loading') return <div style={S.loadingScreen}><div style={S.spinner}/><div style={S.loadingText}>Φόρτωση ΛΕΒΙΑΘΑΝ Cloud...</div></div>;
+ if(status==='loading') 
+  return (
+    <div style={S.loadingScreen}>
+
+      <img 
+        src="/logos/logo-white.png"
+        alt="Leviathan"
+        style={{ 
+          height: '48px', 
+          marginBottom: '24px',
+          objectFit: 'contain',
+          opacity: 0.95
+        }}
+      />
+
+      <div style={S.spinner}/>
+      
+      <div style={S.loadingText}>
+        Φόρτωση ΛΕΒΙΑΘΑΝ Cloud...
+      </div>
+
+    </div>
+  );
   if(!session) return null;
 
   const toolCategories=getToolCategories();
