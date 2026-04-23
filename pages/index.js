@@ -238,8 +238,8 @@ if(status==='loading')
         src="/logo-white.png"
         alt="Leviathan"
         style={{ 
-          height: '86px', 
-          marginBottom: '42px',
+          height: '120px', 
+          marginBottom: '56px',
           objectFit: 'contain'
         }}
       />
