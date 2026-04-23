@@ -238,8 +238,8 @@ if(status==='loading' || Date.now() % 1000 < 700)
         src="/logo-white.png"
         alt="Leviathan"
         style={{ 
-          height: '48px', 
-          marginBottom: '24px',
+          height: '64px', 
+          marginBottom: '32px',
           objectFit: 'contain',
           opacity: 0.95
         }}
