@@ -270,7 +270,7 @@ export default function Home() {
           {!sidebarCollapsed&&<img 
   src="/logo-white.png" 
   alt="Leviathan"
-  style={{ height:'36px', objectFit:'contain' }}
+  style={{ height:'56px', objectFit:'contain' }}
 />}
           <button onClick={()=>setSidebarCollapsed(!sidebarCollapsed)} style={S.collapseBtn}>
             {sidebarCollapsed?<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>}
