@@ -230,7 +230,7 @@ export default function Home() {
   };
 
   // ─────────────────────────────────────────────────────────────────────────
- if(status==='loading') 
+if(status==='loading' || Date.now() % 1000 < 700)
   return (
     <div style={S.loadingScreen}>
 
