@@ -230,7 +230,7 @@ export default function Home() {
   };
 
   // ─────────────────────────────────────────────────────────────────────────
-if(status==='loading' || Date.now() % 1000 < 700)
+if(status==='loading') 
   return (
     <div style={S.loadingScreen}>
 
@@ -239,9 +239,8 @@ if(status==='loading' || Date.now() % 1000 < 700)
         alt="Leviathan"
         style={{ 
           height: '86px', 
-          marginBottom: '43px',
-          objectFit: 'contain',
-          opacity: 0.95
+          marginBottom: '42px',
+          objectFit: 'contain'
         }}
       />
 
