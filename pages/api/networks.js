@@ -1,7 +1,7 @@
 // pages/api/networks.js
 
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../auth/[...nextauth]';
+import { authOptions } from './auth/[...nextauth]';
 import {
   getDriveClient,
   createJsonFile,
@@ -9,7 +9,7 @@ import {
   readJsonFile,
   deleteFile,
   listJsonFilesInFolder,
-} from '../../../lib/drive';
+} from '../../lib/drive';
 
 // Φάκελος στο Drive όπου αποθηκεύονται τα δίκτυα (JSON αρχεία)
 // Πρόσθεσε στο .env.local:  FOLDER_NETWORKS=<drive_folder_id>
