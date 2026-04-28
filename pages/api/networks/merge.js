@@ -109,7 +109,7 @@ export default async function handler(req, res) {
     // 3. Αποθήκευσε στο Drive ως stream
     const pdfBytes = await mergedPdf.save();
     const pdfBuffer = Buffer.from(pdfBytes);
-    const filename = `network_${network.id}.pdf`;
+    const filename = `${network.name}.pdf`;
     const drive = getDriveClient(accessToken);
 
     let pdfFileId = network.pdfFileId;
