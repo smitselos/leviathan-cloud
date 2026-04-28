@@ -3,9 +3,19 @@
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]';
 import { getFileContent, getDriveClient } from '../../../lib/drive';
-import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import { PDFDocument, rgb } from 'pdf-lib';
+import fontkit from '@pdf-lib/fontkit';
 
 const NETWORKS_FOLDER = process.env.FOLDER_NETWORKS;
+
+// DejaVu Sans — υποστηρίζει ελληνικά, ελεύθερη χρήση
+const FONT_URL = 'https://cdn.jsdelivr.net/npm/dejavu-fonts-ttf@2.37.3/ttf/DejaVuSans.ttf';
+
+async function fetchFont() {
+  const res = await fetch(FONT_URL);
+  const buffer = await res.arrayBuffer();
+  return Buffer.from(buffer);
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -20,6 +30,7 @@ export default async function handler(req, res) {
 
   try {
     const mergedPdf = await PDFDocument.create();
+    mergedPdf.registerFontkit(fontkit);
 
     // 1. Πρόσθεσε κάθε κείμενο (PDF)
     for (const item of network.items) {
@@ -40,36 +51,35 @@ export default async function handler(req, res) {
       .filter(q => q.text?.trim());
 
     if (allQuestions.length > 0) {
-      const font = await mergedPdf.embedFont(StandardFonts.Helvetica);
-      const boldFont = await mergedPdf.embedFont(StandardFonts.HelveticaBold);
+      const fontBytes = await fetchFont();
+      const font = await mergedPdf.embedFont(fontBytes);
 
       const pageWidth = 595;
       const pageHeight = 842;
       const margin = 60;
-      const lineHeight = 20;
+      const lineHeight = 22;
       const maxWidth = pageWidth - margin * 2;
 
       let page = mergedPdf.addPage([pageWidth, pageHeight]);
       let y = pageHeight - margin;
 
-      // Τίτλος
+      // Τίτλος ΕΡΩΤΗΣΕΙΣ
       page.drawText('ΕΡΩΤΗΣΕΙΣ', {
-        x: margin, y, size: 16, font: boldFont, color: rgb(0, 0, 0),
+        x: margin, y, size: 16, font, color: rgb(0, 0, 0),
       });
       y -= lineHeight * 2;
 
-      const drawWrappedText = (text, size, bold, indent = 0) => {
-        const f = bold ? boldFont : font;
+      const drawWrappedText = (text, size) => {
         const words = text.split(' ');
         let line = '';
         for (const word of words) {
           const test = line ? `${line} ${word}` : word;
-          if (f.widthOfTextAtSize(test, size) > maxWidth - indent && line) {
+          if (font.widthOfTextAtSize(test, size) > maxWidth && line) {
             if (y < margin + lineHeight) {
               page = mergedPdf.addPage([pageWidth, pageHeight]);
               y = pageHeight - margin;
             }
-            page.drawText(line, { x: margin + indent, y, size, font: f, color: rgb(0, 0, 0) });
+            page.drawText(line, { x: margin, y, size, font, color: rgb(0, 0, 0) });
             y -= lineHeight;
             line = word;
           } else {
@@ -81,14 +91,14 @@ export default async function handler(req, res) {
             page = mergedPdf.addPage([pageWidth, pageHeight]);
             y = pageHeight - margin;
           }
-          page.drawText(line, { x: margin + indent, y, size, font: f, color: rgb(0, 0, 0) });
+          page.drawText(line, { x: margin, y, size, font, color: rgb(0, 0, 0) });
           y -= lineHeight;
         }
       };
 
       for (const q of allQuestions) {
         const prefix = q.code ? `${q.code}. ` : '';
-        drawWrappedText(`${prefix}${q.text}`, 11, false);
+        drawWrappedText(`${prefix}${q.text}`, 11);
         y -= 8;
       }
     }
