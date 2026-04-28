@@ -1,18 +1,15 @@
-// pages/api/networks.js
+// pages/api/networks/index.js
 
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from './auth/[...nextauth]';
+import { authOptions } from '../auth/[...nextauth]';
 import {
-  getDriveClient,
   createJsonFile,
   updateJsonFile,
   readJsonFile,
   deleteFile,
   listJsonFilesInFolder,
-} from '../../lib/drive';
+} from '../../../lib/drive';
 
-// Φάκελος στο Drive όπου αποθηκεύονται τα δίκτυα (JSON αρχεία)
-// Πρόσθεσε στο .env.local:  FOLDER_NETWORKS=<drive_folder_id>
 const NETWORKS_FOLDER = process.env.FOLDER_NETWORKS;
 
 export default async function handler(req, res) {
@@ -21,7 +18,6 @@ export default async function handler(req, res) {
 
   const { accessToken } = session;
 
-  // ── GET: φόρτωση όλων των δικτύων ──────────────────────────────────────
   if (req.method === 'GET') {
     try {
       const files = await listJsonFilesInFolder(accessToken, NETWORKS_FOLDER);
@@ -35,40 +31,26 @@ export default async function handler(req, res) {
           }
         })
       );
-      return res.status(200).json({
-        networks: networks.filter(Boolean),
-      });
+      return res.status(200).json({ networks: networks.filter(Boolean) });
     } catch (error) {
       console.error('GET networks error:', error);
       return res.status(500).json({ error: 'Failed to load networks' });
     }
   }
 
-  // ── POST: δημιουργία ή ενημέρωση δικτύου ───────────────────────────────
   if (req.method === 'POST') {
     const network = req.body;
-    if (!network || !network.id) {
-      return res.status(400).json({ error: 'Invalid network data' });
-    }
+    if (!network || !network.id) return res.status(400).json({ error: 'Invalid network data' });
 
     try {
       let driveFileId = network.driveFileId;
-
       if (driveFileId) {
-        // Ενημέρωση υπάρχοντος αρχείου
         await updateJsonFile(accessToken, driveFileId, network);
       } else {
-        // Δημιουργία νέου αρχείου
         const filename = `network_${network.id}.json`;
-        const created = await createJsonFile(
-          accessToken,
-          NETWORKS_FOLDER,
-          filename,
-          network
-        );
+        const created = await createJsonFile(accessToken, NETWORKS_FOLDER, filename, network);
         driveFileId = created.id;
       }
-
       return res.status(200).json({ driveFileId });
     } catch (error) {
       console.error('POST networks error:', error);
@@ -76,12 +58,9 @@ export default async function handler(req, res) {
     }
   }
 
-  // ── DELETE: διαγραφή δικτύου ────────────────────────────────────────────
   if (req.method === 'DELETE') {
     const { driveFileId } = req.body;
-    if (!driveFileId) {
-      return res.status(400).json({ error: 'Missing driveFileId' });
-    }
+    if (!driveFileId) return res.status(400).json({ error: 'Missing driveFileId' });
 
     try {
       await deleteFile(accessToken, driveFileId);
