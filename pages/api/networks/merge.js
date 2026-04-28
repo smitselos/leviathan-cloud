@@ -5,11 +5,17 @@ import { authOptions } from '../auth/[...nextauth]';
 import { getFileContent, getDriveClient } from '../../../lib/drive';
 import { PDFDocument, rgb } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
+import { Readable } from 'stream';
 
 const NETWORKS_FOLDER = process.env.FOLDER_NETWORKS;
-
-// DejaVu Sans — υποστηρίζει ελληνικά, ελεύθερη χρήση
 const FONT_URL = 'https://cdn.jsdelivr.net/npm/dejavu-fonts-ttf@2.37.3/ttf/DejaVuSans.ttf';
+
+function bufferToStream(buffer) {
+  const readable = new Readable();
+  readable.push(buffer);
+  readable.push(null);
+  return readable;
+}
 
 async function fetchFont() {
   const res = await fetch(FONT_URL);
@@ -32,7 +38,7 @@ export default async function handler(req, res) {
     const mergedPdf = await PDFDocument.create();
     mergedPdf.registerFontkit(fontkit);
 
-    // 1. Πρόσθεσε κάθε κείμενο (PDF)
+    // 1. Πρόσθεσε κάθε κείμενο
     for (const item of network.items) {
       try {
         const pdfBytes = await getFileContent(accessToken, item.fileId);
@@ -47,7 +53,7 @@ export default async function handler(req, res) {
 
     // 2. Σελίδα ερωτήσεων
     const allQuestions = network.items
-      .flatMap(item => item.questions.map(q => ({ ...q, itemTitle: item.title })))
+      .flatMap(item => item.questions.map(q => ({ ...q })))
       .filter(q => q.text?.trim());
 
     if (allQuestions.length > 0) {
@@ -63,13 +69,10 @@ export default async function handler(req, res) {
       let page = mergedPdf.addPage([pageWidth, pageHeight]);
       let y = pageHeight - margin;
 
-      // Τίτλος ΕΡΩΤΗΣΕΙΣ
-      page.drawText('ΕΡΩΤΗΣΕΙΣ', {
-        x: margin, y, size: 16, font, color: rgb(0, 0, 0),
-      });
+      page.drawText('ΕΡΩΤΗΣΕΙΣ', { x: margin, y, size: 16, font, color: rgb(0, 0, 0) });
       y -= lineHeight * 2;
 
-      const drawWrappedText = (text, size) => {
+      const drawWrapped = (text, size) => {
         const words = text.split(' ');
         let line = '';
         for (const word of words) {
@@ -98,12 +101,12 @@ export default async function handler(req, res) {
 
       for (const q of allQuestions) {
         const prefix = q.code ? `${q.code}. ` : '';
-        drawWrappedText(`${prefix}${q.text}`, 11);
+        drawWrapped(`${prefix}${q.text}`, 11);
         y -= 8;
       }
     }
 
-    // 3. Αποθήκευσε στο Drive
+    // 3. Αποθήκευσε στο Drive ως stream
     const pdfBytes = await mergedPdf.save();
     const pdfBuffer = Buffer.from(pdfBytes);
     const filename = `network_${network.id}.pdf`;
@@ -114,7 +117,10 @@ export default async function handler(req, res) {
     if (pdfFileId) {
       await drive.files.update({
         fileId: pdfFileId,
-        media: { mimeType: 'application/pdf', body: pdfBuffer },
+        media: {
+          mimeType: 'application/pdf',
+          body: bufferToStream(pdfBuffer),
+        },
       });
     } else {
       const created = await drive.files.create({
@@ -123,7 +129,10 @@ export default async function handler(req, res) {
           parents: [NETWORKS_FOLDER],
           mimeType: 'application/pdf',
         },
-        media: { mimeType: 'application/pdf', body: pdfBuffer },
+        media: {
+          mimeType: 'application/pdf',
+          body: bufferToStream(pdfBuffer),
+        },
         fields: 'id, name',
       });
       pdfFileId = created.data.id;
