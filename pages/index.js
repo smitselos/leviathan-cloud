@@ -732,15 +732,27 @@ if(status==='loading')
             <div style={S.modalHead}>
               <h2 style={S.modalTitle}>{modalFile.title}</h2>
               <div style={S.modalBtns}>
+                {/* Zoom PDF */}
                 <button onClick={zoomOut} style={S.zoomBtn}>−</button>
                 <span style={S.zoomLabel} onClick={zoomReset}>{modalZoom}%</span>
                 <button onClick={zoomIn} style={S.zoomBtn}>+</button>
                 <div style={S.modalDiv}/>
-                <button onClick={()=>window.open(`/api/files/pdf/${modalFile.id}`,'_blank')} style={S.iconBtn}>↗</button>
+                {/* Fullscreen PDF μόνο */}
+                <button onClick={()=>window.open(`/api/files/pdf/${modalFile.id}`,'_blank')} style={S.iconBtn} title="Άνοιγμα PDF σε νέα καρτέλα">↗</button>
+                {/* Fullscreen ενιαίο (PDF + εφαρμογή) */}
+                {showLinkedApp&&linkedApp&&(
+                  <button onClick={()=>{
+                    const w=window.open('','_blank');
+                    const appSrc=linkedApp.isUrl?linkedApp.file:`/api/tool/${linkedApp.driveId||linkedApp.file}`;
+                    const pdfSrc=`/api/files/pdf/${modalFile.id}`;
+                    w.document.write(`<!DOCTYPE html><html><head><style>*{margin:0;padding:0;box-sizing:border-box;}body{display:flex;height:100vh;overflow:hidden;}iframe{flex:1;border:none;height:100%;}</style></head><body><iframe src="${pdfSrc}"></iframe><iframe src="${appSrc}"></iframe></body></html>`);
+                  }} style={{...S.iconBtn,background:PALETTE.mustard.bgSoft,borderColor:PALETTE.mustard.deep,color:PALETTE.mustard.deep}} title="Άνοιγμα ενιαίου σε πλήρη οθόνη">⛶</button>
+                )}
+                {/* Σύνδεση εφαρμογής */}
                 {linkedApp
                   ?<>
                     <button onClick={()=>setShowLinkedApp(p=>!p)} style={{...S.iconBtn,background:showLinkedApp?PALETTE.mustard.bgSoft:'#f4f4f4',borderColor:showLinkedApp?PALETTE.mustard.deep:'#e0e0e0',color:showLinkedApp?PALETTE.mustard.deep:'#444'}} title={linkedApp.name}>🔗</button>
-                    <button onClick={unlinkApp} style={{...S.iconBtn,fontSize:'10px',color:'#dc2626',borderColor:'#fca5a5'}} title="Αποσύνδεση εφαρμογής">✕🔗</button>
+                    <button onClick={unlinkApp} style={{...S.iconBtn,fontSize:'10px',color:'#dc2626',borderColor:'#fca5a5'}} title="Αποσύνδεση">✕🔗</button>
                   </>
                   :<button onClick={()=>setShowAppPicker(true)} style={{...S.iconBtn,fontSize:'11px'}} title="Σύνδεση εφαρμογής">+🔗</button>
                 }
@@ -749,22 +761,30 @@ if(status==='loading')
               </div>
             </div>
 
-            <div style={{flex:1,display:'flex',overflow:'hidden',background:'#525659'}}>
-              <div style={{flex:1,overflow:'auto',minWidth:0,background:'#525659'}}>
-                <div style={{minHeight:'100%',minWidth:'100%',width:`${modalZoom}%`,transformOrigin:'top left'}}>
-                  <iframe src={`/api/files/pdf/${modalFile.id}`} style={{...S.iframe,minHeight:'100vh'}} title="PDF Viewer"/>
+            <div style={{flex:1,display:'flex',overflow:'hidden'}}>
+
+              {/* PDF panel */}
+              <div style={{flex:1,overflow:'auto',minWidth:0,background:'#525659',position:'relative'}}>
+                <div style={{
+                  width:`${modalZoom}%`,
+                  minWidth:'100%',
+                  height:'100%',
+                  minHeight:'100vh',
+                }}>
+                  <iframe src={`/api/files/pdf/${modalFile.id}`} style={{width:'100%',height:'100%',minHeight:'100vh',border:'none'}} title="PDF Viewer"/>
                 </div>
               </div>
 
+              {/* Εφαρμογή panel */}
               {showLinkedApp&&linkedApp&&(
-                <div style={{flex:1,flexShrink:0,borderLeft:'1px solid #444',display:'flex',flexDirection:'column',background:'#fff',overflow:'hidden'}}>
-                  <div style={S.linkedAppHeader}>
+                <div style={{flex:1,flexShrink:0,borderLeft:'2px solid #333',display:'flex',flexDirection:'column',background:'#fff',overflow:'hidden'}}>
+                  <div style={{...S.linkedAppHeader,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
                     <span style={{fontSize:'12px',fontWeight:'600',color:PALETTE.mustard.deep}}>🔗 {linkedApp.name}</span>
-                    <button onClick={()=>window.open(linkedApp.isUrl?linkedApp.file:`/api/tool/${linkedApp.driveId||linkedApp.file}`,'_blank')} style={{...S.iconBtn,width:'24px',height:'24px',fontSize:'11px'}}>↗</button>
+                    <div style={{display:'flex',gap:'4px',alignItems:'center'}}>
+                      <button onClick={()=>window.open(linkedApp.isUrl?linkedApp.file:`/api/tool/${linkedApp.driveId||linkedApp.file}`,'_blank')} style={{...S.iconBtn,width:'24px',height:'24px',fontSize:'11px'}} title="Άνοιγμα σε νέα καρτέλα">↗</button>
+                    </div>
                   </div>
-                  <div style={{flex:1,overflow:'auto'}}>
-                    <iframe src={linkedApp.isUrl ? linkedApp.file : `/api/tool/${linkedApp.driveId||linkedApp.file}`} style={{...S.iframe,minHeight:'100%'}} title={linkedApp.name}/>
-                  </div>
+                  <iframe src={linkedApp.isUrl ? linkedApp.file : `/api/tool/${linkedApp.driveId||linkedApp.file}`} style={{flex:1,width:'100%',border:'none'}} title={linkedApp.name}/>
                 </div>
               )}
 
