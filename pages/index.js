@@ -136,9 +136,9 @@ export default function Home() {
   };
 
   const openFile=(file)=>{
-    setCurrentFile(file); setShowCommentPanel(false); setShowLinkedApp(false);
+    setCurrentFile(file); setShowCommentPanel(false); setShowLinkedApp(false); setLinkedApp(null);
     const saved=localStorage.getItem(`linked-app-${file.id}`);
-    if(saved){ try{ setLinkedApp(JSON.parse(saved)); }catch(e){ setLinkedApp(null); } } else { setLinkedApp(null); }
+    if(saved){ try{ setLinkedApp(JSON.parse(saved)); }catch(e){ setLinkedApp(null); } }
     const updated=[file,...recentFiles.filter(f=>f.id!==file.id)].slice(0,5);
     setRecentFiles(updated); localStorage.setItem('leviathan-recent',JSON.stringify(updated));
   };
@@ -750,17 +750,17 @@ if(status==='loading')
             </div>
 
             <div style={{flex:1,display:'flex',overflow:'hidden'}}>
-              <div style={{flex:1,overflow:'auto',minWidth:0}}>
-                <div style={{transform:`scale(${modalZoom/100})`,transformOrigin:'top center',height:modalZoom>100?`${modalZoom}%`:'100%',width:modalZoom>100?`${10000/modalZoom}%`:'100%'}}>
+              <div style={{flex:1,overflow:'auto',minWidth:0,display:'flex',flexDirection:'column'}}>
+                <div style={{flex:1,transform:`scale(${modalZoom/100})`,transformOrigin:'top center',height:modalZoom>100?`${modalZoom}%`:'100%',width:modalZoom>100?`${10000/modalZoom}%`:'100%'}}>
                   <iframe src={`/api/files/pdf/${modalFile.id}`} style={S.iframe} title="PDF Viewer"/>
                 </div>
               </div>
 
               {showLinkedApp&&linkedApp&&(
-                <div style={S.linkedAppPanel}>
+                <div style={{...S.linkedAppPanel,width:'50%',display:'flex',flexDirection:'column'}}>
                   <div style={S.linkedAppHeader}>
                     <span style={{fontSize:'12px',fontWeight:'600',color:PALETTE.mustard.deep}}>🔗 {linkedApp.name}</span>
-                    <button onClick={()=>window.open(`/api/tool/${linkedApp.driveId||linkedApp.file}`,'_blank')} style={{...S.iconBtn,width:'24px',height:'24px',fontSize:'11px'}}>↗</button>
+                    <button onClick={()=>window.open(linkedApp.isUrl?linkedApp.file:`/api/tool/${linkedApp.driveId||linkedApp.file}`,'_blank')} style={{...S.iconBtn,width:'24px',height:'24px',fontSize:'11px'}}>↗</button>
                   </div>
                   <iframe src={linkedApp.isUrl ? linkedApp.file : `/api/tool/${linkedApp.driveId||linkedApp.file}`} style={{...S.iframe,flex:1}} title={linkedApp.name}/>
                 </div>
