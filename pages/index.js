@@ -737,17 +737,13 @@ if(status==='loading')
                 <button onClick={zoomIn} style={S.zoomBtn}>+</button>
                 <div style={S.modalDiv}/>
                 <button onClick={()=>window.open(`/api/files/pdf/${modalFile.id}`,'_blank')} style={S.iconBtn}>↗</button>
-                {isDiktya&&(
-                  <>
-                    {linkedApp
-                      ?<>
-                        <button onClick={()=>setShowLinkedApp(p=>!p)} style={{...S.iconBtn,background:showLinkedApp?PALETTE.mustard.bgSoft:'#f4f4f4',borderColor:showLinkedApp?PALETTE.mustard.deep:'#e0e0e0',color:showLinkedApp?PALETTE.mustard.deep:'#444'}} title={linkedApp.name}>🔗</button>
-                        <button onClick={unlinkApp} style={{...S.iconBtn,fontSize:'10px',color:'#dc2626',borderColor:'#fca5a5'}} title="Αποσύνδεση εφαρμογής">✕🔗</button>
-                      </>
-                      :<button onClick={()=>setShowAppPicker(true)} style={{...S.iconBtn,fontSize:'11px'}} title="Σύνδεση εφαρμογής">+🔗</button>
-                    }
+                {linkedApp
+                  ?<>
+                    <button onClick={()=>setShowLinkedApp(p=>!p)} style={{...S.iconBtn,background:showLinkedApp?PALETTE.mustard.bgSoft:'#f4f4f4',borderColor:showLinkedApp?PALETTE.mustard.deep:'#e0e0e0',color:showLinkedApp?PALETTE.mustard.deep:'#444'}} title={linkedApp.name}>🔗</button>
+                    <button onClick={unlinkApp} style={{...S.iconBtn,fontSize:'10px',color:'#dc2626',borderColor:'#fca5a5'}} title="Αποσύνδεση εφαρμογής">✕🔗</button>
                   </>
-                )}
+                  :<button onClick={()=>setShowAppPicker(true)} style={{...S.iconBtn,fontSize:'11px'}} title="Σύνδεση εφαρμογής">+🔗</button>
+                }
                 <button onClick={()=>setShowCommentPanel(p=>!p)} style={{...S.iconBtn,background:showCommentPanel?PALETTE.peach.bgSoft:'#f4f4f4',borderColor:showCommentPanel?PALETTE.peach.deep:'#e0e0e0',color:showCommentPanel?PALETTE.peach.deep:'#444'}} title="Ετικέτες &amp; Σχόλια">🏷️</button>
                 <button onClick={()=>{setCurrentFile(null);zoomReset();setShowCommentPanel(false);setShowLinkedApp(false);}} style={S.closeBtn}>✕</button>
               </div>
@@ -766,7 +762,7 @@ if(status==='loading')
                     <span style={{fontSize:'12px',fontWeight:'600',color:PALETTE.mustard.deep}}>🔗 {linkedApp.name}</span>
                     <button onClick={()=>window.open(`/api/tool/${linkedApp.driveId||linkedApp.file}`,'_blank')} style={{...S.iconBtn,width:'24px',height:'24px',fontSize:'11px'}}>↗</button>
                   </div>
-                  <iframe src={`/api/tool/${linkedApp.driveId||linkedApp.file}`} style={{...S.iframe,flex:1}} title={linkedApp.name}/>
+                  <iframe src={linkedApp.isUrl ? linkedApp.file : `/api/tool/${linkedApp.driveId||linkedApp.file}`} style={{...S.iframe,flex:1}} title={linkedApp.name}/>
                 </div>
               )}
 
@@ -807,19 +803,56 @@ if(status==='loading')
 
       {showAppPicker&&(
         <div style={S.modal} onClick={()=>setShowAppPicker(false)}>
-          <div style={{...S.modalBox,maxWidth:'520px',height:'60vh'}} onClick={e=>e.stopPropagation()}>
-            <div style={S.modalHead}><h2 style={S.modalTitle}>Επιλογή εφαρμογής για σύνδεση</h2><button onClick={()=>setShowAppPicker(false)} style={S.closeBtn}>✕</button></div>
-            <div style={{flex:1,overflowY:'auto',padding:'12px'}}>
-              {tools.length===0?<div style={{textAlign:'center',padding:'32px',color:'#aeaeb8',fontSize:'13px'}}>Δεν υπάρχουν εφαρμογές</div>
-                :tools.map(tool=>(
-                  <div key={tool.file} className="picker-h" style={{display:'flex',alignItems:'center',gap:'12px',padding:'10px 12px',borderRadius:'12px',cursor:'pointer',marginBottom:'4px'}} onClick={()=>linkAppToFile(tool)}>
-                    <div style={{width:'36px',height:'36px',borderRadius:'10px',background:PALETTE.peach.bg,overflow:'hidden',flexShrink:0}}>
-                      <img src={`/api/thumbnail/${tool.driveId||tool.file}`} alt={tool.name} style={{width:'100%',height:'100%',objectFit:'cover'}} onError={e=>{e.target.style.display='none';e.target.parentNode.innerHTML=`<span style="font-size:18px;display:flex;align-items:center;justify-content:center;width:100%;height:100%">${tool.icon||'🔧'}</span>`;}}/>
+          <div style={{...S.modalBox,maxWidth:'560px',width:'90vw',height:'70vh',borderRadius:'16px'}} onClick={e=>e.stopPropagation()}>
+            <div style={S.modalHead}><h2 style={S.modalTitle}>Σύνδεση με εφαρμογή ή σελίδα</h2><button onClick={()=>setShowAppPicker(false)} style={S.closeBtn}>✕</button></div>
+            <div style={{flex:1,overflowY:'auto',padding:'14px'}}>
+
+              {/* Custom URL */}
+              <div style={{marginBottom:'20px'}}>
+                <div style={{fontSize:'11px',fontWeight:'700',color:'#888',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:'8px'}}>Διεύθυνση URL</div>
+                <div style={{display:'flex',gap:'8px'}}>
+                  <input type="url" placeholder="https://..." id="customUrlInput" style={{flex:1,padding:'9px 12px',border:'1px solid #e0e0e0',borderRadius:'10px',fontSize:'13px',color:'#1a1a1a'}}/>
+                  <button onClick={()=>{const url=document.getElementById('customUrlInput').value.trim();if(url)linkAppToFile({file:url,name:url,driveId:null,isUrl:true});}} style={{...S.greenBtn,padding:'9px 14px',fontSize:'12px'}}>Σύνδεση</button>
+                </div>
+              </div>
+
+              {/* Γρήγορες επιλογές */}
+              <div style={{marginBottom:'20px'}}>
+                <div style={{fontSize:'11px',fontWeight:'700',color:'#888',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:'10px'}}>Γρήγορες επιλογές</div>
+                <div style={{display:'flex',flexWrap:'wrap',gap:'8px'}}>
+                  {[
+                    {name:'YouTube',icon:'🎬',url:'https://www.youtube.com'},
+                    {name:'Wikipedia',icon:'📖',url:'https://el.wikipedia.org'},
+                    {name:'ΕΡΤ',icon:'📺',url:'https://www.ert.gr'},
+                    {name:'Ψηφ. Σχολή',icon:'🏫',url:'https://www.digitalschool.gr'},
+                    {name:'Καθημερινή',icon:'🗞️',url:'https://www.kathimerini.gr'},
+                    {name:'ΒΗΜΑ',icon:'📰',url:'https://www.tovima.gr'},
+                  ].map(q=>(
+                    <button key={q.name} onClick={()=>linkAppToFile({file:q.url,name:q.name,driveId:null,isUrl:true})}
+                      style={{display:'flex',alignItems:'center',gap:'6px',padding:'8px 14px',borderRadius:'10px',border:'1px solid #e0e0e0',background:'#fafafa',cursor:'pointer',fontSize:'13px',fontWeight:'500'}}>
+                      <span>{q.icon}</span>{q.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Εφαρμογές ΛΕΒΙΑΘΑΝ */}
+              <div>
+                <div style={{fontSize:'11px',fontWeight:'700',color:'#888',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:'8px'}}>Εφαρμογές ΛΕΒΙΑΘΑΝ</div>
+                {tools.length===0
+                  ?<div style={{textAlign:'center',padding:'20px',color:'#aeaeb8',fontSize:'13px'}}>Δεν υπάρχουν εφαρμογές</div>
+                  :tools.map(tool=>(
+                    <div key={tool.file} className="picker-h" style={{display:'flex',alignItems:'center',gap:'12px',padding:'10px 12px',borderRadius:'12px',cursor:'pointer',marginBottom:'4px'}} onClick={()=>linkAppToFile(tool)}>
+                      <div style={{width:'36px',height:'36px',borderRadius:'10px',background:PALETTE.peach.bg,overflow:'hidden',flexShrink:0}}>
+                        <img src={`/api/thumbnail/${tool.driveId||tool.file}`} alt={tool.name} style={{width:'100%',height:'100%',objectFit:'cover'}} onError={e=>{e.target.style.display='none';e.target.parentNode.innerHTML=`<span style="font-size:18px;display:flex;align-items:center;justify-content:center;width:100%;height:100%">${tool.icon||'🔧'}</span>`;}}/>
+                      </div>
+                      <div style={{flex:1}}><div style={{fontSize:'13px',fontWeight:'500',color:'#1a1a1a'}}>{tool.name}</div>{tool.category&&<div style={{fontSize:'11px',color:'#aeaeb8'}}>{tool.category}</div>}</div>
+                      <span style={{fontSize:'12px',color:PALETTE.mustard.deep}}>+ Σύνδεση</span>
                     </div>
-                    <div style={{flex:1}}><div style={{fontSize:'13px',fontWeight:'500',color:'#1a1a1a'}}>{tool.name}</div>{tool.category&&<div style={{fontSize:'11px',color:'#aeaeb8'}}>{tool.category}</div>}</div>
-                    <span style={{fontSize:'12px',color:PALETTE.mustard.deep}}>+ Σύνδεση</span>
-                  </div>
-                ))}
+                  ))
+                }
+              </div>
+
             </div>
           </div>
         </div>
@@ -1005,8 +1038,8 @@ const S = {
   empty:{gridColumn:'1/-1',textAlign:'center',padding:'48px 20px',color:'#aeaeb8',fontSize:'13px'},
 
   // Modals & υπόλοιπα
-  modal:{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:200,padding:'20px'},
-  modalBox:{background:'#fff',borderRadius:'16px',width:'90vw',maxWidth:'1400px',height:'92vh',display:'flex',flexDirection:'column',overflow:'hidden',border:'1px solid #e5e5e5'},
+  modal:{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:200,padding:'0'},
+  modalBox:{background:'#fff',borderRadius:'0',width:'100vw',maxWidth:'100vw',height:'100vh',display:'flex',flexDirection:'column',overflow:'hidden',border:'none'},
   modalHead:{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 14px',borderBottom:'1px solid #ebebeb',minHeight:'46px',flexShrink:0},
   modalTitle:{fontSize:'14px',fontWeight:'500',color:'#1a1a1a',flex:1,marginRight:'14px',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'},
   modalBtns:{display:'flex',gap:'6px',alignItems:'center'},
