@@ -766,9 +766,10 @@ if(status==='loading')
               {/* PDF panel */}
               <div style={{flex:1,overflow:'auto',minWidth:0,background:'#525659',position:'relative'}}>
                 <div style={{
-                  width:`${modalZoom}%`,
-                  minWidth:'100%',
-                  height:'100%',
+                  transformOrigin:'top left',
+                  transform:`scale(${modalZoom/100})`,
+                  width:`${10000/modalZoom}%`,
+                  height:`${10000/modalZoom}%`,
                   minHeight:'100vh',
                 }}>
                   <iframe src={`/api/files/pdf/${modalFile.id}`} style={{width:'100%',height:'100%',minHeight:'100vh',border:'none'}} title="PDF Viewer"/>
@@ -1060,13 +1061,13 @@ const S = {
   empty:{gridColumn:'1/-1',textAlign:'center',padding:'48px 20px',color:'#aeaeb8',fontSize:'13px'},
 
   // Modals & υπόλοιπα
-  modal:{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:200,padding:'0'},
-  modalBox:{background:'#fff',borderRadius:'0',width:'100vw',maxWidth:'100vw',height:'100vh',display:'flex',flexDirection:'column',overflow:'hidden',border:'none'},
+  modal:{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:200,padding:'20px'},
+  modalBox:{background:'#fff',borderRadius:'12px',width:'100%',maxWidth:'100%',height:'100%',display:'flex',flexDirection:'column',overflow:'hidden',border:'none'},
   modalHead:{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 14px',borderBottom:'1px solid #ebebeb',minHeight:'46px',flexShrink:0},
   modalTitle:{fontSize:'14px',fontWeight:'500',color:'#1a1a1a',flex:1,marginRight:'14px',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'},
   modalBtns:{display:'flex',gap:'6px',alignItems:'center'},
   iconBtn:{background:'#f4f4f4',color:'#444',border:'1px solid #e0e0e0',width:'28px',height:'28px',borderRadius:'8px',fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'},
-  closeBtn:{background:'transparent',border:'1px solid #ebebeb',fontSize:'14px',color:'#8e8ea0',cursor:'pointer',width:'28px',height:'28px',borderRadius:'8px',display:'flex',alignItems:'center',justifyContent:'center'},
+  closeBtn:{background:'#dc2626',border:'none',fontSize:'16px',color:'#fff',cursor:'pointer',width:'36px',height:'36px',borderRadius:'10px',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:'700'},
   zoomBtn:{background:'#1a1a1a',color:'#fff',border:'none',width:'28px',height:'28px',borderRadius:'8px',fontSize:'14px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'},
   zoomLabel:{fontSize:'11px',color:'#6b6b80',minWidth:'36px',textAlign:'center',cursor:'pointer',userSelect:'none'},
   modalDiv:{width:'1px',height:'18px',background:'#ebebeb',margin:'0 2px'},
