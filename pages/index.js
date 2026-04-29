@@ -54,6 +54,7 @@ export default function Home() {
   const [toolsSearchQuery, setToolsSearchQuery] = useState('');
   const [currentToolCategory, setCurrentToolCategory] = useState(null);
   const [modalZoom, setModalZoom]               = useState(100);
+  const [appZoom, setAppZoom]                   = useState(100);
   const [favoriteTools, setFavoriteTools]       = useState([]);
 
   // Tags + comments
@@ -88,6 +89,9 @@ export default function Home() {
   const zoomIn    = () => setModalZoom(z=>Math.min(z+10,200));
   const zoomOut   = () => setModalZoom(z=>Math.max(z-10,50));
   const zoomReset = () => setModalZoom(100);
+  const appZoomIn    = () => setAppZoom(z=>Math.min(z+10,200));
+  const appZoomOut   = () => setAppZoom(z=>Math.max(z-10,50));
+  const appZoomReset = () => setAppZoom(100);
 
   const recentTools = [...tools].filter(t=>t.addedAt).sort((a,b)=>new Date(b.addedAt)-new Date(a.addedAt)).slice(0,5);
 
@@ -725,30 +729,24 @@ if(status==='loading')
         </div>
       </main>
 
-      {/* ── Modals (αμετάβλητα) ── */}
+      {/* ── Modals ── */}
       {modalFile&&(
-        <div style={S.modal} onClick={()=>{setCurrentFile(null);zoomReset();setShowCommentPanel(false);setShowLinkedApp(false);}}>
+        <div style={S.modal} onClick={()=>{setCurrentFile(null);zoomReset();appZoomReset();setShowCommentPanel(false);setShowLinkedApp(false);}}>
           <div style={S.modalBox} onClick={e=>e.stopPropagation()}>
+
+            {/* Header — μόνο τίτλος και γενικά κουμπιά */}
             <div style={S.modalHead}>
               <h2 style={S.modalTitle}>{modalFile.title}</h2>
               <div style={S.modalBtns}>
-                {/* Zoom PDF */}
-                <button onClick={zoomOut} style={S.zoomBtn}>−</button>
-                <span style={S.zoomLabel} onClick={zoomReset}>{modalZoom}%</span>
-                <button onClick={zoomIn} style={S.zoomBtn}>+</button>
-                <div style={S.modalDiv}/>
-                {/* Fullscreen PDF μόνο */}
-                <button onClick={()=>window.open(`/api/files/pdf/${modalFile.id}`,'_blank')} style={S.iconBtn} title="Άνοιγμα PDF σε νέα καρτέλα">↗</button>
-                {/* Fullscreen ενιαίο (PDF + εφαρμογή) */}
+                <button onClick={()=>window.open(`/api/files/pdf/${modalFile.id}`,'_blank')} style={S.iconBtn} title="PDF σε νέα καρτέλα">↗</button>
                 {showLinkedApp&&linkedApp&&(
                   <button onClick={()=>{
                     const w=window.open('','_blank');
                     const appSrc=linkedApp.isUrl?linkedApp.file:`/api/tool/${linkedApp.driveId||linkedApp.file}`;
                     const pdfSrc=`/api/files/pdf/${modalFile.id}`;
-                    w.document.write(`<!DOCTYPE html><html><head><style>*{margin:0;padding:0;box-sizing:border-box;}body{display:flex;height:100vh;overflow:hidden;}iframe{flex:1;border:none;height:100%;}</style></head><body><iframe src="${pdfSrc}"></iframe><iframe src="${appSrc}"></iframe></body></html>`);
-                  }} style={{...S.iconBtn,background:PALETTE.mustard.bgSoft,borderColor:PALETTE.mustard.deep,color:PALETTE.mustard.deep}} title="Άνοιγμα ενιαίου σε πλήρη οθόνη">⛶</button>
+                    w.document.write(`<!DOCTYPE html><html><head><style>*{margin:0;padding:0;box-sizing:border-box;}body{display:flex;height:100vh;overflow:hidden;font-family:sans-serif;}.bar{position:fixed;top:0;left:0;right:0;height:40px;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;gap:12px;z-index:100;}.bar button{background:rgba(255,255,255,0.15);border:none;color:#fff;padding:4px 12px;border-radius:6px;cursor:pointer;font-size:13px;}.panels{display:flex;height:100vh;padding-top:40px;box-sizing:border-box;}iframe{flex:1;border:none;height:100%;}</style></head><body><div class="bar"><span style="color:#e8c96a;font-size:13px;font-weight:600">ΛΕΒΙΑΘΑΝ · Ενιαία Προβολή</span></div><div class="panels"><iframe src="${pdfSrc}"></iframe><iframe src="${appSrc}"></iframe></div></body></html>`);
+                  }} style={{...S.iconBtn,background:PALETTE.mustard.bgSoft,borderColor:PALETTE.mustard.deep,color:PALETTE.mustard.deep}} title="Ενιαία πλήρης οθόνη">⛶</button>
                 )}
-                {/* Σύνδεση εφαρμογής */}
                 {linkedApp
                   ?<>
                     <button onClick={()=>setShowLinkedApp(p=>!p)} style={{...S.iconBtn,background:showLinkedApp?PALETTE.mustard.bgSoft:'#f4f4f4',borderColor:showLinkedApp?PALETTE.mustard.deep:'#e0e0e0',color:showLinkedApp?PALETTE.mustard.deep:'#444'}} title={linkedApp.name}>🔗</button>
@@ -757,20 +755,27 @@ if(status==='loading')
                   :<button onClick={()=>setShowAppPicker(true)} style={{...S.iconBtn,fontSize:'11px'}} title="Σύνδεση εφαρμογής">+🔗</button>
                 }
                 <button onClick={()=>setShowCommentPanel(p=>!p)} style={{...S.iconBtn,background:showCommentPanel?PALETTE.peach.bgSoft:'#f4f4f4',borderColor:showCommentPanel?PALETTE.peach.deep:'#e0e0e0',color:showCommentPanel?PALETTE.peach.deep:'#444'}} title="Ετικέτες &amp; Σχόλια">🏷️</button>
-                <button onClick={()=>{setCurrentFile(null);zoomReset();setShowCommentPanel(false);setShowLinkedApp(false);}} style={S.closeBtn}>✕</button>
+                <button onClick={()=>{setCurrentFile(null);zoomReset();appZoomReset();setShowCommentPanel(false);setShowLinkedApp(false);}} style={S.closeBtn}>✕</button>
               </div>
             </div>
 
             <div style={{flex:1,display:'flex',overflow:'hidden'}}>
 
               {/* PDF panel */}
-              <div style={{flex:1,overflow:'auto',minWidth:0,background:'#525659',position:'relative'}}>
+              <div style={{flex:1,overflow:'auto',minWidth:0,background:'#525659',position:'relative',display:'flex',flexDirection:'column'}}>
+                {/* Zoom bar PDF */}
+                <div style={{position:'sticky',top:0,left:0,zIndex:10,display:'flex',alignItems:'center',gap:'6px',padding:'6px 10px',background:'rgba(0,0,0,0.55)',backdropFilter:'blur(4px)',width:'fit-content',borderRadius:'0 0 10px 0'}}>
+                  <button onClick={zoomOut} style={{...S.zoomBtn,width:'26px',height:'26px',fontSize:'14px'}}>−</button>
+                  <span onClick={zoomReset} style={{...S.zoomLabel,color:'#fff',cursor:'pointer',minWidth:'38px',textAlign:'center',fontSize:'11px'}}>{modalZoom}%</span>
+                  <button onClick={zoomIn} style={{...S.zoomBtn,width:'26px',height:'26px',fontSize:'14px'}}>+</button>
+                </div>
                 <div style={{
                   transformOrigin:'top left',
                   transform:`scale(${modalZoom/100})`,
                   width:`${10000/modalZoom}%`,
                   height:`${10000/modalZoom}%`,
                   minHeight:'100vh',
+                  marginTop:'-38px',
                 }}>
                   <iframe src={`/api/files/pdf/${modalFile.id}`} style={{width:'100%',height:'100%',minHeight:'100vh',border:'none'}} title="PDF Viewer"/>
                 </div>
@@ -779,13 +784,27 @@ if(status==='loading')
               {/* Εφαρμογή panel */}
               {showLinkedApp&&linkedApp&&(
                 <div style={{flex:1,flexShrink:0,borderLeft:'2px solid #333',display:'flex',flexDirection:'column',background:'#fff',overflow:'hidden'}}>
-                  <div style={{...S.linkedAppHeader,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                  {/* Zoom bar εφαρμογής */}
+                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'5px 10px',background:PALETTE.mustard.bgSoft,borderBottom:'1px solid '+PALETTE.mustard.accent,flexShrink:0}}>
                     <span style={{fontSize:'12px',fontWeight:'600',color:PALETTE.mustard.deep}}>🔗 {linkedApp.name}</span>
                     <div style={{display:'flex',gap:'4px',alignItems:'center'}}>
-                      <button onClick={()=>window.open(linkedApp.isUrl?linkedApp.file:`/api/tool/${linkedApp.driveId||linkedApp.file}`,'_blank')} style={{...S.iconBtn,width:'24px',height:'24px',fontSize:'11px'}} title="Άνοιγμα σε νέα καρτέλα">↗</button>
+                      <button onClick={appZoomOut} style={{...S.zoomBtn,width:'24px',height:'24px',fontSize:'13px'}}>−</button>
+                      <span onClick={appZoomReset} style={{...S.zoomLabel,cursor:'pointer',minWidth:'34px',textAlign:'center',fontSize:'11px'}}>{appZoom}%</span>
+                      <button onClick={appZoomIn} style={{...S.zoomBtn,width:'24px',height:'24px',fontSize:'13px'}}>+</button>
+                      <button onClick={()=>window.open(linkedApp.isUrl?linkedApp.file:`/api/tool/${linkedApp.driveId||linkedApp.file}`,'_blank')} style={{...S.iconBtn,width:'24px',height:'24px',fontSize:'11px',marginLeft:'4px'}} title="Νέα καρτέλα">↗</button>
                     </div>
                   </div>
-                  <iframe src={linkedApp.isUrl ? linkedApp.file : `/api/tool/${linkedApp.driveId||linkedApp.file}`} style={{flex:1,width:'100%',border:'none'}} title={linkedApp.name}/>
+                  <div style={{flex:1,overflow:'auto',position:'relative'}}>
+                    <div style={{
+                      transformOrigin:'top left',
+                      transform:`scale(${appZoom/100})`,
+                      width:`${10000/appZoom}%`,
+                      height:`${10000/appZoom}%`,
+                      minHeight:'100%',
+                    }}>
+                      <iframe src={linkedApp.isUrl ? linkedApp.file : `/api/tool/${linkedApp.driveId||linkedApp.file}`} style={{width:'100%',height:'100%',minHeight:'80vh',border:'none'}} title={linkedApp.name}/>
+                    </div>
+                  </div>
                 </div>
               )}
 
