@@ -749,8 +749,8 @@ if(status==='loading')
               </div>
             </div>
 
-            <div style={{flex:1,display:'flex',overflow:'hidden'}}>
-              <div style={{flex:1,overflow:'auto',minWidth:0,display:'flex',flexDirection:'column'}}>
+            <div style={{flex:1,display:'flex',overflow:'hidden',background:'#525659'}}>
+              <div style={{flex:1,overflow:'auto',minWidth:0,display:'flex',flexDirection:'column',background:'#525659'}}>
                 <div style={{flex:1,transform:`scale(${modalZoom/100})`,transformOrigin:'top center',height:modalZoom>100?`${modalZoom}%`:'100%',width:modalZoom>100?`${10000/modalZoom}%`:'100%'}}>
                   <iframe src={`/api/files/pdf/${modalFile.id}`} style={S.iframe} title="PDF Viewer"/>
                 </div>
