@@ -154,6 +154,8 @@ export default function Home() {
     if(saved){ try{ setLinkedApp(JSON.parse(saved)); }catch(e){ setLinkedApp(null); } }
     const updated=[file,...recentFiles.filter(f=>f.id!==file.id)].slice(0,5);
     setRecentFiles(updated); localStorage.setItem('leviathan-recent',JSON.stringify(updated));
+    // Σε mobile ανοίγει ως fullscreen view αντί για modal
+    if(isMobile) { setActiveView('mobileViewer'); setMobileTab('pdf'); }
   };
 
   const toggleFavorite=(file)=>{ const isFav=favorites.some(f=>f.id===file.id); const updated=isFav?favorites.filter(f=>f.id!==file.id):[...favorites,file]; setFavorites(updated); localStorage.setItem('leviathan-favorites',JSON.stringify(updated)); };
@@ -796,8 +798,55 @@ if(status==='loading')
         </div>
       </main>
 
-      {/* ── Modals ── */}
-      {modalFile&&(
+      {/* ── Mobile Viewer — fullscreen χωρίς modal ── */}
+      {isMobile&&activeView==='mobileViewer'&&currentFile&&(
+        <div style={{position:'fixed',inset:0,background:'#fff',zIndex:150,display:'flex',flexDirection:'column'}}>
+
+          {/* Top bar με tabs */}
+          <div style={{background:'#1a1a1a',flexShrink:0}}>
+            <div style={{display:'flex',alignItems:'center',padding:'8px 12px',gap:'8px'}}>
+              <button onClick={()=>{setActiveView('folder');setCurrentFile(null);}} style={{background:'transparent',border:'none',color:'#e8c96a',fontSize:'13px',cursor:'pointer',padding:'4px 8px'}}>← Πίσω</button>
+              <span style={{flex:1,color:'#fff',fontSize:'13px',fontWeight:'600',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{currentFile.title}</span>
+              <button onClick={()=>window.open(`/api/files/pdf/${currentFile.id}`,'_blank')} style={{background:'transparent',border:'none',color:'#aaa',fontSize:'18px',cursor:'pointer'}}>↗</button>
+            </div>
+            {/* Tabs — μόνο αν υπάρχει εφαρμογή */}
+            {linkedApp&&(
+              <div style={{display:'flex',borderTop:'1px solid rgba(255,255,255,0.08)'}}>
+                <button onClick={()=>setMobileTab('pdf')} style={{flex:1,padding:'10px',fontSize:'13px',fontWeight:mobileTab==='pdf'?700:400,color:mobileTab==='pdf'?'#e8c96a':'#8e8ea0',background:'transparent',border:'none',borderBottom:mobileTab==='pdf'?'2px solid #e8c96a':'2px solid transparent',cursor:'pointer'}}>📄 Κείμενο</button>
+                <button onClick={()=>setMobileTab('app')} style={{flex:1,padding:'10px',fontSize:'13px',fontWeight:mobileTab==='app'?700:400,color:mobileTab==='app'?'#e8c96a':'#8e8ea0',background:'transparent',border:'none',borderBottom:mobileTab==='app'?'2px solid #e8c96a':'2px solid transparent',cursor:'pointer'}}>🔗 {linkedApp.name}</button>
+              </div>
+            )}
+          </div>
+
+          {/* Zoom bar */}
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'6px 14px',background:'#f5f5f5',borderBottom:'1px solid #e0e0e0',flexShrink:0}}>
+            <span style={{fontSize:'11px',color:'#888'}}>{mobileTab==='pdf'?'Κείμενο':'Εφαρμογή'}</span>
+            <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+              <button onClick={mobileTab==='pdf'?zoomOut:appZoomOut} style={{...S.zoomBtn,width:'32px',height:'32px',fontSize:'16px'}}>−</button>
+              <span onClick={mobileTab==='pdf'?zoomReset:appZoomReset} style={{fontSize:'12px',color:'#444',minWidth:'40px',textAlign:'center',cursor:'pointer'}}>{mobileTab==='pdf'?modalZoom:appZoom}%</span>
+              <button onClick={mobileTab==='pdf'?zoomIn:appZoomIn} style={{...S.zoomBtn,width:'32px',height:'32px',fontSize:'16px'}}>+</button>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div style={{flex:1,overflow:'auto',background:mobileTab==='pdf'?'#525659':'#fff'}}>
+            {mobileTab==='pdf'&&(
+              <div style={{transformOrigin:'top left',transform:`scale(${modalZoom/100})`,width:`${10000/modalZoom}%`,minHeight:'100%'}}>
+                <iframe src={`/api/files/pdf/${currentFile.id}`} style={{width:'100%',minHeight:'100vh',border:'none'}} title="PDF"/>
+              </div>
+            )}
+            {mobileTab==='app'&&linkedApp&&(
+              <div style={{transformOrigin:'top left',transform:`scale(${appZoom/100})`,width:`${10000/appZoom}%`,minHeight:'100%'}}>
+                <iframe src={linkedApp.isUrl?linkedApp.file:`/api/tool/${linkedApp.driveId||linkedApp.file}`} style={{width:'100%',minHeight:'100vh',border:'none'}} title={linkedApp.name}/>
+              </div>
+            )}
+          </div>
+
+        </div>
+      )}
+
+      {/* ── Modals — μόνο σε desktop ── */}
+      {!isMobile&&modalFile&&(
         <div style={isMobile?{...S.modal,padding:0}:S.modal} onClick={()=>{setCurrentFile(null);zoomReset();appZoomReset();setShowCommentPanel(false);setShowLinkedApp(false);}}>
           <div style={isMobile?{...S.modalBox,borderRadius:0}:S.modalBox} onClick={e=>e.stopPropagation()}>
 
