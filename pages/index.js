@@ -56,6 +56,8 @@ export default function Home() {
   const [modalZoom, setModalZoom]               = useState(100);
   const [appZoom, setAppZoom]                   = useState(100);
   const [favoriteTools, setFavoriteTools]       = useState([]);
+  const [isMobile, setIsMobile]                 = useState(false);
+  const [mobileTab, setMobileTab]               = useState('pdf'); // 'pdf' | 'app'
 
   // Tags + comments
   const [metadata, setMetadata]               = useState({});
@@ -96,6 +98,13 @@ export default function Home() {
   const recentTools = [...tools].filter(t=>t.addedAt).sort((a,b)=>new Date(b.addedAt)-new Date(a.addedAt)).slice(0,5);
 
   useEffect(()=>{ if(status==='unauthenticated') router.push('/login'); },[status,router]);
+
+  useEffect(()=>{
+    const check=()=>setIsMobile(window.innerWidth<=768);
+    check();
+    window.addEventListener('resize',check);
+    return()=>window.removeEventListener('resize',check);
+  },[]);
 
   useEffect(()=>{
     const sf=localStorage.getItem('leviathan-favorites');
@@ -289,14 +298,10 @@ if(status==='loading')
         @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
       `}</style>
 
-      {/* ── Sidebar (αμετάβλητο, σκούρο) ── */}
-      <aside style={{...S.sidebar,width:sidebarCollapsed?'70px':'260px'}}>
+      {/* ── Sidebar — κρυφή σε mobile ── */}
+      {!isMobile&&<aside style={{...S.sidebar,width:sidebarCollapsed?'70px':'260px'}}>
         <div style={S.sidebarHeader}>
-          {!sidebarCollapsed&&<img 
-  src="/logo-white.png" 
-  alt="Leviathan"
-  style={{ height:'86px', objectFit:'contain' }}
-/>}
+          {!sidebarCollapsed&&<img src="/logo-white.png" alt="Leviathan" style={{ height:'86px', objectFit:'contain' }}/>}
           <button onClick={()=>setSidebarCollapsed(!sidebarCollapsed)} style={S.collapseBtn}>
             {sidebarCollapsed?<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>}
           </button>
@@ -348,11 +353,37 @@ if(status==='loading')
             {!sidebarCollapsed&&(<div style={S.userInfo}><div style={S.userName}>{session.user?.email?.split('@')[0]}</div><button onClick={()=>signOut()} style={S.logoutLink}>Αποσύνδεση</button></div>)}
           </div>
         </div>
-      </aside>
+      </aside>}
+
+      {/* ── Bottom Navigation — μόνο σε mobile ── */}
+      {isMobile&&(
+        <nav style={S.bottomNav}>
+          <button onClick={goHome} style={{...S.bottomNavBtn,...(activeView==='home'?S.bottomNavActive:{})}}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>
+            <span>Αρχική</span>
+          </button>
+          <button onClick={()=>{setActiveView('allDocs');setCurrentFolder(null);}} style={{...S.bottomNavBtn,...(['allDocs','folder'].includes(activeView)&&currentFolder!=='diktya'?S.bottomNavActive:{})}}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/><rect x="1" y="3" width="4" height="4" rx="0.5"/><rect x="1" y="9" width="4" height="4" rx="0.5"/><rect x="1" y="15" width="4" height="4" rx="0.5"/></svg>
+            <span>Κείμενα</span>
+          </button>
+          <button onClick={()=>openFolder('diktya')} style={{...S.bottomNavBtn,...(activeView==='folder'&&currentFolder==='diktya'?S.bottomNavActive:{})}}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><line x1="12" y1="7" x2="5" y2="17"/><line x1="12" y1="7" x2="19" y2="17"/><line x1="5" y1="19" x2="19" y2="19"/></svg>
+            <span>Δίκτυα</span>
+          </button>
+          <button onClick={openAllTools} style={{...S.bottomNavBtn,...(['allTools','toolCategory'].includes(activeView)?S.bottomNavActive:{})}}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            <span>Εφαρμογές</span>
+          </button>
+          <button onClick={()=>signOut()} style={S.bottomNavBtn}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <span>Έξοδος</span>
+          </button>
+        </nav>
+      )}
 
       {/* ── Main ── */}
-      <main style={{...S.main,marginLeft:sidebarCollapsed?'70px':'260px'}}>
-        <div style={S.container}>
+      <main style={{...S.main,marginLeft:isMobile?0:sidebarCollapsed?'70px':'260px',paddingBottom:isMobile?'70px':0}}>
+        <div style={{...S.container,padding:isMobile?'16px':undefined}}>
 
           {/* Home */}
           {activeView==='home'&&(
@@ -767,15 +798,15 @@ if(status==='loading')
 
       {/* ── Modals ── */}
       {modalFile&&(
-        <div style={S.modal} onClick={()=>{setCurrentFile(null);zoomReset();appZoomReset();setShowCommentPanel(false);setShowLinkedApp(false);}}>
-          <div style={S.modalBox} onClick={e=>e.stopPropagation()}>
+        <div style={isMobile?{...S.modal,padding:0}:S.modal} onClick={()=>{setCurrentFile(null);zoomReset();appZoomReset();setShowCommentPanel(false);setShowLinkedApp(false);}}>
+          <div style={isMobile?{...S.modalBox,borderRadius:0}:S.modalBox} onClick={e=>e.stopPropagation()}>
 
-            {/* Header — μόνο τίτλος και γενικά κουμπιά */}
+            {/* Header */}
             <div style={S.modalHead}>
               <h2 style={S.modalTitle}>{modalFile.title}</h2>
               <div style={S.modalBtns}>
-                <button onClick={()=>window.open(`/api/files/pdf/${modalFile.id}`,'_blank')} style={S.iconBtn} title="PDF σε νέα καρτέλα">↗</button>
-                {showLinkedApp&&linkedApp&&(
+                {!isMobile&&<button onClick={()=>window.open(`/api/files/pdf/${modalFile.id}`,'_blank')} style={S.iconBtn} title="PDF σε νέα καρτέλα">↗</button>}
+                {!isMobile&&showLinkedApp&&linkedApp&&(
                   <button onClick={()=>{
                     const w=window.open('','_blank');
                     const appSrc=linkedApp.isUrl?linkedApp.file:`/api/tool/${linkedApp.driveId||linkedApp.file}`;
@@ -831,20 +862,46 @@ function az(d){if(d===0)az0=100;else az0=Math.min(Math.max(az0+d,50),200);applyZ
                     w.document.close();
                   }} style={{...S.iconBtn,background:PALETTE.mustard.bgSoft,borderColor:PALETTE.mustard.deep,color:PALETTE.mustard.deep}} title="Ενιαία πλήρης οθόνη">⛶</button>
                 )}
-                {linkedApp
+                {!isMobile&&(linkedApp
                   ?<>
                     <button onClick={()=>setShowLinkedApp(p=>!p)} style={{...S.iconBtn,background:showLinkedApp?PALETTE.mustard.bgSoft:'#f4f4f4',borderColor:showLinkedApp?PALETTE.mustard.deep:'#e0e0e0',color:showLinkedApp?PALETTE.mustard.deep:'#444'}} title={linkedApp.name}>🔗</button>
                     <button onClick={unlinkApp} style={{...S.iconBtn,fontSize:'10px',color:'#dc2626',borderColor:'#fca5a5'}} title="Αποσύνδεση">✕🔗</button>
                   </>
                   :<button onClick={()=>setShowAppPicker(true)} style={{...S.iconBtn,fontSize:'11px'}} title="Σύνδεση εφαρμογής">+🔗</button>
-                }
-                <button onClick={()=>setShowCommentPanel(p=>!p)} style={{...S.iconBtn,background:showCommentPanel?PALETTE.peach.bgSoft:'#f4f4f4',borderColor:showCommentPanel?PALETTE.peach.deep:'#e0e0e0',color:showCommentPanel?PALETTE.peach.deep:'#444'}} title="Ετικέτες &amp; Σχόλια">🏷️</button>
+                )}
+                {!isMobile&&<button onClick={()=>setShowCommentPanel(p=>!p)} style={{...S.iconBtn,background:showCommentPanel?PALETTE.peach.bgSoft:'#f4f4f4',borderColor:showCommentPanel?PALETTE.peach.deep:'#e0e0e0',color:showCommentPanel?PALETTE.peach.deep:'#444'}} title="Ετικέτες &amp; Σχόλια">🏷️</button>}
                 <button onClick={()=>{setCurrentFile(null);zoomReset();appZoomReset();setShowCommentPanel(false);setShowLinkedApp(false);}} style={S.closeBtn}>✕</button>
               </div>
             </div>
 
             <div style={{flex:1,display:'flex',overflow:'hidden'}}>
 
+              {/* MOBILE: tabs για PDF / Εφαρμογή */}
+              {isMobile ? (
+                <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+                  {/* Tab bar — μόνο αν υπάρχει εφαρμογή */}
+                  {linkedApp&&(
+                    <div style={{display:'flex',borderBottom:'1px solid #e0e0e0',flexShrink:0,background:'#fff'}}>
+                      <button onClick={()=>setMobileTab('pdf')} style={{flex:1,padding:'10px',fontSize:'13px',fontWeight:mobileTab==='pdf'?700:400,color:mobileTab==='pdf'?PALETTE.mustard.deep:'#888',background:'transparent',border:'none',borderBottom:mobileTab==='pdf'?'2px solid '+PALETTE.mustard.deep:'2px solid transparent',cursor:'pointer'}}>📄 Κείμενο</button>
+                      <button onClick={()=>setMobileTab('app')} style={{flex:1,padding:'10px',fontSize:'13px',fontWeight:mobileTab==='app'?700:400,color:mobileTab==='app'?PALETTE.mustard.deep:'#888',background:'transparent',border:'none',borderBottom:mobileTab==='app'?'2px solid '+PALETTE.mustard.deep:'2px solid transparent',cursor:'pointer'}}>🔗 {linkedApp.name}</button>
+                    </div>
+                  )}
+                  {/* PDF tab */}
+                  {(!linkedApp||mobileTab==='pdf')&&(
+                    <div style={{flex:1,overflow:'auto',background:'#525659'}}>
+                      <iframe src={`/api/files/pdf/${modalFile.id}`} style={{width:'100%',height:'100%',minHeight:'100vh',border:'none'}} title="PDF Viewer"/>
+                    </div>
+                  )}
+                  {/* App tab */}
+                  {linkedApp&&mobileTab==='app'&&(
+                    <div style={{flex:1,overflow:'auto'}}>
+                      <iframe src={linkedApp.isUrl?linkedApp.file:`/api/tool/${linkedApp.driveId||linkedApp.file}`} style={{width:'100%',height:'100%',minHeight:'100vh',border:'none'}} title={linkedApp.name}/>
+                    </div>
+                  )}
+                </div>
+              ) : (
+              <>
+              {/* DESKTOP: split view */}
               {/* PDF panel */}
               <div style={{flex:1,overflow:'auto',minWidth:0,background:'#525659',position:'relative',display:'flex',flexDirection:'column'}}>
                 {/* Zoom bar PDF */}
@@ -870,12 +927,14 @@ function az(d){if(d===0)az0=100;else az0=Math.min(Math.max(az0+d,50),200);applyZ
                 <div style={{flex:1,flexShrink:0,borderLeft:'2px solid #333',display:'flex',flexDirection:'column',background:'#fff',overflow:'hidden'}}>
                   {/* Zoom bar εφαρμογής */}
                   <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'5px 10px',background:PALETTE.mustard.bgSoft,borderBottom:'1px solid '+PALETTE.mustard.accent,flexShrink:0}}>
-                    <span style={{fontSize:'12px',fontWeight:'600',color:PALETTE.mustard.deep}}>🔗 {linkedApp.name}</span>
+                    <div style={{display:'flex',alignItems:'center',gap:'6px'}}>
+                      <span style={{fontSize:'12px',fontWeight:'600',color:PALETTE.mustard.deep}}>🔗 {linkedApp.name}</span>
+                      <button onClick={()=>window.open(linkedApp.isUrl?linkedApp.file:`/api/tool/${linkedApp.driveId||linkedApp.file}`,'_blank')} style={{...S.iconBtn,width:'22px',height:'22px',fontSize:'11px'}} title="Νέα καρτέλα">↗</button>
+                    </div>
                     <div style={{display:'flex',gap:'4px',alignItems:'center'}}>
                       <button onClick={appZoomOut} style={{...S.zoomBtn,width:'24px',height:'24px',fontSize:'13px'}}>−</button>
                       <span onClick={appZoomReset} style={{...S.zoomLabel,cursor:'pointer',minWidth:'34px',textAlign:'center',fontSize:'11px'}}>{appZoom}%</span>
                       <button onClick={appZoomIn} style={{...S.zoomBtn,width:'24px',height:'24px',fontSize:'13px'}}>+</button>
-                      <button onClick={()=>window.open(linkedApp.isUrl?linkedApp.file:`/api/tool/${linkedApp.driveId||linkedApp.file}`,'_blank')} style={{...S.iconBtn,width:'24px',height:'24px',fontSize:'11px',marginLeft:'4px'}} title="Νέα καρτέλα">↗</button>
                     </div>
                   </div>
                   <div style={{flex:1,overflow:'auto',position:'relative'}}>
@@ -912,6 +971,8 @@ function az(d){if(d===0)az0=100;else az0=Math.min(Math.max(az0+d,50),200);applyZ
                     <textarea placeholder="Σημειώσεις για το αρχείο…" value={fileComment(modalFile.id)} onChange={e=>updateComment(modalFile.id,e.target.value)} style={{...S.commentTextarea,flex:1}}/>
                   </div>
                 </div>
+              )}
+              </>
               )}
             </div>
           </div>
@@ -1219,4 +1280,25 @@ const S = {
   qTextInput:{flex:1,padding:'8px 12px',border:'1px solid #e0e0e0',borderRadius:'8px',fontSize:'13px',lineHeight:'1.6',color:'#1a1a1a',background:PALETTE.cream.bgSoft,resize:'vertical',fontFamily:'inherit'},
   qDelBtn:{background:'transparent',border:'1px solid #fca5a5',color:'#dc2626',width:'28px',height:'28px',borderRadius:'8px',fontSize:'11px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,marginTop:'4px'},
   addQBtn:{background:'transparent',color:PALETTE.mustard.deep,border:'1px dashed '+PALETTE.mustard.accent,padding:'6px 14px',borderRadius:'10px',fontSize:'12px',fontWeight:'600',cursor:'pointer',marginTop:'4px'},
+
+  // ── Mobile bottom navigation ─────────────────────────────────────────────
+  bottomNav:{
+    position:'fixed',bottom:0,left:0,right:0,
+    height:'60px',
+    background:'#1a1a1a',
+    display:'flex',
+    alignItems:'center',
+    justifyContent:'space-around',
+    zIndex:100,
+    borderTop:'1px solid rgba(255,255,255,0.08)',
+    paddingBottom:'env(safe-area-inset-bottom)',
+  },
+  bottomNavBtn:{
+    display:'flex',flexDirection:'column',alignItems:'center',gap:'3px',
+    background:'transparent',border:'none',color:'#8e8ea0',
+    fontSize:'10px',cursor:'pointer',padding:'6px 12px',borderRadius:'8px',
+    minWidth:'56px',
+  },
+  bottomNavActive:{color:'#e8c96a'},
 };
+
