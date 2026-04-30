@@ -854,8 +854,8 @@ if(status==='loading')
               const code = Math.floor(1000+Math.random()*9000).toString();
               // Χρησιμοποιούμε το embed URL του Drive για δημόσια πρόσβαση
               const fileId = currentFile.id;
-              const publicUrl = `https://drive.google.com/file/d/${fileId}/view`;
-              const pdfSrc = `https://docs.google.com/viewer?url=${encodeURIComponent(publicUrl)}&embedded=true`;
+              const directUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+              const pdfSrc = `https://docs.google.com/viewer?url=${encodeURIComponent(directUrl)}&embedded=true`;
               const appSrc = linkedApp ? (linkedApp.isUrl?linkedApp.file:`/api/tool/${linkedApp.driveId||linkedApp.file}`) : null;
               await fetch('/api/live',{
                 method:'POST',
