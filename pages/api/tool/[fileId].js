@@ -1,25 +1,21 @@
-// pages/api/public-tool/[fileId].js
-// Σερβίρει εφαρμογές HTML χωρίς authentication — για χρήση στο /live
-
-import { google } from 'googleapis';
+// pages/api/tool/[fileId].js
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '../auth/[...nextauth]';
+import { getDriveClient } from '../../../lib/drive';
 
 export default async function handler(req, res) {
+  const session = await getServerSession(req, res, authOptions);
+  if (!session) return res.status(401).send('Unauthorized');
+
   const { fileId } = req.query;
 
   try {
-    // Χρησιμοποιεί API key αντί για OAuth — δεν χρειάζεται login
-    const drive = google.drive({
-      version: 'v3',
-      auth: process.env.GOOGLE_API_KEY,
-    });
-
+    const drive = getDriveClient(session.accessToken);
     const response = await drive.files.get(
       { fileId, alt: 'media' },
       { responseType: 'text' }
     );
-
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.setHeader('Cache-Control', 'public, max-age=300');
     res.send(response.data);
   } catch (error) {
     res.status(500).send('Error: ' + error.message);
