@@ -144,7 +144,13 @@ export default function Home() {
   },[]);
 
   const openFolder=(id)=>{ setCurrentFolder(id); setActiveView('folder'); setCurrentFile(null); setActiveTagFilter(null); setNetBuilderActive(false); loadFiles(id); };
-  const openTool=(t)=>{ setCurrentTool(t); if(isMobile){ setActiveView('mobileToolViewer'); } };
+  const openTool=(t)=>{ 
+    if(isMobile){ 
+      window.open(`/api/tool/${t.driveId||t.file}`,'_blank'); 
+    } else { 
+      setCurrentTool(t); 
+    } 
+  };
   const openAllTools=async()=>{ setActiveView('allTools'); setCurrentFolder(null); setCurrentFile(null); setCurrentToolCategory(null); setNetBuilderActive(false); await loadTools(); };
   const openToolCategory=(c)=>{ setCurrentToolCategory(c); setActiveView('toolCategory'); setCurrentFolder(null); setCurrentFile(null); };
 
