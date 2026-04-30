@@ -161,9 +161,14 @@ export default function Home() {
 
   const openFile=(file)=>{
     setCurrentFile(file); setShowCommentPanel(false); setShowLinkedApp(false); setLinkedApp(null);
-    // Διαβάζει linkedApp από metadata (Drive) — συγχρονισμένο παντού
-    const saved = metadata[file.id]?.linkedApp;
-    if(saved) setLinkedApp(saved);
+    // Διαβάζει linkedApp από metadata (Drive) — με fallback στο localStorage
+    const fromMeta = metadata[file.id]?.linkedApp;
+    if(fromMeta){
+      setLinkedApp(fromMeta);
+    } else {
+      const saved=localStorage.getItem(`linked-app-${file.id}`);
+      if(saved){ try{ setLinkedApp(JSON.parse(saved)); }catch(e){} }
+    }
     const updated=[file,...recentFiles.filter(f=>f.id!==file.id)].slice(0,5);
     setRecentFiles(updated); localStorage.setItem('leviathan-recent',JSON.stringify(updated));
     // Σε mobile ανοίγει ως fullscreen view αντί για modal
