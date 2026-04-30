@@ -1,10 +1,6 @@
 // pages/api/live.js
-// Αποθηκεύει/διαβάζει περιεχόμενο παρουσίασης ανά κωδικό session
-// Χρησιμοποιεί in-memory store (επαρκεί για σχολική χρήση)
-
 const sessions = {};
 
-// Καθαρισμός παλιών sessions (>4 ώρες)
 function cleanup() {
   const now = Date.now();
   for (const code of Object.keys(sessions)) {
@@ -15,16 +11,13 @@ function cleanup() {
 }
 
 export default function handler(req, res) {
-  // CORS για δημόσια πρόσβαση
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   cleanup();
 
-  // GET — λήψη περιεχομένου για κωδικό
   if (req.method === 'GET') {
     const { code } = req.query;
     if (!code) return res.status(400).json({ error: 'Missing code' });
@@ -33,17 +26,17 @@ export default function handler(req, res) {
     return res.status(200).json(session);
   }
 
-  // POST — αποστολή περιεχομένου
   if (req.method === 'POST') {
-    const { code, type, src, title, appSrc, appName } = req.body;
+    const { code, type, src, title, appSrc, appHtml, appName } = req.body;
     if (!code || !src) return res.status(400).json({ error: 'Missing data' });
 
     sessions[code] = {
-      type,      // 'pdf' | 'app' | 'split'
-      src,       // URL κειμένου (PDF)
-      title,     // Τίτλος κειμένου
-      appSrc,    // URL εφαρμογής (αν υπάρχει)
-      appName,   // Όνομα εφαρμογής
+      type,
+      src,
+      title,
+      appSrc,
+      appHtml: appHtml || null,  // HTML εφαρμογής inline
+      appName,
       updatedAt: Date.now(),
     };
 
@@ -52,3 +45,7 @@ export default function handler(req, res) {
 
   return res.status(405).json({ error: 'Method not allowed' });
 }
+
+export const config = {
+  api: { bodyParser: { sizeLimit: '5mb' } },
+};
