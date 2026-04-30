@@ -1,5 +1,5 @@
 // pages/live/[code].js
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 
 export default function LivePresentation() {
@@ -9,6 +9,8 @@ export default function LivePresentation() {
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [activeTab, setActiveTab] = useState('pdf');
+  const [appBlobUrl, setAppBlobUrl] = useState(null);
+  const prevBlobUrl = useRef(null);
 
   const fetchSession = async () => {
     if (!code) return;
@@ -21,6 +23,17 @@ export default function LivePresentation() {
         setLastUpdated(data.updatedAt);
         setActiveTab('pdf');
         setError(null);
+
+        // Δημιουργία blob URL από HTML αν υπάρχει
+        if (data.appHtml) {
+          if (prevBlobUrl.current) URL.revokeObjectURL(prevBlobUrl.current);
+          const blob = new Blob([data.appHtml], { type: 'text/html' });
+          const url = URL.createObjectURL(blob);
+          prevBlobUrl.current = url;
+          setAppBlobUrl(url);
+        } else {
+          setAppBlobUrl(null);
+        }
       }
     } catch(e) {}
   };
@@ -28,7 +41,10 @@ export default function LivePresentation() {
   useEffect(() => {
     fetchSession();
     const interval = setInterval(fetchSession, 3000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      if (prevBlobUrl.current) URL.revokeObjectURL(prevBlobUrl.current);
+    };
   }, [code, lastUpdated]);
 
   if (!session) return (
@@ -45,9 +61,8 @@ export default function LivePresentation() {
     </div>
   );
 
-  const hasApp = !!session.appSrc;
-  // Χρησιμοποιεί απευθείας το appSrc (περιέχει ήδη το token)
-  const appSrc = session.appSrc || null;
+  const hasApp = !!(session.appHtml || session.appSrc);
+  const appSrc = appBlobUrl || session.appSrc || null;
 
   return (
     <div style={{position:'fixed',inset:0,background:'#000',display:'flex',flexDirection:'column'}}>
