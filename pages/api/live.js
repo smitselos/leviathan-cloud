@@ -4,6 +4,7 @@ import { authOptions } from './auth/[...nextauth]';
 import { google } from 'googleapis';
 
 const FILENAME = 'leviathan-live-sessions.json';
+const FOLDER_ID = process.env.FOLDER_NETWORKS;
 
 async function getDrive(accessToken) {
   const auth = new google.auth.OAuth2();
@@ -12,13 +13,12 @@ async function getDrive(accessToken) {
 }
 
 async function getDrivePublic() {
-  // Χρησιμοποιεί API Key για δημόσια ανάγνωση
   return google.drive({ version: 'v3', auth: process.env.GOOGLE_API_KEY });
 }
 
 async function findFile(drive) {
   const res = await drive.files.list({
-    q: `name='${FILENAME}' and trashed=false`,
+    q: `name='${FILENAME}' and '${FOLDER_ID}' in parents and trashed=false`,
     fields: 'files(id)',
     spaces: 'drive',
   });
@@ -52,7 +52,11 @@ async function writeSessions(drive, sessions) {
     });
   } else {
     await drive.files.create({
-      requestBody: { name: FILENAME, mimeType: 'application/json' },
+      requestBody: {
+        name: FILENAME,
+        parents: [FOLDER_ID],
+        mimeType: 'application/json',
+      },
       media: { mimeType: 'application/json', body },
       fields: 'id',
     });
@@ -65,15 +69,13 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  // GET — χρησιμοποιεί session αν υπάρχει, αλλιώς API Key
   if (req.method === 'GET') {
     const { code } = req.query;
     if (!code) return res.status(400).json({ error: 'Missing code' });
 
     try {
-      // Προσπαθεί με session πρώτα
-      const session = await getServerSession(req, res, authOptions);
-      const drive = session ? await getDrive(session.accessToken) : await getDrivePublic();
+      // Προσπαθεί με API Key (δημόσιος φάκελος)
+      const drive = await getDrivePublic();
       const sessions = await readSessions(drive);
       const data = sessions[code];
       if (!data) return res.status(404).json({ error: 'Session not found' });
@@ -84,7 +86,6 @@ export default async function handler(req, res) {
     }
   }
 
-  // POST — χρειάζεται session
   if (req.method === 'POST') {
     const session = await getServerSession(req, res, authOptions);
     if (!session) return res.status(401).json({ error: 'Unauthorized' });
