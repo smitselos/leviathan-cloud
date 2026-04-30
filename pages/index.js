@@ -547,18 +547,26 @@ if(status==='loading')
                   {/* Αριστερά — λίστα κειμένων */}
                   <div style={{width:'320px',flexShrink:0,background:PALETTE.cream.bgSoft,borderRadius:'16px',padding:'14px',border:'1px solid '+PALETTE.cream.accent}}>
                     <div style={{fontSize:'11px',fontWeight:'700',color:'#888',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:'10px'}}>Κείμενα</div>
-                    <input type="search" placeholder="Αναζήτηση…" value={pickerSearch} onChange={e=>setPickerSearch(e.target.value)} style={{...S.searchInput,width:'100%',marginBottom:'10px',padding:'8px 12px'}}/>
-                    <div style={{maxHeight:'calc(100vh - 320px)',overflowY:'auto',display:'flex',flexDirection:'column',gap:'4px'}}>
-                      {allFiles.filter(f=>!pickerSearch||f.title.toLowerCase().includes(pickerSearch.toLowerCase())).map(file=>{
+
+                    {/* Αναζήτηση — ψάχνει σε τίτλο ΚΑΙ ετικέτες */}
+                    <input type="search" placeholder="Αναζήτηση τίτλου ή ετικέτας…" value={pickerSearch} onChange={e=>setPickerSearch(e.target.value)} style={{...S.searchInput,width:'100%',marginBottom:'10px',padding:'8px 12px'}}/>
+
+                    {/* Λίστα κειμένων */}
+                    <div style={{maxHeight:'calc(100vh - 380px)',overflowY:'auto',display:'flex',flexDirection:'column',gap:'4px'}}>
+                      {allFiles.filter(f=>{
+                        const matchQ=!pickerSearch||f.title.toLowerCase().includes(pickerSearch.toLowerCase())||fileTags(f.id).some(t=>t.toLowerCase().includes(pickerSearch.toLowerCase()));
+                        return matchQ;
+                      }).map(file=>{
                         const already=currentNetwork.items.some(i=>i.fileId===file.id);
                         return (
-                          <div key={file.id} style={{display:'flex',alignItems:'center',gap:'8px',padding:'8px 10px',borderRadius:'10px',background:already?PALETTE.mustard.bgSoft:'#fff',border:'1px solid '+(already?PALETTE.mustard.accent:'#ebebeb'),opacity:already?0.6:1}}>
+                          <div key={file.id} style={{display:'flex',alignItems:'center',gap:'6px',padding:'8px 10px',borderRadius:'10px',background:already?PALETTE.mustard.bgSoft:'#fff',border:'1px solid '+(already?PALETTE.mustard.accent:'#ebebeb')}}>
                             <div style={{flex:1,minWidth:0}}>
                               <div style={{fontSize:'12px',fontWeight:'600',color:'#1a1a1a',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{file.title}</div>
                             </div>
+                            <button onClick={()=>openFile(file)} style={{background:'#f4f4f4',border:'1px solid #e0e0e0',width:'24px',height:'24px',borderRadius:'6px',fontSize:'12px',cursor:'pointer',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center'}}>👁</button>
                             {already
-                              ?<span style={{fontSize:'11px',color:PALETTE.mustard.deep,flexShrink:0}}>✓</span>
-                              :<button onClick={()=>addFileToNetwork(file)} style={{background:PALETTE.mustard.deep,border:'none',color:'#fff',width:'22px',height:'22px',borderRadius:'6px',fontSize:'14px',cursor:'pointer',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center'}}>+</button>
+                              ?<span style={{fontSize:'11px',color:PALETTE.mustard.deep,flexShrink:0,minWidth:'16px',textAlign:'center'}}>✓</span>
+                              :<button onClick={()=>addFileToNetwork(file)} style={{background:PALETTE.mustard.deep,border:'none',color:'#fff',width:'24px',height:'24px',borderRadius:'6px',fontSize:'14px',cursor:'pointer',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center'}}>+</button>
                             }
                           </div>
                         );
