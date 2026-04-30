@@ -139,7 +139,7 @@ export default function Home() {
   },[]);
 
   const openFolder=(id)=>{ setCurrentFolder(id); setActiveView('folder'); setCurrentFile(null); setActiveTagFilter(null); setNetBuilderActive(false); loadFiles(id); };
-  const openTool=(t)=>setCurrentTool(t);
+  const openTool=(t)=>{ setCurrentTool(t); if(isMobile){ setActiveView('mobileToolViewer'); } };
   const openAllTools=async()=>{ setActiveView('allTools'); setCurrentFolder(null); setCurrentFile(null); setCurrentToolCategory(null); setNetBuilderActive(false); await loadTools(); };
   const openToolCategory=(c)=>{ setCurrentToolCategory(c); setActiveView('toolCategory'); setCurrentFolder(null); setCurrentFile(null); };
 
@@ -842,6 +842,20 @@ if(status==='loading')
             )}
           </div>
 
+        </div>
+      )}
+
+      {/* ── Mobile Tool Viewer ── */}
+      {isMobile&&activeView==='mobileToolViewer'&&currentTool&&(
+        <div style={{position:'fixed',inset:0,background:'#fff',zIndex:150,display:'flex',flexDirection:'column'}}>
+          <div style={{background:'#1a1a1a',flexShrink:0,display:'flex',alignItems:'center',padding:'10px 12px',gap:'8px'}}>
+            <button onClick={()=>{setActiveView('allTools');setCurrentTool(null);}} style={{background:'transparent',border:'none',color:'#e8c96a',fontSize:'13px',cursor:'pointer',padding:'4px 8px'}}>← Πίσω</button>
+            <span style={{flex:1,color:'#fff',fontSize:'13px',fontWeight:'600',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{currentTool.name}</span>
+            <button onClick={()=>window.open(`/api/tool/${currentTool.driveId||currentTool.file}`,'_blank')} style={{background:'transparent',border:'none',color:'#aaa',fontSize:'18px',cursor:'pointer'}}>↗</button>
+          </div>
+          <div style={{flex:1,overflow:'auto'}}>
+            <iframe src={`/api/tool/${currentTool.driveId||currentTool.file}`} style={{width:'100%',height:'100%',minHeight:'100vh',border:'none'}} title={currentTool.name}/>
+          </div>
         </div>
       )}
 
