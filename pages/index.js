@@ -858,9 +858,14 @@ if(status==='loading')
               title="PDF" allow="fullscreen"/>
           )}
           {mobileTab==='app'&&linkedApp&&(
-            <iframe src={linkedApp.isUrl?linkedApp.file:`/api/tool/${linkedApp.driveId||linkedApp.file}`}
-              style={{position:'absolute',inset:0,width:'100%',height:'100%',border:'none'}}
-              title={linkedApp.name} allow="fullscreen"/>
+            <div style={{position:'absolute',inset:0,background:'#1a1a1a',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'16px'}}>
+              <div style={{color:'#e8c96a',fontSize:'32px'}}>🔗</div>
+              <div style={{color:'#fff',fontSize:'15px',fontWeight:'600'}}>{linkedApp.name}</div>
+              <button onClick={()=>window.open(linkedApp.isUrl?linkedApp.file:`/api/tool/${linkedApp.driveId||linkedApp.file}`,'_blank')}
+                style={{background:'#e8c96a',border:'none',color:'#1a1a1a',padding:'12px 28px',borderRadius:'12px',fontSize:'14px',fontWeight:'700',cursor:'pointer'}}>
+                Άνοιγμα εφαρμογής →
+              </button>
+            </div>
           )}
 
           {/* Floating κουμπιά */}
