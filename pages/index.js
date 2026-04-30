@@ -848,16 +848,38 @@ if(status==='loading')
 
           {/* Floating κουμπιά */}
           <div style={{position:'absolute',top:'env(safe-area-inset-top, 12px)',right:'12px',display:'flex',gap:'8px',zIndex:10}}>
-            {/* Σχόλια — πάντα ορατό */}
+            {/* Στείλε στο διαδραστικό 📡 */}
+            <button onClick={async e=>{
+              e.stopPropagation();
+              const code = Math.floor(1000+Math.random()*9000).toString();
+              const pdfSrc = `/api/files/pdf/${currentFile.id}`;
+              const appSrc = linkedApp ? (linkedApp.isUrl?linkedApp.file:`/api/tool/${linkedApp.driveId||linkedApp.file}`) : null;
+              await fetch('/api/live',{
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({
+                  code,
+                  type: appSrc ? 'split' : 'pdf',
+                  src: pdfSrc,
+                  title: currentFile.title,
+                  appSrc,
+                  appName: linkedApp?.name,
+                }),
+              });
+              alert(`Άνοιξε στο διαδραστικό:\nleviathan-cloud.vercel.app/live/${code}`);
+            }}
+              style={{width:'44px',height:'44px',borderRadius:'50%',background:'rgba(16,122,90,0.75)',backdropFilter:'blur(8px)',border:'1px solid rgba(255,255,255,0.2)',color:'#fff',fontSize:'20px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
+              📡
+            </button>
+            {/* Σχόλια */}
             <button onClick={e=>{e.stopPropagation();setShowCommentPanel(p=>!p);}}
               style={{width:'44px',height:'44px',borderRadius:'50%',background:showCommentPanel?'rgba(201,123,90,0.85)':'rgba(0,0,0,0.55)',backdropFilter:'blur(8px)',border:'1px solid rgba(255,255,255,0.2)',color:'#fff',fontSize:'18px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
               💬
             </button>
-            {/* Εναλλαγή — μόνο αν υπάρχει εφαρμογή */}
+            {/* Εναλλαγή */}
             {linkedApp&&(
               <button onClick={e=>{e.stopPropagation();setMobileTab(t=>t==='pdf'?'app':'pdf');}}
-                style={{width:'44px',height:'44px',borderRadius:'50%',background:'rgba(0,0,0,0.55)',backdropFilter:'blur(8px)',border:'1px solid rgba(255,255,255,0.2)',color:'#fff',fontSize:'18px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}
-                title={mobileTab==='pdf'?'Εφαρμογή':'Κείμενο'}>
+                style={{width:'44px',height:'44px',borderRadius:'50%',background:'rgba(0,0,0,0.55)',backdropFilter:'blur(8px)',border:'1px solid rgba(255,255,255,0.2)',color:'#fff',fontSize:'18px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
                 {mobileTab==='pdf'?'🔗':'📄'}
               </button>
             )}
