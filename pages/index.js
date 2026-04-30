@@ -57,8 +57,9 @@ export default function Home() {
   const [appZoom, setAppZoom]                   = useState(100);
   const [favoriteTools, setFavoriteTools]       = useState([]);
   const [isMobile, setIsMobile]                 = useState(false);
-  const [mobileTab, setMobileTab]               = useState('pdf'); // 'pdf' | 'app'
-  const [mobileFullscreen, setMobileFullscreen] = useState(false); // true = fullscreen mode
+  const [isLandscape, setIsLandscape]           = useState(false);
+  const [mobileTab, setMobileTab]               = useState('pdf');
+  const [mobileFullscreen, setMobileFullscreen] = useState(false);
 
   // Tags + comments
   const [metadata, setMetadata]               = useState({});
@@ -101,7 +102,10 @@ export default function Home() {
   useEffect(()=>{ if(status==='unauthenticated') router.push('/login'); },[status,router]);
 
   useEffect(()=>{
-    const check=()=>setIsMobile(window.innerWidth<=768);
+    const check=()=>{
+      setIsMobile(window.innerWidth<=768);
+      setIsLandscape(window.innerWidth>window.innerHeight);
+    };
     check();
     window.addEventListener('resize',check);
     return()=>window.removeEventListener('resize',check);
@@ -358,34 +362,39 @@ if(status==='loading')
         </div>
       </aside>}
 
-      {/* ── Bottom Navigation — μόνο σε mobile ── */}
+      {/* ── Navigation — bottom (portrait) / left sidebar (landscape) ── */}
       {isMobile&&(
-        <nav style={S.bottomNav}>
+        <nav style={isLandscape?{
+          position:'fixed',top:0,left:0,bottom:0,width:'56px',
+          background:'#1a1a1a',display:'flex',flexDirection:'column',
+          alignItems:'center',justifyContent:'space-around',
+          zIndex:100,borderRight:'1px solid rgba(255,255,255,0.08)',padding:'12px 0',
+        }:S.bottomNav}>
           <button onClick={goHome} style={{...S.bottomNavBtn,...(activeView==='home'?S.bottomNavActive:{})}}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>
-            <span>Αρχική</span>
+            {!isLandscape&&<span>Αρχική</span>}
           </button>
           <button onClick={()=>{setActiveView('allDocs');setCurrentFolder(null);}} style={{...S.bottomNavBtn,...(['allDocs','folder'].includes(activeView)&&currentFolder!=='diktya'?S.bottomNavActive:{})}}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/><rect x="1" y="3" width="4" height="4" rx="0.5"/><rect x="1" y="9" width="4" height="4" rx="0.5"/><rect x="1" y="15" width="4" height="4" rx="0.5"/></svg>
-            <span>Κείμενα</span>
+            {!isLandscape&&<span>Κείμενα</span>}
           </button>
           <button onClick={()=>openFolder('diktya')} style={{...S.bottomNavBtn,...(activeView==='folder'&&currentFolder==='diktya'?S.bottomNavActive:{})}}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><line x1="12" y1="7" x2="5" y2="17"/><line x1="12" y1="7" x2="19" y2="17"/><line x1="5" y1="19" x2="19" y2="19"/></svg>
-            <span>Δίκτυα</span>
+            {!isLandscape&&<span>Δίκτυα</span>}
           </button>
           <button onClick={openAllTools} style={{...S.bottomNavBtn,...(['allTools','toolCategory'].includes(activeView)?S.bottomNavActive:{})}}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-            <span>Εφαρμογές</span>
+            {!isLandscape&&<span>Εφαρμογές</span>}
           </button>
           <button onClick={()=>signOut()} style={S.bottomNavBtn}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-            <span>Έξοδος</span>
+            {!isLandscape&&<span>Έξοδος</span>}
           </button>
         </nav>
       )}
 
       {/* ── Main ── */}
-      <main style={{...S.main,marginLeft:isMobile?0:sidebarCollapsed?'70px':'260px',paddingBottom:isMobile?'70px':0}}>
+      <main style={{...S.main,marginLeft:isMobile?(isLandscape?'56px':0):sidebarCollapsed?'70px':'260px',paddingBottom:isMobile&&!isLandscape?'70px':0}}>
         <div style={{...S.container,padding:isMobile?'16px':undefined}}>
 
           {/* Home */}
