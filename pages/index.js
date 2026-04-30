@@ -848,13 +848,11 @@ if(status==='loading')
 
           {/* Floating κουμπιά */}
           <div style={{position:'absolute',top:'env(safe-area-inset-top, 12px)',right:'12px',display:'flex',gap:'8px',zIndex:10}}>
-            {/* Σχόλια */}
-            {fileComment(currentFile.id).trim()&&(
-              <button onClick={e=>{e.stopPropagation();setShowCommentPanel(p=>!p);}}
-                style={{width:'44px',height:'44px',borderRadius:'50%',background:showCommentPanel?'rgba(201,123,90,0.85)':'rgba(0,0,0,0.55)',backdropFilter:'blur(8px)',border:'1px solid rgba(255,255,255,0.2)',color:'#fff',fontSize:'18px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
-                💬
-              </button>
-            )}
+            {/* Σχόλια — πάντα ορατό */}
+            <button onClick={e=>{e.stopPropagation();setShowCommentPanel(p=>!p);}}
+              style={{width:'44px',height:'44px',borderRadius:'50%',background:showCommentPanel?'rgba(201,123,90,0.85)':'rgba(0,0,0,0.55)',backdropFilter:'blur(8px)',border:'1px solid rgba(255,255,255,0.2)',color:'#fff',fontSize:'18px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
+              💬
+            </button>
             {/* Εναλλαγή — μόνο αν υπάρχει εφαρμογή */}
             {linkedApp&&(
               <button onClick={e=>{e.stopPropagation();setMobileTab(t=>t==='pdf'?'app':'pdf');}}
@@ -875,7 +873,7 @@ if(status==='loading')
             <div onClick={e=>e.stopPropagation()} style={{position:'absolute',bottom:0,left:0,right:0,background:'rgba(255,255,255,0.97)',backdropFilter:'blur(12px)',borderRadius:'20px 20px 0 0',padding:'20px',zIndex:11,maxHeight:'50vh',overflowY:'auto',boxShadow:'0 -4px 24px rgba(0,0,0,0.2)'}}>
               <div style={{width:'36px',height:'4px',background:'#e0e0e0',borderRadius:'2px',margin:'0 auto 16px'}}/>
               <div style={{fontSize:'12px',fontWeight:'700',color:'#888',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:'10px'}}>Σημειώσεις</div>
-              <div style={{fontSize:'14px',color:'#1a1a1a',lineHeight:'1.65',whiteSpace:'pre-wrap'}}>{fileComment(currentFile.id)}</div>
+              <div style={{fontSize:'14px',color:'#1a1a1a',lineHeight:'1.65',whiteSpace:'pre-wrap'}}>{fileComment(currentFile.id)||<span style={{color:'#aaa',fontStyle:'italic'}}>Δεν υπάρχουν σημειώσεις για αυτό το αρχείο.</span>}</div>
             </div>
           )}
 
