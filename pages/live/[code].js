@@ -46,22 +46,12 @@ export default function LivePresentation() {
   );
 
   const hasApp = !!session.appSrc;
-
-  // Μετατροπή appSrc σε public-tool URL αν είναι εφαρμογή ΛΕΒΙΑΘΑΝ
-  const getAppSrc = () => {
-    if (!session.appSrc) return null;
-    // Αν είναι εξωτερικό URL (http/https) το αφήνουμε ως έχει
-    if (session.appSrc.startsWith('http')) return session.appSrc;
-    // Αν είναι /api/tool/[id] το μετατρέπουμε σε /api/public-tool/[id]
-    return session.appSrc.replace('/api/tool/', '/api/public-tool/');
-  };
-
-  const appSrc = getAppSrc();
+  // Χρησιμοποιεί απευθείας το appSrc (περιέχει ήδη το token)
+  const appSrc = session.appSrc || null;
 
   return (
     <div style={{position:'fixed',inset:0,background:'#000',display:'flex',flexDirection:'column'}}>
 
-      {/* Tab bar — μόνο αν υπάρχει εφαρμογή */}
       {hasApp && (
         <div style={{display:'flex',background:'#1a1a1a',flexShrink:0,height:'44px'}}>
           <button onClick={()=>setActiveTab('pdf')}
@@ -79,7 +69,6 @@ export default function LivePresentation() {
         </div>
       )}
 
-      {/* Content */}
       <div style={{flex:1,display:'flex',overflow:'hidden'}}>
         {(activeTab==='pdf'||activeTab==='split'||!hasApp)&&(
           <iframe src={session.src}
@@ -96,7 +85,6 @@ export default function LivePresentation() {
         )}
       </div>
 
-      {/* Floating info */}
       <div style={{position:'absolute',bottom:'10px',left:'50%',transform:'translateX(-50%)',background:'rgba(0,0,0,0.5)',backdropFilter:'blur(8px)',borderRadius:'20px',padding:'5px 14px',color:'rgba(255,255,255,0.4)',fontSize:'11px',display:'flex',gap:'8px',alignItems:'center',fontFamily:'sans-serif'}}>
         <span style={{color:'#e8c96a',fontWeight:'600'}}>ΛΕΒΙΑΘΑΝ</span>
         <span>·</span>
