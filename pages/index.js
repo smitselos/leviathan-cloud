@@ -365,6 +365,17 @@ if(status==='loading')
             <div style={S.userAvatar}>{session.user?.email?.charAt(0).toUpperCase()}</div>
             {!sidebarCollapsed&&(<div style={S.userInfo}><div style={S.userName}>{session.user?.email?.split('@')[0]}</div><button onClick={()=>signOut()} style={S.logoutLink}>Αποσύνδεση</button></div>)}
           </div>
+          <button onClick={()=>signOut()} className="nav-h" title="Αποσύνδεση"
+            style={{...S.navItem,marginTop:'6px',color:'#dc2626',justifyContent:'center'}}>
+            <span style={S.navIcon}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+              </svg>
+            </span>
+            {!sidebarCollapsed&&<span>Αποσύνδεση</span>}
+          </button>
         </div>
       </aside>}
 
