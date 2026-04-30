@@ -58,6 +58,7 @@ export default function Home() {
   const [favoriteTools, setFavoriteTools]       = useState([]);
   const [isMobile, setIsMobile]                 = useState(false);
   const [mobileTab, setMobileTab]               = useState('pdf'); // 'pdf' | 'app'
+  const [mobileFullscreen, setMobileFullscreen] = useState(false); // true = fullscreen mode
 
   // Tags + comments
   const [metadata, setMetadata]               = useState({});
@@ -798,64 +799,58 @@ if(status==='loading')
         </div>
       </main>
 
-      {/* ── Mobile Viewer — fullscreen χωρίς modal ── */}
+      {/* ── Mobile Viewer — true fullscreen με floating κουμπιά ── */}
       {isMobile&&activeView==='mobileViewer'&&currentFile&&(
-        <div style={{position:'fixed',inset:0,background:'#fff',zIndex:150,display:'flex',flexDirection:'column'}}>
+        <div style={{position:'fixed',inset:0,zIndex:150,background:'#000',overflow:'hidden'}}
+          onClick={e=>{
+            // Fullscreen API για να κρυφτεί η browser bar
+            const el=document.documentElement;
+            if(el.requestFullscreen) el.requestFullscreen().catch(()=>{});
+          }}>
 
-          {/* Top bar με tabs */}
-          <div style={{background:'#1a1a1a',flexShrink:0}}>
-            <div style={{display:'flex',alignItems:'center',padding:'8px 12px',gap:'8px'}}>
-              <button onClick={()=>{setActiveView('folder');setCurrentFile(null);}} style={{background:'transparent',border:'none',color:'#e8c96a',fontSize:'13px',cursor:'pointer',padding:'4px 8px'}}>← Πίσω</button>
-              <span style={{flex:1,color:'#fff',fontSize:'13px',fontWeight:'600',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{currentFile.title}</span>
-              <button onClick={()=>window.open(`/api/files/pdf/${currentFile.id}`,'_blank')} style={{background:'transparent',border:'none',color:'#aaa',fontSize:'18px',cursor:'pointer'}}>↗</button>
-            </div>
-            {/* Tabs — μόνο αν υπάρχει εφαρμογή */}
+          {/* Iframe content */}
+          {mobileTab==='pdf'&&(
+            <iframe src={`/api/files/pdf/${currentFile.id}`}
+              style={{position:'absolute',inset:0,width:'100%',height:'100%',border:'none'}}
+              title="PDF" allow="fullscreen"/>
+          )}
+          {mobileTab==='app'&&linkedApp&&(
+            <iframe src={linkedApp.isUrl?linkedApp.file:`/api/tool/${linkedApp.driveId||linkedApp.file}`}
+              style={{position:'absolute',inset:0,width:'100%',height:'100%',border:'none'}}
+              title={linkedApp.name} allow="fullscreen"/>
+          )}
+
+          {/* Floating κουμπιά */}
+          <div style={{position:'absolute',top:'env(safe-area-inset-top, 12px)',right:'12px',display:'flex',gap:'8px',zIndex:10}}>
+            {/* Εναλλαγή — μόνο αν υπάρχει εφαρμογή */}
             {linkedApp&&(
-              <div style={{display:'flex',borderTop:'1px solid rgba(255,255,255,0.08)'}}>
-                <button onClick={()=>setMobileTab('pdf')} style={{flex:1,padding:'10px',fontSize:'13px',fontWeight:mobileTab==='pdf'?700:400,color:mobileTab==='pdf'?'#e8c96a':'#8e8ea0',background:'transparent',border:'none',borderBottom:mobileTab==='pdf'?'2px solid #e8c96a':'2px solid transparent',cursor:'pointer'}}>📄 Κείμενο</button>
-                <button onClick={()=>setMobileTab('app')} style={{flex:1,padding:'10px',fontSize:'13px',fontWeight:mobileTab==='app'?700:400,color:mobileTab==='app'?'#e8c96a':'#8e8ea0',background:'transparent',border:'none',borderBottom:mobileTab==='app'?'2px solid #e8c96a':'2px solid transparent',cursor:'pointer'}}>🔗 {linkedApp.name}</button>
-              </div>
+              <button onClick={e=>{e.stopPropagation();setMobileTab(t=>t==='pdf'?'app':'pdf');}}
+                style={{width:'44px',height:'44px',borderRadius:'50%',background:'rgba(0,0,0,0.55)',backdropFilter:'blur(8px)',border:'1px solid rgba(255,255,255,0.2)',color:'#fff',fontSize:'18px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}
+                title={mobileTab==='pdf'?'Εφαρμογή':'Κείμενο'}>
+                {mobileTab==='pdf'?'🔗':'📄'}
+              </button>
             )}
-          </div>
-
-          {/* Zoom bar */}
-          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'6px 14px',background:'#f5f5f5',borderBottom:'1px solid #e0e0e0',flexShrink:0}}>
-            <span style={{fontSize:'11px',color:'#888'}}>{mobileTab==='pdf'?'Κείμενο':'Εφαρμογή'}</span>
-            <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
-              <button onClick={mobileTab==='pdf'?zoomOut:appZoomOut} style={{...S.zoomBtn,width:'32px',height:'32px',fontSize:'16px'}}>−</button>
-              <span onClick={mobileTab==='pdf'?zoomReset:appZoomReset} style={{fontSize:'12px',color:'#444',minWidth:'40px',textAlign:'center',cursor:'pointer'}}>{mobileTab==='pdf'?modalZoom:appZoom}%</span>
-              <button onClick={mobileTab==='pdf'?zoomIn:appZoomIn} style={{...S.zoomBtn,width:'32px',height:'32px',fontSize:'16px'}}>+</button>
-            </div>
-          </div>
-
-          {/* Content */}
-          <div style={{flex:1,overflow:'auto',background:mobileTab==='pdf'?'#525659':'#fff'}}>
-            {mobileTab==='pdf'&&(
-              <div style={{transformOrigin:'top left',transform:`scale(${modalZoom/100})`,width:`${10000/modalZoom}%`,minHeight:'100%'}}>
-                <iframe src={`/api/files/pdf/${currentFile.id}`} style={{width:'100%',minHeight:'100vh',border:'none'}} title="PDF"/>
-              </div>
-            )}
-            {mobileTab==='app'&&linkedApp&&(
-              <div style={{transformOrigin:'top left',transform:`scale(${appZoom/100})`,width:`${10000/appZoom}%`,minHeight:'100%'}}>
-                <iframe src={linkedApp.isUrl?linkedApp.file:`/api/tool/${linkedApp.driveId||linkedApp.file}`} style={{width:'100%',minHeight:'100vh',border:'none'}} title={linkedApp.name}/>
-              </div>
-            )}
+            {/* Κλείσιμο */}
+            <button onClick={e=>{e.stopPropagation();setActiveView('folder');setCurrentFile(null);if(document.exitFullscreen)document.exitFullscreen().catch(()=>{});}}
+              style={{width:'44px',height:'44px',borderRadius:'50%',background:'rgba(220,38,38,0.75)',backdropFilter:'blur(8px)',border:'1px solid rgba(255,255,255,0.2)',color:'#fff',fontSize:'18px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:'700'}}>
+              ✕
+            </button>
           </div>
 
         </div>
       )}
 
-      {/* ── Mobile Tool Viewer ── */}
+      {/* ── Mobile Tool Viewer — true fullscreen ── */}
       {isMobile&&activeView==='mobileToolViewer'&&currentTool&&(
-        <div style={{position:'fixed',inset:0,background:'#fff',zIndex:150,display:'flex',flexDirection:'column'}}>
-          <div style={{background:'#1a1a1a',flexShrink:0,display:'flex',alignItems:'center',padding:'10px 12px',gap:'8px'}}>
-            <button onClick={()=>{setActiveView('allTools');setCurrentTool(null);}} style={{background:'transparent',border:'none',color:'#e8c96a',fontSize:'13px',cursor:'pointer',padding:'4px 8px'}}>← Πίσω</button>
-            <span style={{flex:1,color:'#fff',fontSize:'13px',fontWeight:'600',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{currentTool.name}</span>
-            <button onClick={()=>window.open(`/api/tool/${currentTool.driveId||currentTool.file}`,'_blank')} style={{background:'transparent',border:'none',color:'#aaa',fontSize:'18px',cursor:'pointer'}}>↗</button>
-          </div>
-          <div style={{flex:1,overflow:'auto'}}>
-            <iframe src={`/api/tool/${currentTool.driveId||currentTool.file}`} style={{width:'100%',height:'100%',minHeight:'100vh',border:'none'}} title={currentTool.name}/>
-          </div>
+        <div style={{position:'fixed',inset:0,zIndex:150,background:'#000',overflow:'hidden'}}>
+          <iframe src={`/api/tool/${currentTool.driveId||currentTool.file}`}
+            style={{position:'absolute',inset:0,width:'100%',height:'100%',border:'none'}}
+            title={currentTool.name} allow="fullscreen"/>
+          {/* Floating κλείσιμο */}
+          <button onClick={()=>{setActiveView('allTools');setCurrentTool(null);if(document.exitFullscreen)document.exitFullscreen().catch(()=>{});}}
+            style={{position:'absolute',top:'env(safe-area-inset-top, 12px)',right:'12px',width:'44px',height:'44px',borderRadius:'50%',background:'rgba(220,38,38,0.75)',backdropFilter:'blur(8px)',border:'1px solid rgba(255,255,255,0.2)',color:'#fff',fontSize:'18px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:'700',zIndex:10}}>
+            ✕
+          </button>
         </div>
       )}
 
