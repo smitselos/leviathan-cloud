@@ -542,64 +542,92 @@ if(status==='loading')
               )}
 
               {currentNetwork&&(
-                <>
-                  <div style={{...S.pageHeader,marginBottom:'16px'}}>
-                    <button onClick={()=>setCurrentNetwork(null)} style={S.backBtn}>← Λίστα</button>
-                    <div style={{flex:1}}>
-                      <h2 style={{fontSize:'17px',fontWeight:'600',color:'#1a1a1a',marginBottom:'2px'}}>{currentNetwork.name}</h2>
-                      <p style={S.pageSub}>
-                        {currentNetwork.items.length} κείμενα
-                        {netSaving&&<span style={{marginLeft:'8px',color:PALETTE.mustard.deep,fontSize:'12px'}}>· Αποθήκευση…</span>}
-                        {netMsg&&<span style={{marginLeft:'8px',color:netMsg.startsWith('✓')?PALETTE.mustard.deep:'#dc2626',fontSize:'12px'}}>{netMsg}</span>}
-                      </p>
-                    </div>
-                    <div style={{display:'flex',gap:'8px'}}>
-                      <button onClick={()=>setPickingFile(true)} style={S.greenBtn}>+ Κείμενο</button>
-                      {currentNetwork.pdfFileId&&<button onClick={()=>window.open(`/api/files/pdf/${currentNetwork.pdfFileId}`,'_blank')} style={S.pdfBtn}>📄 PDF</button>}
-                      <button onClick={mergeAndSave} disabled={merging||!currentNetwork.items.length} style={{...S.mergeBtn,opacity:(merging||!currentNetwork.items.length)?0.6:1}}>
-                        {merging?'⏳ Δημιουργία…':`💾 ${currentNetwork.pdfFileId?'Ενημέρωση PDF':'Αποθήκευση PDF'}`}
-                      </button>
+                <div style={{display:'flex',gap:'16px',alignItems:'flex-start'}}>
+
+                  {/* Αριστερά — λίστα κειμένων */}
+                  <div style={{width:'320px',flexShrink:0,background:PALETTE.cream.bgSoft,borderRadius:'16px',padding:'14px',border:'1px solid '+PALETTE.cream.accent}}>
+                    <div style={{fontSize:'11px',fontWeight:'700',color:'#888',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:'10px'}}>Κείμενα</div>
+                    <input type="search" placeholder="Αναζήτηση…" value={pickerSearch} onChange={e=>setPickerSearch(e.target.value)} style={{...S.searchInput,width:'100%',marginBottom:'10px',padding:'8px 12px'}}/>
+                    <div style={{maxHeight:'calc(100vh - 320px)',overflowY:'auto',display:'flex',flexDirection:'column',gap:'4px'}}>
+                      {allFiles.filter(f=>!pickerSearch||f.title.toLowerCase().includes(pickerSearch.toLowerCase())).map(file=>{
+                        const already=currentNetwork.items.some(i=>i.fileId===file.id);
+                        return (
+                          <div key={file.id} style={{display:'flex',alignItems:'center',gap:'8px',padding:'8px 10px',borderRadius:'10px',background:already?PALETTE.mustard.bgSoft:'#fff',border:'1px solid '+(already?PALETTE.mustard.accent:'#ebebeb'),opacity:already?0.6:1}}>
+                            <div style={{flex:1,minWidth:0}}>
+                              <div style={{fontSize:'12px',fontWeight:'600',color:'#1a1a1a',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{file.title}</div>
+                            </div>
+                            {already
+                              ?<span style={{fontSize:'11px',color:PALETTE.mustard.deep,flexShrink:0}}>✓</span>
+                              :<button onClick={()=>addFileToNetwork(file)} style={{background:PALETTE.mustard.deep,border:'none',color:'#fff',width:'22px',height:'22px',borderRadius:'6px',fontSize:'14px',cursor:'pointer',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center'}}>+</button>
+                            }
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
 
-                  {currentNetwork.items.length===0
-                    ?<div style={{textAlign:'center',padding:'32px',color:'#aeaeb8',fontSize:'13px'}}>Πάτησε «+ Κείμενο» για να ξεκινήσεις</div>
-                    :<div style={{display:'flex',flexDirection:'column',gap:'10px'}}>
-                      {currentNetwork.items.map((item,idx)=>{ const isOpen=!!openAccordions[item.fileId]; return (
-                        <div key={item.fileId} style={S.netItemCard}>
-                          <div style={S.netItemHeader}>
-                            <div style={S.netItemNum}>{idx+1}</div>
-                            <div style={S.netItemTitle}>{item.title}</div>
-                            <div style={{display:'flex',gap:'5px',alignItems:'center',flexShrink:0}}>
-                              <button onClick={()=>moveItem(idx,-1)} disabled={idx===0} style={{...S.moveBtn,opacity:idx===0?0.3:1}}>↑</button>
-                              <button onClick={()=>moveItem(idx,1)} disabled={idx===currentNetwork.items.length-1} style={{...S.moveBtn,opacity:idx===currentNetwork.items.length-1?0.3:1}}>↓</button>
-                              <button onClick={()=>openFile({id:item.fileId,title:item.title,name:item.name})} style={S.viewSmall}>👁</button>
-                              <button onClick={()=>removeFromNetwork(item.fileId)} style={S.deleteSmall}>✕</button>
-                            </div>
-                          </div>
-                          <div className="acc-h" style={{...S.accToggle,cursor:'pointer',background:isOpen?PALETTE.mustard.bgSoft:'#fafaf9'}} onClick={()=>toggleAccordion(item.fileId)}>
-                            <span style={S.accLabel}>Ερωτήσεις</span>
-                            <span style={{fontSize:'11px',color:'#6b6b80'}}>{item.questions.length} {item.questions.length===1?'ερώτηση':'ερωτήσεις'}</span>
-                            <span style={{fontSize:'11px',color:'#6b6b80',marginLeft:'6px'}}>{isOpen?'▲':'▼'}</span>
-                          </div>
-                          {isOpen&&(
-                            <div style={S.accBody}>
-                              {item.questions.length===0&&<div style={{fontSize:'13px',color:'#aeaeb8',marginBottom:'10px'}}>Δεν υπάρχουν ερωτήσεις. Πάτησε «+ Ερώτηση».</div>}
-                              {item.questions.map(q=>(
-                                <div key={q.id} style={S.qRow}>
-                                  <input type="text" placeholder="Κωδ." value={q.code} onChange={e=>updateQuestion(item.fileId,q.id,'code',e.target.value)} onBlur={saveQuestionsNow} style={S.qCodeInput}/>
-                                  <textarea rows={3} placeholder="Κείμενο ερώτησης…" value={q.text} onChange={e=>updateQuestion(item.fileId,q.id,'text',e.target.value)} onBlur={saveQuestionsNow} style={S.qTextInput}/>
-                                  <button onClick={()=>removeQuestion(item.fileId,q.id)} style={S.qDelBtn}>✕</button>
-                                </div>
-                              ))}
-                              <button onClick={()=>addQuestion(item.fileId)} style={S.addQBtn}>+ Ερώτηση</button>
-                            </div>
-                          )}
-                        </div>
-                      );})}
+                  {/* Δεξιά — δίκτυο */}
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{...S.pageHeader,marginBottom:'16px'}}>
+                      <button onClick={()=>setCurrentNetwork(null)} style={S.backBtn}>← Λίστα</button>
+                      <div style={{flex:1}}>
+                        <h2 style={{fontSize:'17px',fontWeight:'600',color:'#1a1a1a',marginBottom:'2px'}}>{currentNetwork.name}</h2>
+                        <p style={S.pageSub}>
+                          {currentNetwork.items.length} κείμενα
+                          {netSaving&&<span style={{marginLeft:'8px',color:PALETTE.mustard.deep,fontSize:'12px'}}>· Αποθήκευση…</span>}
+                          {netMsg&&<span style={{marginLeft:'8px',color:netMsg.startsWith('✓')?PALETTE.mustard.deep:'#dc2626',fontSize:'12px'}}>{netMsg}</span>}
+                        </p>
+                      </div>
+                      <div style={{display:'flex',gap:'8px'}}>
+                        {currentNetwork.pdfFileId&&<button onClick={()=>window.open(`/api/files/pdf/${currentNetwork.pdfFileId}`,'_blank')} style={S.pdfBtn}>📄 PDF</button>}
+                        <button onClick={mergeAndSave} disabled={merging||!currentNetwork.items.length} style={{...S.mergeBtn,opacity:(merging||!currentNetwork.items.length)?0.6:1}}>
+                          {merging?'⏳ Δημιουργία…':`💾 ${currentNetwork.pdfFileId?'Ενημέρωση PDF':'Αποθήκευση PDF'}`}
+                        </button>
+                      </div>
                     </div>
-                  }
-                </>
+
+                    {currentNetwork.items.length===0
+                      ?<div style={{textAlign:'center',padding:'48px',color:'#aeaeb8',fontSize:'13px',background:PALETTE.cream.bgSoft,borderRadius:'16px',border:'2px dashed '+PALETTE.cream.accent}}>
+                        Πάτησε «+» δίπλα σε ένα κείμενο αριστερά για να ξεκινήσεις
+                       </div>
+                      :<div style={{display:'flex',flexDirection:'column',gap:'10px'}}>
+                        {currentNetwork.items.map((item,idx)=>{ const isOpen=!!openAccordions[item.fileId]; return (
+                          <div key={item.fileId} style={S.netItemCard}>
+                            <div style={S.netItemHeader}>
+                              <div style={S.netItemNum}>{idx+1}</div>
+                              <div style={S.netItemTitle}>{item.title}</div>
+                              <div style={{display:'flex',gap:'5px',alignItems:'center',flexShrink:0}}>
+                                <button onClick={()=>moveItem(idx,-1)} disabled={idx===0} style={{...S.moveBtn,opacity:idx===0?0.3:1}}>↑</button>
+                                <button onClick={()=>moveItem(idx,1)} disabled={idx===currentNetwork.items.length-1} style={{...S.moveBtn,opacity:idx===currentNetwork.items.length-1?0.3:1}}>↓</button>
+                                <button onClick={()=>openFile({id:item.fileId,title:item.title,name:item.name})} style={S.viewSmall}>👁</button>
+                                <button onClick={()=>removeFromNetwork(item.fileId)} style={S.deleteSmall}>✕</button>
+                              </div>
+                            </div>
+                            <div className="acc-h" style={{...S.accToggle,cursor:'pointer',background:isOpen?PALETTE.mustard.bgSoft:'#fafaf9'}} onClick={()=>toggleAccordion(item.fileId)}>
+                              <span style={S.accLabel}>Ερωτήσεις</span>
+                              <span style={{fontSize:'11px',color:'#6b6b80'}}>{item.questions.length} {item.questions.length===1?'ερώτηση':'ερωτήσεις'}</span>
+                              <span style={{fontSize:'11px',color:'#6b6b80',marginLeft:'6px'}}>{isOpen?'▲':'▼'}</span>
+                            </div>
+                            {isOpen&&(
+                              <div style={S.accBody}>
+                                {item.questions.length===0&&<div style={{fontSize:'13px',color:'#aeaeb8',marginBottom:'10px'}}>Δεν υπάρχουν ερωτήσεις. Πάτησε «+ Ερώτηση».</div>}
+                                {item.questions.map(q=>(
+                                  <div key={q.id} style={S.qRow}>
+                                    <input type="text" placeholder="Κωδ." value={q.code} onChange={e=>updateQuestion(item.fileId,q.id,'code',e.target.value)} onBlur={saveQuestionsNow} style={S.qCodeInput}/>
+                                    <textarea rows={3} placeholder="Κείμενο ερώτησης…" value={q.text} onChange={e=>updateQuestion(item.fileId,q.id,'text',e.target.value)} onBlur={saveQuestionsNow} style={S.qTextInput}/>
+                                    <button onClick={()=>removeQuestion(item.fileId,q.id)} style={S.qDelBtn}>✕</button>
+                                  </div>
+                                ))}
+                                <button onClick={()=>addQuestion(item.fileId)} style={S.addQBtn}>+ Ερώτηση</button>
+                              </div>
+                            )}
+                          </div>
+                        );})}
+                      </div>
+                    }
+                  </div>
+
+                </div>
               )}
             </>
           )}
