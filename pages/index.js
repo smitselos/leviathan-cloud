@@ -161,8 +161,9 @@ export default function Home() {
 
   const openFile=(file)=>{
     setCurrentFile(file); setShowCommentPanel(false); setShowLinkedApp(false); setLinkedApp(null);
-    const saved=localStorage.getItem(`linked-app-${file.id}`);
-    if(saved){ try{ setLinkedApp(JSON.parse(saved)); }catch(e){ setLinkedApp(null); } }
+    // Διαβάζει linkedApp από metadata (Drive) — συγχρονισμένο παντού
+    const saved = metadata[file.id]?.linkedApp;
+    if(saved) setLinkedApp(saved);
     const updated=[file,...recentFiles.filter(f=>f.id!==file.id)].slice(0,5);
     setRecentFiles(updated); localStorage.setItem('leviathan-recent',JSON.stringify(updated));
     // Σε mobile ανοίγει ως fullscreen view αντί για modal
@@ -188,10 +189,21 @@ export default function Home() {
 
   const linkAppToFile=(tool)=>{
     setLinkedApp(tool);
-    if(currentFile) localStorage.setItem(`linked-app-${currentFile.id}`,JSON.stringify(tool));
+    if(currentFile){
+      const updated={...metadata,[currentFile.id]:{...fileMeta(currentFile.id),linkedApp:tool}};
+      persistMetadata(updated);
+    }
     setShowAppPicker(false);
   };
-  const unlinkApp=()=>{ setLinkedApp(null); setShowLinkedApp(false); if(currentFile) localStorage.removeItem(`linked-app-${currentFile.id}`); };
+  const unlinkApp=()=>{ 
+    setLinkedApp(null); setShowLinkedApp(false); 
+    if(currentFile){
+      const cur=fileMeta(currentFile.id);
+      const {linkedApp:_,...rest}=cur;
+      const updated={...metadata,[currentFile.id]:rest};
+      persistMetadata(updated);
+    }
+  };
 
   // ── Network builder ───────────────────────────────────────────────────────
   const saveNetwork=async(net)=>{
