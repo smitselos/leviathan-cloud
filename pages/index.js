@@ -869,20 +869,31 @@ if(status==='loading')
             <button onClick={async e=>{
               e.stopPropagation();
               const code = Math.floor(1000+Math.random()*9000).toString();
-              // Χρησιμοποιούμε το embed URL του Drive για δημόσια πρόσβαση
               const fileId = currentFile.id;
               const pdfSrc = `https://drive.google.com/file/d/${fileId}/preview`;
-              const appSrc = linkedApp ? (linkedApp.isUrl?linkedApp.file:`/api/tool/${linkedApp.driveId||linkedApp.file}?token=leviathan2026`) : null;
+              
+              // Φορτώνει το HTML της εφαρμογής με session και το στέλνει inline
+              let appHtml = null;
+              let appName = linkedApp?.name || null;
+              if (linkedApp && !linkedApp.isUrl) {
+                try {
+                  const r = await fetch(`/api/tool/${linkedApp.driveId||linkedApp.file}`);
+                  if (r.ok) appHtml = await r.text();
+                } catch(e) {}
+              }
+              const appSrc = linkedApp?.isUrl ? linkedApp.file : null;
+
               await fetch('/api/live',{
                 method:'POST',
                 headers:{'Content-Type':'application/json'},
                 body:JSON.stringify({
                   code,
-                  type: appSrc ? 'split' : 'pdf',
+                  type: (appHtml||appSrc) ? 'split' : 'pdf',
                   src: pdfSrc,
                   title: currentFile.title,
                   appSrc,
-                  appName: linkedApp?.name,
+                  appHtml,
+                  appName,
                 }),
               });
               alert(`Άνοιξε στο διαδραστικό:\nleviathan-cloud.vercel.app/live/${code}`);
