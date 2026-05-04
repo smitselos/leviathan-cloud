@@ -185,8 +185,8 @@ export default function Home() {
   const addTag=(fileId,tag)=>{ const t=tag.trim(); if(!t)return; const cur=fileMeta(fileId); if(cur.tags.includes(t))return; const updated={...metadata,[fileId]:{...cur,tags:[...cur.tags,t]}}; persistMetadata(updated); setTagInput(''); setShowTagSuggest(false); };
   const removeTag=(fileId,tag)=>{ const cur=fileMeta(fileId); const updated={...metadata,[fileId]:{...cur,tags:cur.tags.filter(t=>t!==tag)}}; persistMetadata(updated); };
   const updateComment=(fileId,value)=>{ const cur=fileMeta(fileId); scheduleMetaSave({...metadata,[fileId]:{...cur,comment:value}}); };
-  const fileQuestions=(id)=>fileMeta(id).questions||[];
-  const addFileQuestion=(fileId)=>{ const cur=fileMeta(fileId); const updated={...metadata,[fileId]:{...cur,questions:[...(cur.questions||[]),{id:newQid(),code:'',text:''}]}}; persistMetadata(updated); };
+  const fileQuestions=(id)=>(fileMeta(id).questions||[]).map(q=>({...q,type:q.type||'open',options:q.options||[],matchA:q.matchA||[],matchB:q.matchB||[]}));
+  const addFileQuestion=(fileId,type='open')=>{ const cur=fileMeta(fileId); const base={id:newQid(),code:'',text:'',type}; if(type==='mcq') base.options=['','','','']; if(type==='match'){ base.matchA=['','','']; base.matchB=['','','']; } const updated={...metadata,[fileId]:{...cur,questions:[...(cur.questions||[]),base]}}; persistMetadata(updated); };
   const updateFileQuestion=(fileId,qid,field,value)=>{ const cur=fileMeta(fileId); const updated={...metadata,[fileId]:{...cur,questions:(cur.questions||[]).map(q=>q.id===qid?{...q,[field]:value}:q)}}; scheduleMetaSave(updated); };
   const removeFileQuestion=(fileId,qid)=>{ const cur=fileMeta(fileId); const updated={...metadata,[fileId]:{...cur,questions:(cur.questions||[]).filter(q=>q.id!==qid)}}; persistMetadata(updated); };
   const allTagsInFolder=()=>{ const set=new Set(); files.forEach(f=>fileTags(f.id).forEach(t=>set.add(t))); return[...set].sort(); };
@@ -1132,24 +1132,70 @@ function az(d){if(d===0)az0=100;else az0=Math.min(Math.max(az0+d,50),200);applyZ
                     <div style={{...S.cpSection,borderBottom:'none'}}>
                       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'10px'}}>
                         <div style={S.cpSectionLabel}>Ερωτήσεις</div>
-                        <button onClick={()=>addFileQuestion(modalFile.id)}
-                          style={{background:'transparent',color:PALETTE.peach.deep,border:'1px dashed '+PALETTE.peach.accent,padding:'4px 10px',borderRadius:'8px',fontSize:'11px',fontWeight:'600',cursor:'pointer'}}>
-                          + Ερώτηση
-                        </button>
+                        <div style={{position:'relative'}}>
+                          <select onChange={e=>{if(e.target.value){addFileQuestion(modalFile.id,e.target.value);e.target.value='';}}}
+                            defaultValue=""
+                            style={{background:'transparent',color:PALETTE.peach.deep,border:'1px dashed '+PALETTE.peach.accent,padding:'4px 8px',borderRadius:'8px',fontSize:'11px',fontWeight:'600',cursor:'pointer',appearance:'none',WebkitAppearance:'none',paddingRight:'8px'}}>
+                            <option value="" disabled>+ Ερώτηση</option>
+                            <option value="open">Ανοιχτή</option>
+                            <option value="mcq">Πολλαπλών επιλογών</option>
+                            <option value="match">Αντιστοίχισης</option>
+                          </select>
+                        </div>
                       </div>
                       {fileQuestions(modalFile.id).length===0
-                        ?<div style={{fontSize:'12px',color:'#aeaeb8',fontStyle:'italic',padding:'8px 0'}}>Δεν υπάρχουν ερωτήσεις. Πατήστε «+ Ερώτηση» για να προσθέσετε.</div>
+                        ?<div style={{fontSize:'12px',color:'#aeaeb8',fontStyle:'italic',padding:'8px 0'}}>Δεν υπάρχουν ερωτήσεις.</div>
                         :fileQuestions(modalFile.id).map((q,idx)=>(
                           <div key={q.id} style={{marginBottom:'10px',background:PALETTE.cream.bgSoft,borderRadius:'10px',padding:'10px',border:'1px solid '+PALETTE.cream.accent}}>
-                            <div style={{display:'flex',gap:'6px',alignItems:'flex-start'}}>
+                            <div style={{display:'flex',gap:'6px',alignItems:'center',marginBottom:'6px'}}>
                               <input type="text" value={q.code} onChange={e=>updateFileQuestion(modalFile.id,q.id,'code',e.target.value)}
-                                placeholder={(idx+1).toString()} style={{width:'52px',flexShrink:0,padding:'6px',border:'1px solid #e0e0e0',borderRadius:'6px',fontSize:'12px',fontWeight:'600',color:'#1a1a1a',background:'#fff',textAlign:'center'}}/>
+                                placeholder={(idx+1).toString()} style={{width:'46px',flexShrink:0,padding:'5px',border:'1px solid #e0e0e0',borderRadius:'6px',fontSize:'11px',fontWeight:'600',color:'#1a1a1a',background:'#fff',textAlign:'center'}}/>
+                              <span style={{fontSize:'10px',color:'#aaa',flex:1}}>{q.type==='mcq'?'Πολ. επιλ.':q.type==='match'?'Αντιστοίχ.':'Ανοιχτή'}</span>
                               <button onClick={()=>removeFileQuestion(modalFile.id,q.id)}
-                                style={{background:'transparent',border:'1px solid #fca5a5',color:'#dc2626',width:'24px',height:'24px',borderRadius:'6px',fontSize:'10px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>✕</button>
+                                style={{background:'transparent',border:'1px solid #fca5a5',color:'#dc2626',width:'22px',height:'22px',borderRadius:'6px',fontSize:'10px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>✕</button>
                             </div>
+                            {/* Κείμενο ερώτησης — κοινό για όλους τους τύπους */}
                             <textarea value={q.text} onChange={e=>updateFileQuestion(modalFile.id,q.id,'text',e.target.value)}
                               placeholder="Κείμενο ερώτησης…" rows={2}
-                              style={{width:'100%',marginTop:'6px',padding:'6px 8px',border:'1px solid #e0e0e0',borderRadius:'6px',fontSize:'12px',lineHeight:'1.55',color:'#1a1a1a',background:'#fff',resize:'vertical',fontFamily:'inherit'}}/>
+                              style={{width:'100%',padding:'5px 7px',border:'1px solid #e0e0e0',borderRadius:'6px',fontSize:'11px',lineHeight:'1.5',color:'#1a1a1a',background:'#fff',resize:'vertical',fontFamily:'inherit'}}/>
+                            {/* Πολλαπλών επιλογών */}
+                            {q.type==='mcq'&&<div style={{marginTop:'6px'}}>
+                              {(q.options||[]).map((opt,oi)=>(
+                                <div key={oi} style={{display:'flex',gap:'4px',alignItems:'center',marginBottom:'3px'}}>
+                                  <span style={{fontSize:'11px',fontWeight:'600',color:'#888',width:'16px',flexShrink:0}}>{String.fromCharCode(945+oi)}.</span>
+                                  <input type="text" value={opt} onChange={e=>{const opts=[...(q.options||[])];opts[oi]=e.target.value;updateFileQuestion(modalFile.id,q.id,'options',opts);}}
+                                    placeholder={`Επιλογή ${String.fromCharCode(945+oi)}`}
+                                    style={{flex:1,padding:'4px 6px',border:'1px solid #e0e0e0',borderRadius:'5px',fontSize:'11px',color:'#1a1a1a',background:'#fff'}}/>
+                                  {(q.options||[]).length>2&&<button onClick={()=>{const opts=[...(q.options||[])];opts.splice(oi,1);updateFileQuestion(modalFile.id,q.id,'options',opts);}}
+                                    style={{background:'transparent',border:'none',color:'#ccc',fontSize:'12px',cursor:'pointer',padding:'0 2px'}}>✕</button>}
+                                </div>
+                              ))}
+                              {(q.options||[]).length<6&&<button onClick={()=>{const opts=[...(q.options||[]),''];updateFileQuestion(modalFile.id,q.id,'options',opts);}}
+                                style={{background:'transparent',border:'none',color:PALETTE.peach.deep,fontSize:'10px',cursor:'pointer',padding:'2px 0',fontWeight:'600'}}>+ επιλογή</button>}
+                            </div>}
+                            {/* Αντιστοίχισης */}
+                            {q.type==='match'&&<div style={{marginTop:'6px'}}>
+                              <div style={{display:'flex',gap:'6px',marginBottom:'4px'}}>
+                                <div style={{flex:1,fontSize:'10px',fontWeight:'700',color:'#888',textAlign:'center'}}>Στήλη Α</div>
+                                <div style={{width:'14px'}}/>
+                                <div style={{flex:1,fontSize:'10px',fontWeight:'700',color:'#888',textAlign:'center'}}>Στήλη Β</div>
+                              </div>
+                              {(q.matchA||[]).map((a,mi)=>(
+                                <div key={mi} style={{display:'flex',gap:'4px',alignItems:'center',marginBottom:'3px'}}>
+                                  <input type="text" value={a} onChange={e=>{const arr=[...(q.matchA||[])];arr[mi]=e.target.value;updateFileQuestion(modalFile.id,q.id,'matchA',arr);}}
+                                    placeholder={`${mi+1}.`}
+                                    style={{flex:1,padding:'4px 6px',border:'1px solid #e0e0e0',borderRadius:'5px',fontSize:'11px',color:'#1a1a1a',background:'#fff'}}/>
+                                  <span style={{fontSize:'10px',color:'#ccc'}}>↔</span>
+                                  <input type="text" value={(q.matchB||[])[mi]||''} onChange={e=>{const arr=[...(q.matchB||[])];arr[mi]=e.target.value;updateFileQuestion(modalFile.id,q.id,'matchB',arr);}}
+                                    placeholder={`${String.fromCharCode(945+mi)}.`}
+                                    style={{flex:1,padding:'4px 6px',border:'1px solid #e0e0e0',borderRadius:'5px',fontSize:'11px',color:'#1a1a1a',background:'#fff'}}/>
+                                  {(q.matchA||[]).length>2&&<button onClick={()=>{const a2=[...(q.matchA||[])];const b2=[...(q.matchB||[])];a2.splice(mi,1);b2.splice(mi,1);updateFileQuestion(modalFile.id,q.id,'matchA',a2);updateFileQuestion(modalFile.id,q.id,'matchB',b2);}}
+                                    style={{background:'transparent',border:'none',color:'#ccc',fontSize:'12px',cursor:'pointer',padding:'0 2px'}}>✕</button>}
+                                </div>
+                              ))}
+                              {(q.matchA||[]).length<8&&<button onClick={()=>{updateFileQuestion(modalFile.id,q.id,'matchA',[...(q.matchA||[]),'']);updateFileQuestion(modalFile.id,q.id,'matchB',[...(q.matchB||[]),'']);}}
+                                style={{background:'transparent',border:'none',color:PALETTE.peach.deep,fontSize:'10px',cursor:'pointer',padding:'2px 0',fontWeight:'600'}}>+ ζεύγος</button>}
+                            </div>}
                           </div>
                         ))
                       }
