@@ -66,6 +66,7 @@ export default function Home() {
   const [metaSaving, setMetaSaving]           = useState(false);
   const [activeTagFilter, setActiveTagFilter] = useState(null);
   const [showCommentPanel, setShowCommentPanel] = useState(false);
+  const [showPrintMenu, setShowPrintMenu]       = useState(false);
   const [tagInput, setTagInput]               = useState('');
   const [showTagSuggest, setShowTagSuggest]   = useState(false);
   const tagInputRef = useRef(null);
@@ -160,7 +161,7 @@ export default function Home() {
   };
 
   const openFile=(file)=>{
-    setCurrentFile(file); setShowCommentPanel(false); setShowLinkedApp(false); setLinkedApp(null);
+    setCurrentFile(file); setShowCommentPanel(false); setShowLinkedApp(false); setLinkedApp(null); setShowPrintMenu(false);
     // Διαβάζει linkedApp από metadata (Drive) — με fallback στο localStorage
     const fromMeta = metadata[file.id]?.linkedApp;
     if(fromMeta){
@@ -185,6 +186,10 @@ export default function Home() {
   const addTag=(fileId,tag)=>{ const t=tag.trim(); if(!t)return; const cur=fileMeta(fileId); if(cur.tags.includes(t))return; const updated={...metadata,[fileId]:{...cur,tags:[...cur.tags,t]}}; persistMetadata(updated); setTagInput(''); setShowTagSuggest(false); };
   const removeTag=(fileId,tag)=>{ const cur=fileMeta(fileId); const updated={...metadata,[fileId]:{...cur,tags:cur.tags.filter(t=>t!==tag)}}; persistMetadata(updated); };
   const updateComment=(fileId,value)=>{ const cur=fileMeta(fileId); scheduleMetaSave({...metadata,[fileId]:{...cur,comment:value}}); };
+  const fileQuestions=(id)=>fileMeta(id).questions||[];
+  const addFileQuestion=(fileId)=>{ const cur=fileMeta(fileId); const updated={...metadata,[fileId]:{...cur,questions:[...(cur.questions||[]),{id:newQid(),code:'',text:''}]}}; persistMetadata(updated); };
+  const updateFileQuestion=(fileId,qid,field,value)=>{ const cur=fileMeta(fileId); const updated={...metadata,[fileId]:{...cur,questions:(cur.questions||[]).map(q=>q.id===qid?{...q,[field]:value}:q)}}; scheduleMetaSave(updated); };
+  const removeFileQuestion=(fileId,qid)=>{ const cur=fileMeta(fileId); const updated={...metadata,[fileId]:{...cur,questions:(cur.questions||[]).filter(q=>q.id!==qid)}}; persistMetadata(updated); };
   const allTagsInFolder=()=>{ const set=new Set(); files.forEach(f=>fileTags(f.id).forEach(t=>set.add(t))); return[...set].sort(); };
 
   const filteredFiles=files.filter(f=>{ const matchQ=!searchQuery||f.title.toLowerCase().includes(searchQuery.toLowerCase())||f.name.toLowerCase().includes(searchQuery.toLowerCase()); const matchTag=!activeTagFilter||fileTags(f.id).includes(activeTagFilter); return matchQ&&matchTag; });
@@ -243,7 +248,10 @@ export default function Home() {
   const addFileToNetwork=(file)=>{
     if(!currentNetwork)return;
     if(currentNetwork.items.some(i=>i.fileId===file.id)){ setPickingFile(false); return; }
-    const item={fileId:file.id,title:file.title,name:file.name,questions:[]};
+    // Αυτόματη μεταφορά ερωτήσεων από τα metadata του κειμένου
+    const metaQs=fileQuestions(file.id);
+    const importedQs=metaQs.length>0?metaQs.map(q=>({id:newQid(),code:q.code,text:q.text})):[];
+    const item={fileId:file.id,title:file.title,name:file.name,questions:importedQs};
     const updated={...currentNetwork,items:[...currentNetwork.items,item]};
     updateNet(updated); saveNetwork(updated);
     setOpenAccordions(prev=>({...prev,[file.id]:true}));
@@ -901,6 +909,15 @@ if(status==='loading')
               style={{width:'44px',height:'44px',borderRadius:'50%',background:'rgba(16,122,90,0.75)',backdropFilter:'blur(8px)',border:'1px solid rgba(255,255,255,0.2)',color:'#fff',fontSize:'20px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
               📡
             </button>
+            {/* Εκτύπωση */}
+            <button onClick={e=>{
+              e.stopPropagation();
+              window.open(`https://drive.google.com/file/d/${currentFile.id}/preview`,'_blank');
+            }}
+              style={{width:'44px',height:'44px',borderRadius:'50%',background:'rgba(0,0,0,0.55)',backdropFilter:'blur(8px)',border:'1px solid rgba(255,255,255,0.2)',color:'#fff',fontSize:'18px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}
+              title="Εκτύπωση">
+              🖨️
+            </button>
             {/* Σχόλια */}
             <button onClick={e=>{e.stopPropagation();setShowCommentPanel(p=>!p);}}
               style={{width:'44px',height:'44px',borderRadius:'50%',background:showCommentPanel?'rgba(201,123,90,0.85)':'rgba(0,0,0,0.55)',backdropFilter:'blur(8px)',border:'1px solid rgba(255,255,255,0.2)',color:'#fff',fontSize:'18px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
@@ -948,7 +965,7 @@ if(status==='loading')
 
       {/* ── Modals — μόνο σε desktop ── */}
       {!isMobile&&modalFile&&(
-        <div style={isMobile?{...S.modal,padding:0}:S.modal} onClick={()=>{setCurrentFile(null);zoomReset();appZoomReset();setShowCommentPanel(false);setShowLinkedApp(false);}}>
+        <div style={isMobile?{...S.modal,padding:0}:S.modal} onClick={()=>{setCurrentFile(null);zoomReset();appZoomReset();setShowCommentPanel(false);setShowLinkedApp(false);setShowPrintMenu(false);}}>
           <div style={isMobile?{...S.modalBox,borderRadius:0}:S.modalBox} onClick={e=>e.stopPropagation()}>
 
             {/* Header */}
@@ -1019,8 +1036,31 @@ function az(d){if(d===0)az0=100;else az0=Math.min(Math.max(az0+d,50),200);applyZ
                   </>
                   :<button onClick={()=>setShowAppPicker(true)} style={{...S.iconBtn,fontSize:'11px'}} title="Σύνδεση εφαρμογής">+🔗</button>
                 )}
+                {!isMobile&&<div style={{position:'relative'}}>
+                  <button onClick={()=>setShowPrintMenu(p=>!p)} style={{...S.iconBtn,background:showPrintMenu?PALETTE.cream.bgSoft:'#f4f4f4',borderColor:showPrintMenu?PALETTE.cream.deep:'#e0e0e0',color:showPrintMenu?PALETTE.cream.deep:'#444'}} title="Εκτύπωση">🖨️</button>
+                  {showPrintMenu&&<div style={{position:'absolute',top:'100%',right:0,marginTop:'6px',background:'#fff',border:'1px solid #e0e0e0',borderRadius:'12px',boxShadow:'0 8px 24px rgba(0,0,0,0.12)',zIndex:20,minWidth:'220px',overflow:'hidden'}}>
+                    <button onClick={()=>{window.open(`/api/files/pdf/${modalFile.id}`,'_blank');setShowPrintMenu(false);}}
+                      style={{display:'flex',alignItems:'center',gap:'10px',width:'100%',padding:'12px 16px',background:'transparent',border:'none',cursor:'pointer',fontSize:'13px',color:'#1a1a1a',textAlign:'left'}}
+                      onMouseEnter={e=>e.currentTarget.style.background='#faf6ea'} onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
+                      <span>📄</span><div><div style={{fontWeight:'600'}}>Μόνο κείμενο</div><div style={{fontSize:'11px',color:'#888',marginTop:'2px'}}>Εκτύπωση PDF χωρίς ερωτήσεις</div></div>
+                    </button>
+                    <div style={{height:'1px',background:'#f0f0f0'}}/>
+                    <button onClick={()=>{
+                      const qs=fileQuestions(modalFile.id);
+                      const qHtml=qs.length>0?qs.sort((a,b)=>sortCode(a.code)-sortCode(b.code)).map((q,i)=>`<tr><td style="padding:6px 12px;border:1px solid #ddd;font-weight:600;text-align:center;width:60px;font-size:13px">${q.code||i+1}</td><td style="padding:6px 12px;border:1px solid #ddd;font-size:13px;line-height:1.6">${q.text}</td></tr>`).join(''):'<tr><td style="padding:12px;color:#888;font-style:italic;font-size:13px">Δεν υπάρχουν ερωτήσεις</td></tr>';
+                      const w=window.open('','_blank');
+                      w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${modalFile.title} — Ερωτήσεις</title><style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:Georgia,serif;} .page{max-width:800px;margin:0 auto;padding:40px 32px;} h1{font-size:18px;margin-bottom:4px;color:#1a1a1a;} .sub{font-size:12px;color:#888;margin-bottom:24px;} iframe{width:100%;height:70vh;border:1px solid #ddd;border-radius:8px;margin-bottom:24px;} h2{font-size:15px;color:#1a1a1a;margin-bottom:12px;border-bottom:2px solid #e8dfc4;padding-bottom:6px;} table{width:100%;border-collapse:collapse;margin-bottom:24px;} @media print{.no-print{display:none!important;} iframe{height:auto;min-height:60vh;}}</style></head><body><div class="page"><h1>${modalFile.title}</h1><p class="sub">${modalFile.name}</p><iframe src="/api/files/pdf/${modalFile.id}"></iframe><h2>Ερωτήσεις</h2><table>${qHtml}</table><button class="no-print" onclick="window.print()" style="background:#1a1a1a;color:#fff;border:none;padding:10px 24px;border-radius:10px;font-size:13px;cursor:pointer;margin-top:12px">🖨️ Εκτύπωση</button></div></body></html>`);
+                      w.document.close();
+                      setShowPrintMenu(false);
+                    }}
+                      style={{display:'flex',alignItems:'center',gap:'10px',width:'100%',padding:'12px 16px',background:'transparent',border:'none',cursor:'pointer',fontSize:'13px',color:'#1a1a1a',textAlign:'left'}}
+                      onMouseEnter={e=>e.currentTarget.style.background='#faf6ea'} onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
+                      <span>📝</span><div><div style={{fontWeight:'600'}}>Κείμενο + Ερωτήσεις</div><div style={{fontSize:'11px',color:'#888',marginTop:'2px'}}>PDF με πίνακα ερωτήσεων</div></div>
+                    </button>
+                  </div>}
+                </div>}
                 {!isMobile&&<button onClick={()=>setShowCommentPanel(p=>!p)} style={{...S.iconBtn,background:showCommentPanel?PALETTE.peach.bgSoft:'#f4f4f4',borderColor:showCommentPanel?PALETTE.peach.deep:'#e0e0e0',color:showCommentPanel?PALETTE.peach.deep:'#444'}} title="Ετικέτες &amp; Σχόλια">🏷️</button>}
-                <button onClick={()=>{setCurrentFile(null);zoomReset();appZoomReset();setShowCommentPanel(false);setShowLinkedApp(false);}} style={S.closeBtn}>✕</button>
+                <button onClick={()=>{setCurrentFile(null);zoomReset();appZoomReset();setShowCommentPanel(false);setShowLinkedApp(false);setShowPrintMenu(false);}} style={S.closeBtn}>✕</button>
               </div>
             </div>
 
@@ -1102,23 +1142,51 @@ function az(d){if(d===0)az0=100;else az0=Math.min(Math.max(az0+d,50),200);applyZ
               )}
 
               {showCommentPanel&&(
-                <div style={S.commentPanel}>
-                  <div style={S.cpHeader}><span style={S.cpTitle}>Ετικέτες &amp; Σχόλια</span>{metaSaving&&<span style={{fontSize:'11px',color:PALETTE.peach.deep}}>Αποθήκευση…</span>}</div>
-                  <div style={S.cpSection}>
-                    <div style={S.cpSectionLabel}>Ετικέτες</div>
-                    <div style={S.tagsWrap}>{fileTags(modalFile.id).map(t=>{ const c=tagColor(t); return <span key={t} className="tag-chip" style={{...S.tagChip,background:c.bg,color:c.text}}>#{t}<span className="tag-x" style={S.tagX} onClick={()=>removeTag(modalFile.id,t)}>✕</span></span>; })}</div>
-                    <div style={{position:'relative'}}>
-                      <div style={S.tagInputWrap}>
-                        <input ref={tagInputRef} type="text" placeholder="Νέα ετικέτα…" value={tagInput} onChange={e=>{setTagInput(e.target.value);setShowTagSuggest(true);}} onKeyDown={e=>{if(e.key==='Enter')addTag(modalFile.id,tagInput);if(e.key==='Escape')setShowTagSuggest(false);}} style={S.tagInputField}/>
-                        {tagInput.trim()&&<button onClick={()=>addTag(modalFile.id,tagInput)} style={S.tagAddBtn}>+</button>}
+                <div style={{...S.commentPanel,width:'300px'}}>
+                  <div style={S.cpHeader}><span style={S.cpTitle}>Ετικέτες · Σχόλια · Ερωτήσεις</span>{metaSaving&&<span style={{fontSize:'11px',color:PALETTE.peach.deep}}>Αποθήκευση…</span>}</div>
+                  <div style={{flex:1,overflowY:'auto'}}>
+                    <div style={S.cpSection}>
+                      <div style={S.cpSectionLabel}>Ετικέτες</div>
+                      <div style={S.tagsWrap}>{fileTags(modalFile.id).map(t=>{ const c=tagColor(t); return <span key={t} className="tag-chip" style={{...S.tagChip,background:c.bg,color:c.text}}>#{t}<span className="tag-x" style={S.tagX} onClick={()=>removeTag(modalFile.id,t)}>✕</span></span>; })}</div>
+                      <div style={{position:'relative'}}>
+                        <div style={S.tagInputWrap}>
+                          <input ref={tagInputRef} type="text" placeholder="Νέα ετικέτα…" value={tagInput} onChange={e=>{setTagInput(e.target.value);setShowTagSuggest(true);}} onKeyDown={e=>{if(e.key==='Enter')addTag(modalFile.id,tagInput);if(e.key==='Escape')setShowTagSuggest(false);}} style={S.tagInputField}/>
+                          {tagInput.trim()&&<button onClick={()=>addTag(modalFile.id,tagInput)} style={S.tagAddBtn}>+</button>}
+                        </div>
+                        {showTagSuggest&&tagInput&&suggestedTags.length>0&&<div style={S.suggestBox}>{suggestedTags.slice(0,6).map(t=>(<div key={t} className="suggest-item" style={S.suggestItem} onClick={()=>addTag(modalFile.id,t)}><span style={{color:PALETTE.peach.deep}}>#</span>{t}</div>))}</div>}
+                        {!tagInput&&<div style={{marginTop:'8px'}}><div style={{fontSize:'11px',color:'#aeaeb8',marginBottom:'6px'}}>Προτεινόμενες:</div><div style={{display:'flex',flexWrap:'wrap',gap:'4px'}}>{SUGGESTED_TAGS.filter(t=>!fileTags(modalFile.id).includes(t)).map(t=>{ const c=tagColor(t); return <span key={t} style={{...S.tagChip,background:c.bg,color:c.text,cursor:'pointer'}} onClick={()=>addTag(modalFile.id,t)}>+{t}</span>; })}</div></div>}
                       </div>
-                      {showTagSuggest&&tagInput&&suggestedTags.length>0&&<div style={S.suggestBox}>{suggestedTags.slice(0,6).map(t=>(<div key={t} className="suggest-item" style={S.suggestItem} onClick={()=>addTag(modalFile.id,t)}><span style={{color:PALETTE.peach.deep}}>#</span>{t}</div>))}</div>}
-                      {!tagInput&&<div style={{marginTop:'8px'}}><div style={{fontSize:'11px',color:'#aeaeb8',marginBottom:'6px'}}>Προτεινόμενες:</div><div style={{display:'flex',flexWrap:'wrap',gap:'4px'}}>{SUGGESTED_TAGS.filter(t=>!fileTags(modalFile.id).includes(t)).map(t=>{ const c=tagColor(t); return <span key={t} style={{...S.tagChip,background:c.bg,color:c.text,cursor:'pointer'}} onClick={()=>addTag(modalFile.id,t)}>+{t}</span>; })}</div></div>}
                     </div>
-                  </div>
-                  <div style={{...S.cpSection,flex:1,display:'flex',flexDirection:'column'}}>
-                    <div style={S.cpSectionLabel}>Σχόλια</div>
-                    <textarea placeholder="Σημειώσεις για το αρχείο…" value={fileComment(modalFile.id)} onChange={e=>updateComment(modalFile.id,e.target.value)} style={{...S.commentTextarea,flex:1}}/>
+                    <div style={S.cpSection}>
+                      <div style={S.cpSectionLabel}>Σχόλια</div>
+                      <textarea placeholder="Σημειώσεις για το αρχείο…" value={fileComment(modalFile.id)} onChange={e=>updateComment(modalFile.id,e.target.value)} style={{...S.commentTextarea,minHeight:'80px'}}/>
+                    </div>
+                    {/* ── Ερωτήσεις κειμένου ── */}
+                    <div style={{...S.cpSection,borderBottom:'none'}}>
+                      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'10px'}}>
+                        <div style={S.cpSectionLabel}>Ερωτήσεις</div>
+                        <button onClick={()=>addFileQuestion(modalFile.id)}
+                          style={{background:'transparent',color:PALETTE.peach.deep,border:'1px dashed '+PALETTE.peach.accent,padding:'4px 10px',borderRadius:'8px',fontSize:'11px',fontWeight:'600',cursor:'pointer'}}>
+                          + Ερώτηση
+                        </button>
+                      </div>
+                      {fileQuestions(modalFile.id).length===0
+                        ?<div style={{fontSize:'12px',color:'#aeaeb8',fontStyle:'italic',padding:'8px 0'}}>Δεν υπάρχουν ερωτήσεις. Πατήστε «+ Ερώτηση» για να προσθέσετε.</div>
+                        :fileQuestions(modalFile.id).map((q,idx)=>(
+                          <div key={q.id} style={{marginBottom:'10px',background:PALETTE.cream.bgSoft,borderRadius:'10px',padding:'10px',border:'1px solid '+PALETTE.cream.accent}}>
+                            <div style={{display:'flex',gap:'6px',alignItems:'flex-start'}}>
+                              <input type="text" value={q.code} onChange={e=>updateFileQuestion(modalFile.id,q.id,'code',e.target.value)}
+                                placeholder={(idx+1).toString()} style={{width:'52px',flexShrink:0,padding:'6px',border:'1px solid #e0e0e0',borderRadius:'6px',fontSize:'12px',fontWeight:'600',color:'#1a1a1a',background:'#fff',textAlign:'center'}}/>
+                              <button onClick={()=>removeFileQuestion(modalFile.id,q.id)}
+                                style={{background:'transparent',border:'1px solid #fca5a5',color:'#dc2626',width:'24px',height:'24px',borderRadius:'6px',fontSize:'10px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>✕</button>
+                            </div>
+                            <textarea value={q.text} onChange={e=>updateFileQuestion(modalFile.id,q.id,'text',e.target.value)}
+                              placeholder="Κείμενο ερώτησης…" rows={2}
+                              style={{width:'100%',marginTop:'6px',padding:'6px 8px',border:'1px solid #e0e0e0',borderRadius:'6px',fontSize:'12px',lineHeight:'1.55',color:'#1a1a1a',background:'#fff',resize:'vertical',fontFamily:'inherit'}}/>
+                          </div>
+                        ))
+                      }
+                    </div>
                   </div>
                 </div>
               )}
