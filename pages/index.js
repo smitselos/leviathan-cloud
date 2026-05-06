@@ -501,7 +501,10 @@ if(status==='loading')
                           <div style={S.recentTitle}>{file.title}</div>
                           <div style={S.recentMeta}>{file.name}</div>
                         </div>
-                        <button style={S.quickBtn}>Άνοιγμα →</button>
+                        <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
+                          <button onClick={e=>{e.stopPropagation();window.open(`/api/files/pdf/${file.id}`,'_blank');}} style={S.printBtn} title="Εκτύπωση"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
+                          <button style={S.quickBtn}>Άνοιγμα →</button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -579,6 +582,7 @@ if(status==='loading')
                         </div>
                         <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
                           <button onClick={e=>{e.stopPropagation();toggleFavorite(file);}} style={{background:'transparent',border:'none',fontSize:'16px',cursor:'pointer',color:favorites.some(f=>f.id===file.id)?'#e8c96a':'#ccc',padding:'4px'}}>{favorites.some(f=>f.id===file.id)?'★':'☆'}</button>
+                          <button onClick={e=>{e.stopPropagation();window.open(`/api/files/pdf/${file.id}`,'_blank');}} style={{...S.printBtn, color:p.deep, borderColor:p.deep}} title="Εκτύπωση"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
                           <button style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>
                         </div>
                       </div>
@@ -743,6 +747,7 @@ if(status==='loading')
                         </div>
                         <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
                           <button onClick={e=>{e.stopPropagation();toggleFavorite(file);}} style={{background:'transparent',border:'none',fontSize:'16px',cursor:'pointer',color:'#e8c96a',padding:'4px'}}>★</button>
+                          <button onClick={e=>{e.stopPropagation();window.open(`/api/files/pdf/${file.id}`,'_blank');}} style={{...S.printBtn, color:p.deep, borderColor:p.deep}} title="Εκτύπωση"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
                           <button style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>
                         </div>
                       </div>
@@ -771,6 +776,7 @@ if(status==='loading')
                         </div>
                         <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
                           <button onClick={e=>{e.stopPropagation();toggleFavorite(file);}} style={{background:'transparent',border:'none',fontSize:'16px',cursor:'pointer',color:favorites.some(f=>f.id===file.id)?'#e8c96a':'#ccc',padding:'4px'}}>{favorites.some(f=>f.id===file.id)?'★':'☆'}</button>
+                          <button onClick={e=>{e.stopPropagation();window.open(`/api/files/pdf/${file.id}`,'_blank');}} style={{...S.printBtn, color:p.deep, borderColor:p.deep}} title="Εκτύπωση"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
                           <button style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>
                         </div>
                       </div>
@@ -1443,6 +1449,7 @@ const S = {
   recentTitle:{fontSize:'13px',fontWeight:'600',color:'#1a1a1a',marginBottom:'2px',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'},
   recentMeta:{fontSize:'11px',color:'#aeaeb8'},
   quickBtn:{background:'transparent',border:'1.5px solid '+PALETTE.peach.deep,color:PALETTE.peach.deep,padding:'6px 14px',borderRadius:'10px',fontSize:'12px',fontWeight:'600',cursor:'pointer',flexShrink:0},
+  printBtn:{background:'transparent',border:'1.5px solid '+PALETTE.peach.deep,color:PALETTE.peach.deep,width:'32px',height:'32px',borderRadius:'10px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0},
 
   pageHeader:{display:'flex',alignItems:'center',gap:'14px',marginBottom:'24px',flexWrap:'wrap'},
   backBtn:{background:'#fff',border:'1px solid #ebebeb',color:'#6b6b80',padding:'8px 16px',borderRadius:'12px',fontSize:'13px',cursor:'pointer'},
