@@ -536,7 +536,7 @@ if(status==='loading')
             </>
           )}
 
-          {/* Folder view */}
+          {/* Folder view — compact list */}
           {activeView==='folder'&&currentFolder&&(
             <>
               <div style={S.pageHeader}>
@@ -553,34 +553,33 @@ if(status==='loading')
                 </div>
               )}
               <div style={S.searchBar}><input type="search" placeholder="Αναζήτηση..." value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} style={S.searchInput}/></div>
-              <div style={S.filesGrid}>
+              <div style={S.recentList}>
                 {loading?<div style={S.empty}>Φόρτωση...</div>:filteredFiles.length===0?<div style={S.empty}>Δεν βρέθηκαν αρχεία</div>
-                  :filteredFiles.map(file=>{
+                  :filteredFiles.map((file,idx)=>{
                     const tags=fileTags(file.id);
                     const hasComment=!!fileComment(file.id).trim();
                     const folderTone = FOLDERS[currentFolder]?.tone || 'cream';
                     const p = PALETTE[folderTone];
+                    const isActive=currentFile?.id===file.id;
                     return (
-                      <div key={file.id} className="ch"
-                        style={{...S.fileCard, background:p.bgSoft, ...(currentFile?.id===file.id?{...S.fileCardActive, borderColor:p.deep}:{})}}
+                      <div key={file.id} className="ri-h"
+                        style={{...S.recentItem, background:isActive?p.bgSoft:'transparent', borderBottom:idx<filteredFiles.length-1?'1px solid #f0f0f0':'none'}}
                         onClick={()=>openFile(file)}>
-                        <div style={S.fileCardTop}>
-                          <div style={{...S.filePreview, background:p.bg}}>
-                            <img src={`/api/thumbnail/${file.id}`} alt={file.title} style={{width:'100%',height:'100%',objectFit:'cover'}} onError={e=>{e.target.style.display='none';e.target.parentNode.innerHTML='<span style="font-size:36px">📄</span>';}}/>
-                          </div>
-                          <div style={S.fileCardBadges}>
-                            <button onClick={e=>{e.stopPropagation();toggleFavorite(file);}} style={S.favBtn}>{favorites.some(f=>f.id===file.id)?'★':'☆'}</button>
-                            {hasComment&&<span style={S.commentDot}>💬</span>}
-                            {isDiktya&&metadata[file.id]?.linkedApp&&<span style={{...S.commentDot,background:'rgba(255,255,255,0.9)'}} title="Συνδεδεμένη εφαρμογή">🔗</span>}
-                          </div>
+                        <div style={{width:'36px',height:'36px',borderRadius:'10px',background:p.bg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={p.deep} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                         </div>
-                        <div style={S.fileCardBody}>
-                          <h3 style={{...S.fileCardTitle, color:p.text}}>{file.title}</h3>
-                          <p style={{...S.fileCardMeta, color:p.text, opacity:0.55}}>{file.name}</p>
-                          {tags.length>0&&(<div style={S.cardTags} onClick={e=>e.stopPropagation()}>{tags.map(t=>{ const c=tagColor(t); return <span key={t} className="tag-chip" style={{...S.tagChip,background:c.bg,color:c.text}}>#{t}<span className="tag-x" style={S.tagX} onClick={e=>{e.stopPropagation();removeTag(file.id,t);}}>✕</span></span>; })}</div>)}
+                        <div style={S.recentInfo}>
+                          <div style={S.recentTitle}>{file.title}</div>
+                          <div style={S.recentMeta}>
+                            {file.name}
+                            {hasComment&&<span style={{marginLeft:'6px'}}>💬</span>}
+                            {isDiktya&&metadata[file.id]?.linkedApp&&<span style={{marginLeft:'4px'}}>🔗</span>}
+                          </div>
+                          {tags.length>0&&(<div style={{display:'flex',flexWrap:'wrap',gap:'3px',marginTop:'4px'}} onClick={e=>e.stopPropagation()}>{tags.map(t=>{ const c=tagColor(t); return <span key={t} className="tag-chip" style={{...S.tagChip,background:c.bg,color:c.text,fontSize:'10px',padding:'1px 7px'}}>#{t}<span className="tag-x" style={S.tagX} onClick={e=>{e.stopPropagation();removeTag(file.id,t);}}>✕</span></span>; })}</div>)}
                         </div>
-                        <div style={{...S.fileCardFoot, borderTopColor:p.accent}}>
-                          <button style={{...S.actionSmall, color:p.deep, borderColor:p.deep}}>Προβολή →</button>
+                        <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
+                          <button onClick={e=>{e.stopPropagation();toggleFavorite(file);}} style={{background:'transparent',border:'none',fontSize:'16px',cursor:'pointer',color:favorites.some(f=>f.id===file.id)?'#e8c96a':'#ccc',padding:'4px'}}>{favorites.some(f=>f.id===file.id)?'★':'☆'}</button>
+                          <button style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>
                         </div>
                       </div>
                     );
@@ -725,28 +724,26 @@ if(status==='loading')
             </>
           )}
 
-          {/* Favorites */}
+          {/* Favorites — compact list */}
           {activeView==='favorites'&&(
             <>
               <div style={S.pageHeader}><button onClick={goHome} style={S.backBtn}>← Πίσω</button><div><h1 style={S.pageTitle}>Αγαπημένα</h1><p style={S.pageSub}>{favorites.length} αρχεία</p></div></div>
-              <div style={S.filesGrid}>
+              <div style={S.recentList}>
                 {favorites.length===0?<div style={S.empty}>Δεν έχεις αγαπημένα ακόμα</div>
-                  :favorites.map(file=>{
+                  :favorites.map((file,idx)=>{
                     const p=PALETTE.cream;
                     return (
-                      <div key={file.id} className="ch" style={{...S.fileCard, background:p.bgSoft}} onClick={()=>openFile(file)}>
-                        <div style={S.fileCardTop}>
-                          <div style={{...S.filePreview, background:p.bg}}>
-                            <img src={`/api/thumbnail/${file.id}`} alt={file.title} style={{width:'100%',height:'100%',objectFit:'cover'}} onError={e=>{e.target.style.display='none';e.target.parentNode.innerHTML='<span style="font-size:36px">📄</span>';}}/>
-                          </div>
-                          <button onClick={e=>{e.stopPropagation();toggleFavorite(file);}} style={{...S.favBtn,position:'static',background:'transparent',border:'none'}}>★</button>
+                      <div key={file.id} className="ri-h" style={{...S.recentItem, borderBottom:idx<favorites.length-1?'1px solid #f0f0f0':'none'}} onClick={()=>openFile(file)}>
+                        <div style={{width:'36px',height:'36px',borderRadius:'10px',background:p.bg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={p.deep} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                         </div>
-                        <div style={S.fileCardBody}>
-                          <h3 style={{...S.fileCardTitle, color:p.text}}>{file.title}</h3>
-                          <p style={{...S.fileCardMeta, color:p.text, opacity:0.55}}>{file.name}</p>
+                        <div style={S.recentInfo}>
+                          <div style={S.recentTitle}>{file.title}</div>
+                          <div style={S.recentMeta}>{file.name}</div>
                         </div>
-                        <div style={{...S.fileCardFoot, borderTopColor:p.accent}}>
-                          <button style={{...S.actionSmall, color:p.deep, borderColor:p.deep}}>Προβολή →</button>
+                        <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
+                          <button onClick={e=>{e.stopPropagation();toggleFavorite(file);}} style={{background:'transparent',border:'none',fontSize:'16px',cursor:'pointer',color:'#e8c96a',padding:'4px'}}>★</button>
+                          <button style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>
                         </div>
                       </div>
                     );
@@ -755,28 +752,26 @@ if(status==='loading')
             </>
           )}
 
-          {/* Recent */}
+          {/* Recent — compact list */}
           {activeView==='recent'&&(
             <>
               <div style={S.pageHeader}><button onClick={goHome} style={S.backBtn}>← Πίσω</button><div><h1 style={S.pageTitle}>Πρόσφατα</h1><p style={S.pageSub}>{recentFiles.length} αρχεία</p></div></div>
-              <div style={S.filesGrid}>
+              <div style={S.recentList}>
                 {recentFiles.length===0?<div style={S.empty}>Δεν έχεις ανοίξει αρχεία ακόμα</div>
-                  :recentFiles.map(file=>{
+                  :recentFiles.map((file,idx)=>{
                     const p=PALETTE.peach;
                     return (
-                      <div key={file.id} className="ch" style={{...S.fileCard, background:p.bgSoft}} onClick={()=>openFile(file)}>
-                        <div style={S.fileCardTop}>
-                          <div style={{...S.filePreview, background:p.bg}}>
-                            <img src={`/api/thumbnail/${file.id}`} alt={file.title} style={{width:'100%',height:'100%',objectFit:'cover'}} onError={e=>{e.target.style.display='none';e.target.parentNode.innerHTML='<span style="font-size:36px">📄</span>';}}/>
-                          </div>
-                          <button onClick={e=>{e.stopPropagation();toggleFavorite(file);}} style={S.favBtn}>{favorites.some(f=>f.id===file.id)?'★':'☆'}</button>
+                      <div key={file.id} className="ri-h" style={{...S.recentItem, borderBottom:idx<recentFiles.length-1?'1px solid #f0f0f0':'none'}} onClick={()=>openFile(file)}>
+                        <div style={{width:'36px',height:'36px',borderRadius:'10px',background:p.bg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={p.deep} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                         </div>
-                        <div style={S.fileCardBody}>
-                          <h3 style={{...S.fileCardTitle, color:p.text}}>{file.title}</h3>
-                          <p style={{...S.fileCardMeta, color:p.text, opacity:0.55}}>{file.name}</p>
+                        <div style={S.recentInfo}>
+                          <div style={S.recentTitle}>{file.title}</div>
+                          <div style={S.recentMeta}>{file.name}</div>
                         </div>
-                        <div style={{...S.fileCardFoot, borderTopColor:p.accent}}>
-                          <button style={{...S.actionSmall, color:p.deep, borderColor:p.deep}}>Προβολή →</button>
+                        <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
+                          <button onClick={e=>{e.stopPropagation();toggleFavorite(file);}} style={{background:'transparent',border:'none',fontSize:'16px',cursor:'pointer',color:favorites.some(f=>f.id===file.id)?'#e8c96a':'#ccc',padding:'4px'}}>{favorites.some(f=>f.id===file.id)?'★':'☆'}</button>
+                          <button style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>
                         </div>
                       </div>
                     );
@@ -813,31 +808,31 @@ if(status==='loading')
             </>
           )}
 
-          {/* Tool Category — εφαρμογές μέσα σε φάκελο */}
+          {/* Tool Category — compact list εφαρμογών */}
           {activeView==='toolCategory'&&currentToolCategory&&(
             <>
               <div style={S.pageHeader}><button onClick={openAllTools} style={S.backBtn}>← Εφαρμογές</button><div><h1 style={S.pageTitle}>{currentToolCategory==='__recent__'?'Πρόσφατα':currentToolCategory}</h1><p style={S.pageSub}>{filteredCategoryTools.length} εφαρμογές</p></div></div>
               <div style={S.searchBar}><input type="search" placeholder="Αναζήτηση εφαρμογής..." value={toolsSearchQuery} onChange={e=>setToolsSearchQuery(e.target.value)} style={S.searchInput}/></div>
-              <div style={S.filesGrid}>
-                {filteredCategoryTools.map(tool=>{
-                  const p=PALETTE.peach;
-                  return (
-                    <div key={tool.file} className="ch" style={{...S.toolCard, background:p.bgSoft}} onClick={()=>openTool(tool)}>
-                      <div style={{...S.toolAccent, background:p.accent}}/>
-                      <div style={S.toolContent}>
-                        <div style={{...S.toolThumb, background:p.bg}}>
-                          <img src={`/api/thumbnail/${tool.driveId||tool.file}`} alt={tool.name} style={{width:'100%',height:'100%',objectFit:'cover'}} onError={e=>{e.target.style.display='none';e.target.parentNode.style.background=p.bg;e.target.parentNode.innerHTML=`<span style="font-size:22px;display:flex;align-items:center;justify-content:center;width:100%;height:100%">${tool.icon||'🔧'}</span>`;}} />
+              <div style={S.recentList}>
+                {filteredCategoryTools.length===0?<div style={S.empty}>Δεν βρέθηκαν εφαρμογές</div>
+                  :filteredCategoryTools.map((tool,idx)=>{
+                    const p=PALETTE.peach;
+                    return (
+                      <div key={tool.file} className="ri-h" style={{...S.recentItem, borderBottom:idx<filteredCategoryTools.length-1?'1px solid #f0f0f0':'none'}} onClick={()=>openTool(tool)}>
+                        <div style={{width:'36px',height:'36px',borderRadius:'10px',background:p.bg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={p.deep} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
                         </div>
-                        <h3 style={{...S.toolTitle, color:p.text}}>{tool.name}</h3>
-                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                          <button style={{...S.actionSmall, color:p.deep, borderColor:p.deep}}>Εκκίνηση →</button>
-                          <button onClick={e=>{e.stopPropagation();toggleFavoriteTool(tool);}} style={{...S.favBtn,position:'static',background:'transparent',border:'none'}}>{favoriteTools.some(t=>t.file===tool.file)?'★':'☆'}</button>
+                        <div style={S.recentInfo}>
+                          <div style={S.recentTitle}>{tool.name}</div>
+                          <div style={S.recentMeta}>{tool.category||''}</div>
+                        </div>
+                        <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
+                          <button onClick={e=>{e.stopPropagation();toggleFavoriteTool(tool);}} style={{background:'transparent',border:'none',fontSize:'16px',cursor:'pointer',color:favoriteTools.some(t=>t.file===tool.file)?'#e8c96a':'#ccc',padding:'4px'}}>{favoriteTools.some(t=>t.file===tool.file)?'★':'☆'}</button>
+                          <button style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Εκκίνηση →</button>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-                {filteredCategoryTools.length===0&&<div style={S.empty}>Δεν βρέθηκαν εφαρμογές</div>}
+                    );
+                  })}
               </div>
             </>
           )}
