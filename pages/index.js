@@ -66,7 +66,6 @@ export default function Home() {
   const [metaSaving, setMetaSaving]           = useState(false);
   const [activeTagFilter, setActiveTagFilter] = useState(null);
   const [showCommentPanel, setShowCommentPanel] = useState(false);
-  const [showPrintMenu, setShowPrintMenu]       = useState(false);
   const [tagInput, setTagInput]               = useState('');
   const [showTagSuggest, setShowTagSuggest]   = useState(false);
   const tagInputRef = useRef(null);
@@ -161,7 +160,7 @@ export default function Home() {
   };
 
   const openFile=(file)=>{
-    setCurrentFile(file); setShowCommentPanel(false); setShowLinkedApp(false); setLinkedApp(null); setShowPrintMenu(false);
+    setCurrentFile(file); setShowCommentPanel(false); setShowLinkedApp(false); setLinkedApp(null); 
     // Διαβάζει linkedApp από metadata (Drive) — με fallback στο localStorage
     const fromMeta = metadata[file.id]?.linkedApp;
     if(fromMeta){
@@ -905,15 +904,6 @@ if(status==='loading')
               style={{width:'44px',height:'44px',borderRadius:'50%',background:'rgba(16,122,90,0.75)',backdropFilter:'blur(8px)',border:'1px solid rgba(255,255,255,0.2)',color:'#fff',fontSize:'20px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
               📡
             </button>
-            {/* Εκτύπωση */}
-            <button onClick={e=>{
-              e.stopPropagation();
-              window.open(`https://drive.google.com/file/d/${currentFile.id}/preview`,'_blank');
-            }}
-              style={{width:'44px',height:'44px',borderRadius:'50%',background:'rgba(0,0,0,0.55)',backdropFilter:'blur(8px)',border:'1px solid rgba(255,255,255,0.2)',color:'#fff',fontSize:'18px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}
-              title="Εκτύπωση">
-              🖨️
-            </button>
             {/* Σχόλια */}
             <button onClick={e=>{e.stopPropagation();setShowCommentPanel(p=>!p);}}
               style={{width:'44px',height:'44px',borderRadius:'50%',background:showCommentPanel?'rgba(201,123,90,0.85)':'rgba(0,0,0,0.55)',backdropFilter:'blur(8px)',border:'1px solid rgba(255,255,255,0.2)',color:'#fff',fontSize:'18px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
@@ -961,7 +951,7 @@ if(status==='loading')
 
       {/* ── Modals — μόνο σε desktop ── */}
       {!isMobile&&modalFile&&(
-        <div style={isMobile?{...S.modal,padding:0}:S.modal} onClick={()=>{setCurrentFile(null);zoomReset();appZoomReset();setShowCommentPanel(false);setShowLinkedApp(false);setShowPrintMenu(false);}}>
+        <div style={isMobile?{...S.modal,padding:0}:S.modal} onClick={()=>{setCurrentFile(null);zoomReset();appZoomReset();setShowCommentPanel(false);setShowLinkedApp(false);}}>
           <div style={isMobile?{...S.modalBox,borderRadius:0}:S.modalBox} onClick={e=>e.stopPropagation()}>
 
             {/* Header */}
@@ -1032,49 +1022,8 @@ function az(d){if(d===0)az0=100;else az0=Math.min(Math.max(az0+d,50),200);applyZ
                   </>
                   :<button onClick={()=>setShowAppPicker(true)} style={{...S.iconBtn,fontSize:'11px'}} title="Σύνδεση εφαρμογής">+🔗</button>
                 )}
-                {!isMobile&&<div style={{position:'relative'}}>
-                  <button onClick={()=>setShowPrintMenu(p=>!p)} style={{...S.iconBtn,background:showPrintMenu?PALETTE.cream.bgSoft:'#f4f4f4',borderColor:showPrintMenu?PALETTE.cream.deep:'#e0e0e0',color:showPrintMenu?PALETTE.cream.deep:'#444'}} title="Εκτύπωση">🖨️</button>
-                  {showPrintMenu&&<div style={{position:'absolute',top:'100%',right:0,marginTop:'6px',background:'#fff',border:'1px solid #e0e0e0',borderRadius:'12px',boxShadow:'0 8px 24px rgba(0,0,0,0.12)',zIndex:20,minWidth:'240px',overflow:'hidden'}}>
-                    {/* 1. Κείμενο */}
-                    <button onClick={()=>{window.open(`/api/files/pdf/${modalFile.id}`,'_blank');setShowPrintMenu(false);}}
-                      style={{display:'flex',alignItems:'center',gap:'10px',width:'100%',padding:'12px 16px',background:'transparent',border:'none',cursor:'pointer',fontSize:'13px',color:'#1a1a1a',textAlign:'left'}}
-                      onMouseEnter={e=>e.currentTarget.style.background='#faf6ea'} onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
-                      <span>📄</span><div><div style={{fontWeight:'600'}}>Κείμενο</div><div style={{fontSize:'11px',color:'#888',marginTop:'2px'}}>Άνοιγμα PDF σε νέα καρτέλα</div></div>
-                    </button>
-                    <div style={{height:'1px',background:'#f0f0f0'}}/>
-                    <div style={{padding:'6px 16px 4px',fontSize:'10px',fontWeight:'700',color:'#aaa',textTransform:'uppercase',letterSpacing:'0.08em'}}>Ερωτήσεις</div>
-                    {/* 2. Πρόχειρη */}
-                    <button onClick={()=>{
-                      const qs=fileQuestions(modalFile.id);
-                      const qHtml=qs.length>0?[...qs].sort((a,b)=>sortCode(a.code)-sortCode(b.code)).map((q,i)=>`<tr><td style="padding:5px 10px;border:1px solid #ccc;font-weight:700;text-align:center;width:50px;font-size:12px">${q.code||i+1}</td><td style="padding:5px 10px;border:1px solid #ccc;font-size:12px;line-height:1.5">${q.text}</td></tr>`).join(''):'<tr><td colspan="2" style="padding:12px;color:#888;font-style:italic;font-size:12px">Δεν υπάρχουν ερωτήσεις</td></tr>';
-                      const w=window.open('about:blank','_blank');
-                      w.document.open();
-                      w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${modalFile.title} — Ερωτήσεις (πρόχειρη)</title><style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:Georgia,'Times New Roman',serif;font-size:12px;color:#1a1a1a;} .page{max-width:780px;margin:0 auto;padding:28px 32px;} h1{font-size:15px;font-weight:700;margin-bottom:6px;} .sub{font-size:11px;color:#888;margin-bottom:14px;} hr{border:none;border-top:1.5px solid #e8dfc4;margin-bottom:14px;} table{width:100%;border-collapse:collapse;margin-bottom:16px;} .foot{font-size:10px;color:#aaa;border-top:1px solid #eee;padding-top:10px;margin-top:16px;} @media print{.no-print{display:none!important;}}</style></head><body><div class="page"><h1>${modalFile.title}</h1><p class="sub">${modalFile.name}</p><hr/><table>${qHtml}</table><div class="foot">ΛΕΒΙΑΘΑΝ Cloud · Φύλλο ερωτήσεων (πρόχειρη)</div><div class="no-print" style="margin-top:16px"><button onclick="window.print()" style="background:#1a1a1a;color:#fff;border:none;padding:9px 20px;border-radius:10px;font-size:12px;cursor:pointer">🖨️ Εκτύπωση / Αποθήκευση PDF</button></div></div></body></html>`);
-                      w.document.close();
-                      setShowPrintMenu(false);
-                    }}
-                      style={{display:'flex',alignItems:'center',gap:'10px',width:'100%',padding:'10px 16px',background:'transparent',border:'none',cursor:'pointer',fontSize:'13px',color:'#1a1a1a',textAlign:'left'}}
-                      onMouseEnter={e=>e.currentTarget.style.background='#faf6ea'} onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
-                      <span>📋</span><div><div style={{fontWeight:'600'}}>Πρόχειρη</div><div style={{fontSize:'11px',color:'#888',marginTop:'2px'}}>Compact φύλλο ερωτήσεων</div></div>
-                    </button>
-                    {/* 3. Κανονική */}
-                    <button onClick={()=>{
-                      const qs=fileQuestions(modalFile.id);
-                      const qHtml=qs.length>0?[...qs].sort((a,b)=>sortCode(a.code)-sortCode(b.code)).map((q,i)=>`<div class="q-item"><span class="q-code">${q.code||i+1}.</span> ${q.text}</div>`).join(''):'<div style="padding:16px;color:#888;font-style:italic;font-size:11pt">Δεν υπάρχουν ερωτήσεις</div>';
-                      const w=window.open('about:blank','_blank');
-                      w.document.open();
-                      w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${modalFile.title} — Ερωτήσεις</title><style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:11pt;line-height:1.2;color:#1a1a1a;} .page{max-width:780px;margin:0 auto;padding:40px 36px;} h1{font-size:14pt;font-weight:700;margin-bottom:4px;} .sub{font-size:9pt;color:#888;margin-bottom:8px;} h2{font-size:12pt;font-weight:700;margin-bottom:20px;border-bottom:1.5px solid #c0c0c0;padding-bottom:8px;margin-top:4px;} .q-item{margin-bottom:2em;font-size:11pt;line-height:1.2;} .q-code{font-weight:700;} .foot{font-size:8pt;color:#aaa;border-top:1px solid #ddd;padding-top:12px;margin-top:32px;} @media print{.no-print{display:none!important;}}</style></head><body><div class="page"><h1>${modalFile.title}</h1><p class="sub">${modalFile.name}</p><h2>Ερωτήσεις</h2>${qHtml}<div class="foot">ΛΕΒΙΑΘΑΝ Cloud · Φύλλο ερωτήσεων</div><div class="no-print" style="margin-top:20px"><button onclick="window.print()" style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#1a1a1a;color:#fff;border:none;padding:10px 24px;border-radius:10px;font-size:11pt;cursor:pointer">🖨️ Εκτύπωση / Αποθήκευση PDF</button></div></div></body></html>`);
-                      w.document.close();
-                      setShowPrintMenu(false);
-                    }}
-                      style={{display:'flex',alignItems:'center',gap:'10px',width:'100%',padding:'10px 16px 12px',background:'transparent',border:'none',cursor:'pointer',fontSize:'13px',color:'#1a1a1a',textAlign:'left'}}
-                      onMouseEnter={e=>e.currentTarget.style.background='#faf6ea'} onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
-                      <span>📝</span><div><div style={{fontWeight:'600'}}>Κανονική</div><div style={{fontSize:'11px',color:'#888',marginTop:'2px'}}>Φύλλο ερωτήσεων με μορφοποίηση</div></div>
-                    </button>
-                  </div>}
-                </div>}
                 {!isMobile&&<button onClick={()=>setShowCommentPanel(p=>!p)} style={{...S.iconBtn,background:showCommentPanel?PALETTE.peach.bgSoft:'#f4f4f4',borderColor:showCommentPanel?PALETTE.peach.deep:'#e0e0e0',color:showCommentPanel?PALETTE.peach.deep:'#444'}} title="Ετικέτες &amp; Σχόλια">🏷️</button>}
-                <button onClick={()=>{setCurrentFile(null);zoomReset();appZoomReset();setShowCommentPanel(false);setShowLinkedApp(false);setShowPrintMenu(false);}} style={S.closeBtn}>✕</button>
+                <button onClick={()=>{setCurrentFile(null);zoomReset();appZoomReset();setShowCommentPanel(false);setShowLinkedApp(false);}} style={S.closeBtn}>✕</button>
               </div>
             </div>
 
