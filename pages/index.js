@@ -125,7 +125,17 @@ export default function Home() {
   const loadTools = async()=>{ try{ const r=await fetch('/api/tools'); const d=await r.json(); setTools(d.tools||[]); }catch(e){} };
   const loadMetadata = async()=>{ try{ const r=await fetch('/api/metadata'); const d=await r.json(); setMetadata(d.metadata||{}); }catch(e){} };
   const loadAllFiles = async()=>{ try{ const results=await Promise.all(['keimena','biblia','diktya'].map(fid=>fetch(`/api/files/${fid}`).then(r=>r.json()))); setAllFiles(results.flatMap(r=>r.files||[])); }catch(e){} };
-  const loadNetworks = async()=>{ try{ const r=await fetch('/api/networks'); const d=await r.json(); setNetworks(d.networks||[]); }catch(e){} };
+  const loadNetworks = async()=>{
+    try{
+      const r=await fetch('/api/networks');
+      if(!r.ok) throw new Error(`API error: ${r.status}`);
+      const d=await r.json();
+      setNetworks(Array.isArray(d.networks)?d.networks:[]);
+    }catch(e){
+      console.error('Σφάλμα φόρτωσης δικτύων:',e);
+      setNetworks([]);
+    }
+  };
 
   const persistMetadata = useCallback(async(updated)=>{
     setMetaSaving(true);
@@ -219,37 +229,71 @@ export default function Home() {
     setNetSaving(true); setNetMsg('');
     try{
       const r=await fetch('/api/networks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(net)});
+      if(!r.ok){
+        const ed=await r.json().catch(()=>({}));
+        setNetMsg(`✗ ${ed.error||`HTTP ${r.status}`}`);
+        setNetSaving(false);
+        return null;
+      }
       const d=await r.json();
-      if(r.ok){ setNetMsg('✓ Αποθηκεύτηκε'); setTimeout(()=>setNetMsg(''),2000); return d.driveFileId; }
-      else setNetMsg('✗ Σφάλμα');
-    }catch{ setNetMsg('✗ Σφάλμα'); }
+      const updatedNet={...net, driveFileId:d.driveFileId, pdfFileId:d.pdfFileId||net.pdfFileId};
+      setNetworks(prev=>prev.map(n=>n.id===net.id?updatedNet:n));
+      if(currentNetwork?.id===net.id) setCurrentNetwork(updatedNet);
+      setNetMsg('✓ Αποθηκεύτηκε'); setTimeout(()=>setNetMsg(''),2000);
+      return d.driveFileId;
+    }catch(e){
+      console.error('Σφάλμα αποθήκευσης:',e);
+      setNetMsg('✗ Σφάλμα σύνδεσης');
+    }
     setNetSaving(false);
+    return null;
   };
 
   const createNetwork=async()=>{
     if(!newNetName.trim())return;
-    const net={id:Date.now().toString(),name:newNetName.trim(),items:[],pdfFileId:null};
-    setNewNetName(''); setShowNewNetForm(false);
+    const net={id:Date.now().toString(),name:newNetName.trim(),items:[],pdfFileId:null,driveFileId:null};
+    setNewNetName(''); setShowNewNetForm(false); setNetMsg('');
+    const optimisticNet={...net};
+    setNetworks(prev=>[optimisticNet,...prev]);
+    setCurrentNetwork(optimisticNet);
     const driveFileId=await saveNetwork(net);
-    const newNet={...net,driveFileId};
-    setNetworks(prev=>[newNet,...prev]);
-    setCurrentNetwork(newNet);
+    if(!driveFileId){
+      setNetworks(prev=>prev.filter(n=>n.id!==net.id));
+      setCurrentNetwork(null);
+      setNetMsg('✗ Αποτυχία δημιουργίας δικτύου');
+      return;
+    }
+    const savedNet={...net,driveFileId};
+    setNetworks(prev=>prev.map(n=>n.id===net.id?savedNet:n));
+    setCurrentNetwork(savedNet);
     setNetSaving(false);
   };
 
   const deleteNetwork=async(net)=>{
     if(!confirm(`Διαγραφή δικτύου «${net.name}»;`))return;
-    try{ await fetch('/api/networks',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({driveFileId:net.driveFileId})}); setNetworks(prev=>prev.filter(n=>n.id!==net.id)); if(currentNetwork?.id===net.id)setCurrentNetwork(null); }catch(e){ alert('Σφάλμα διαγραφής'); }
+    if(!net.driveFileId){ setNetworks(prev=>prev.filter(n=>n.id!==net.id)); if(currentNetwork?.id===net.id)setCurrentNetwork(null); return; }
+    try{
+      const r=await fetch('/api/networks',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({driveFileId:net.driveFileId})});
+      if(r.ok){ setNetworks(prev=>prev.filter(n=>n.id!==net.id)); if(currentNetwork?.id===net.id)setCurrentNetwork(null); }
+      else{ const d=await r.json().catch(()=>({})); alert(`Σφάλμα διαγραφής: ${d.error||'Άγνωστο σφάλμα'}`); }
+    }catch(e){ console.error('Σφάλμα διαγραφής:',e); alert('Σφάλμα διαγραφής. Προσπαθήστε ξανά.'); }
   };
 
   const updateNet=(updated)=>{ setCurrentNetwork(updated); setNetworks(prev=>prev.map(n=>n.id===updated.id?updated:n)); };
 
-  const addFileToNetwork=(file)=>{
+  const addFileToNetwork=async(file)=>{
     if(!currentNetwork)return;
     if(currentNetwork.items.some(i=>i.fileId===file.id)){ setPickingFile(false); return; }
-    // Αυτόματη μεταφορά ερωτήσεων από τα metadata του κειμένου
-    const metaQs=fileQuestions(file.id);
-    const importedQs=metaQs.length>0?metaQs.map(q=>({id:newQid(),code:q.code,text:q.text})):[];
+    // Φόρτωση ερωτημάτων από τοπικά metadata
+    let metaQs=fileQuestions(file.id);
+    // Fallback: αν δεν υπάρχουν τοπικά, ζήτησε από το API
+    if(!metaQs||metaQs.length===0){
+      try{
+        const r=await fetch(`/api/metadata/${file.id}`);
+        if(r.ok){ const d=await r.json(); metaQs=d.metadata?.questions||[]; }
+      }catch(e){ console.warn(`Δεν φορτώθηκαν metadata για ${file.id}:`,e); metaQs=[]; }
+    }
+    const importedQs=metaQs.map(q=>({id:newQid(),code:q.code||'',text:q.text||''}));
     const item={fileId:file.id,title:file.title,name:file.name,questions:importedQs};
     const updated={...currentNetwork,items:[...currentNetwork.items,item]};
     updateNet(updated); saveNetwork(updated);
@@ -261,8 +305,8 @@ export default function Home() {
 
   const moveItem=(idx,dir)=>{ const items=[...currentNetwork.items]; const target=idx+dir; if(target<0||target>=items.length)return; [items[idx],items[target]]=[items[target],items[idx]]; const updated={...currentNetwork,items}; updateNet(updated); saveNetwork(updated); };
 
-  const addQuestion=(fileId)=>{ const items=currentNetwork.items.map(item=>item.fileId!==fileId?item:{...item,questions:[...item.questions,{id:newQid(),code:'',text:''}]}); const updated={...currentNetwork,items}; updateNet(updated); };
-  const updateQuestion=(fileId,qid,field,value)=>{ const items=currentNetwork.items.map(item=>item.fileId!==fileId?item:{...item,questions:item.questions.map(q=>q.id===qid?{...q,[field]:value}:q)}); const updated={...currentNetwork,items}; updateNet(updated); };
+  const addQuestion=(fileId)=>{ const items=currentNetwork.items.map(item=>item.fileId!==fileId?item:{...item,questions:[...item.questions,{id:newQid(),code:'',text:''}]}); const updated={...currentNetwork,items}; updateNet(updated); saveNetwork(updated); };
+  const updateQuestion=(fileId,qid,field,value)=>{ const items=currentNetwork.items.map(item=>item.fileId!==fileId?item:{...item,questions:item.questions.map(q=>q.id===qid?{...q,[field]:value}:q)}); const updated={...currentNetwork,items}; updateNet(updated); if(saveTimer.current)clearTimeout(saveTimer.current); saveTimer.current=setTimeout(()=>saveNetwork(updated),800); };
   const removeQuestion=(fileId,qid)=>{ const items=currentNetwork.items.map(item=>item.fileId!==fileId?item:{...item,questions:item.questions.filter(q=>q.id!==qid)}); const updated={...currentNetwork,items}; updateNet(updated); saveNetwork(updated); };
   const saveQuestionsNow=()=>{ if(currentNetwork){ const all=networks.map(n=>n.id===currentNetwork.id?currentNetwork:n); setNetworks(all); saveNetwork(currentNetwork); } };
   const toggleAccordion=(fileId)=>setOpenAccordions(prev=>({...prev,[fileId]:!prev[fileId]}));
@@ -273,8 +317,12 @@ export default function Home() {
     try{
       const r=await fetch('/api/networks/merge',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({network:currentNetwork})});
       const d=await r.json();
-      if(r.ok){ const updated={...currentNetwork,pdfFileId:d.pdfFileId,pdfFilename:d.pdfFilename}; updateNet(updated); setNetMsg('✓ PDF αποθηκεύτηκε'); }
-      else setNetMsg(`✗ ${d.error||'Σφάλμα'}`);
+      if(r.ok){
+        const updated={...currentNetwork,pdfFileId:d.pdfFileId,pdfFilename:d.pdfFilename};
+        updateNet(updated);
+        await saveNetwork(updated);
+        setNetMsg('✓ PDF αποθηκεύτηκε');
+      } else setNetMsg(`✗ ${d.error||'Σφάλμα'}`);
     }catch{ setNetMsg('✗ Σφάλμα σύνδεσης'); }
     setMerging(false); setTimeout(()=>setNetMsg(''),4000);
   };
