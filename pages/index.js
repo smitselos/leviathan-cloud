@@ -130,7 +130,9 @@ export default function Home() {
       const r=await fetch('/api/networks');
       if(!r.ok) throw new Error(`HTTP ${r.status}`);
       const d=await r.json();
-      setNetworks(Array.isArray(d.networks)?d.networks:[]);
+      // Κανονικοποίηση: κάθε δίκτυο πρέπει να έχει items array
+      const normalized=(d.networks||[]).map(n=>({...n,items:Array.isArray(n.items)?n.items:[]}));
+      setNetworks(normalized);
     }catch(e){ console.error('loadNetworks:',e); setNetworks([]); }
   };
 
@@ -227,19 +229,10 @@ export default function Home() {
     try{
       const r=await fetch('/api/networks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(net)});
       const d=await r.json();
-      if(r.ok){
-        // Ενημέρωση μόνο της λίστας — ΟΧΙ του currentNetwork (αποφυγή race condition)
-        if(d.driveFileId){
-          setNetworks(prev=>prev.map(n=>n.id===net.id?{...n,driveFileId:d.driveFileId}:n));
-        }
-        setNetMsg('✓ Αποθηκεύτηκε'); setTimeout(()=>setNetMsg(''),2000);
-        return d.driveFileId;
-      } else {
-        setNetMsg(`✗ ${d.error||'Σφάλμα'}`);
-      }
-    }catch(e){ console.error('saveNetwork:',e); setNetMsg('✗ Σφάλμα σύνδεσης'); }
+      if(r.ok){ setNetMsg('✓ Αποθηκεύτηκε'); setTimeout(()=>setNetMsg(''),2000); return d.driveFileId; }
+      else setNetMsg('✗ Σφάλμα');
+    }catch{ setNetMsg('✗ Σφάλμα'); }
     setNetSaving(false);
-    return null;
   };
 
   const createNetwork=async()=>{
@@ -260,16 +253,17 @@ export default function Home() {
     try{ await fetch('/api/networks',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({driveFileId:net.driveFileId})}); setNetworks(prev=>prev.filter(n=>n.id!==net.id)); if(currentNetwork?.id===net.id)setCurrentNetwork(null); }catch(e){ alert('Σφάλμα διαγραφής'); }
   };
 
-  const updateNet=(updated)=>{ setCurrentNetwork(updated); setNetworks(prev=>prev.map(n=>n.id===updated.id?updated:n)); };
+  const updateNet=(updated)=>{ const safe={...updated,items:Array.isArray(updated.items)?updated.items:[]}; setCurrentNetwork(safe); setNetworks(prev=>prev.map(n=>n.id===safe.id?safe:n)); };
 
   const addFileToNetwork=(file)=>{
     if(!currentNetwork)return;
-    if(currentNetwork.items.some(i=>i.fileId===file.id)){ setPickingFile(false); return; }
+    const currentItems=currentNetwork.items||[];
+    if(currentItems.some(i=>i.fileId===file.id)){ setPickingFile(false); return; }
     // Αυτόματη μεταφορά ερωτήσεων από τα metadata του κειμένου
     const metaQs=fileQuestions(file.id);
     const importedQs=metaQs.length>0?metaQs.map(q=>({id:newQid(),code:q.code,text:q.text})):[];
     const item={fileId:file.id,title:file.title,name:file.name,questions:importedQs};
-    const updated={...currentNetwork,items:[...currentNetwork.items,item]};
+    const updated={...currentNetwork,items:[...currentItems,item]};
     updateNet(updated); saveNetwork(updated);
     setOpenAccordions(prev=>({...prev,[file.id]:true}));
     setPickingFile(false); setPickerSearch('');
@@ -279,8 +273,8 @@ export default function Home() {
 
   const moveItem=(idx,dir)=>{ const items=[...currentNetwork.items]; const target=idx+dir; if(target<0||target>=items.length)return; [items[idx],items[target]]=[items[target],items[idx]]; const updated={...currentNetwork,items}; updateNet(updated); saveNetwork(updated); };
 
-  const addQuestion=(fileId)=>{ const items=currentNetwork.items.map(item=>item.fileId!==fileId?item:{...item,questions:[...item.questions,{id:newQid(),code:'',text:''}]}); const updated={...currentNetwork,items}; updateNet(updated); saveNetwork(updated); };
-  const updateQuestion=(fileId,qid,field,value)=>{ const items=currentNetwork.items.map(item=>item.fileId!==fileId?item:{...item,questions:item.questions.map(q=>q.id===qid?{...q,[field]:value}:q)}); const updated={...currentNetwork,items}; updateNet(updated); if(saveTimer.current)clearTimeout(saveTimer.current); saveTimer.current=setTimeout(()=>saveNetwork(updated),800); };
+  const addQuestion=(fileId)=>{ const items=currentNetwork.items.map(item=>item.fileId!==fileId?item:{...item,questions:[...item.questions,{id:newQid(),code:'',text:''}]}); const updated={...currentNetwork,items}; updateNet(updated); };
+  const updateQuestion=(fileId,qid,field,value)=>{ const items=currentNetwork.items.map(item=>item.fileId!==fileId?item:{...item,questions:item.questions.map(q=>q.id===qid?{...q,[field]:value}:q)}); const updated={...currentNetwork,items}; updateNet(updated); };
   const removeQuestion=(fileId,qid)=>{ const items=currentNetwork.items.map(item=>item.fileId!==fileId?item:{...item,questions:item.questions.filter(q=>q.id!==qid)}); const updated={...currentNetwork,items}; updateNet(updated); saveNetwork(updated); };
   const saveQuestionsNow=()=>{ if(currentNetwork){ const all=networks.map(n=>n.id===currentNetwork.id?currentNetwork:n); setNetworks(all); saveNetwork(currentNetwork); } };
   const toggleAccordion=(fileId)=>setOpenAccordions(prev=>({...prev,[fileId]:!prev[fileId]}));
@@ -634,7 +628,7 @@ if(status==='loading')
                       <div key={net.id} className="ch" style={S.netListCard}>
                         <div style={S.netListLeft}>
                           <div style={S.netListIcon}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={PALETTE.mustard.deep} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><line x1="12" y1="7" x2="5" y2="17"/><line x1="12" y1="7" x2="19" y2="17"/><line x1="5" y1="19" x2="19" y2="19"/></svg></div>
-                          <div><div style={S.netListName}>{net.name}</div><div style={S.netListMeta}>{net.items.length} κείμενα{net.pdfFileId&&<span style={{color:PALETTE.mustard.deep,marginLeft:'8px'}}>· PDF ✓</span>}</div></div>
+                          <div><div style={S.netListName}>{net.name}</div><div style={S.netListMeta}>{(net.items||[]).length} κείμενα{net.pdfFileId&&<span style={{color:PALETTE.mustard.deep,marginLeft:'8px'}}>· PDF ✓</span>}</div></div>
                         </div>
                         <div style={{display:'flex',gap:'8px',alignItems:'center'}}>
                           <button onClick={()=>setCurrentNetwork(net)} style={S.greenSmall}>Επεξεργασία →</button>
@@ -1250,7 +1244,7 @@ function az(d){if(d===0)az0=100;else az0=Math.min(Math.max(az0+d,50),200);applyZ
             <div style={S.modalHead}><h2 style={S.modalTitle}>Επιλογή κειμένου</h2><button onClick={()=>{setPickingFile(false);setPickerSearch('');}} style={S.closeBtn}>✕</button></div>
             <div style={{padding:'10px 14px',borderBottom:'1px solid #ebebeb'}}><input type="search" placeholder="Αναζήτηση…" value={pickerSearch} onChange={e=>setPickerSearch(e.target.value)} style={{...S.searchInput,width:'100%'}} autoFocus/></div>
             <div style={{flex:1,overflowY:'auto',padding:'8px'}}>
-              {allFiles.filter(f=>!pickerSearch||f.title.toLowerCase().includes(pickerSearch.toLowerCase())).map(file=>{ const already=currentNetwork?.items.some(i=>i.fileId===file.id); return (
+              {allFiles.filter(f=>!pickerSearch||f.title.toLowerCase().includes(pickerSearch.toLowerCase())).map(file=>{ const already=currentNetwork?.items?.some(i=>i.fileId===file.id); return (
                 <div key={file.id} className="picker-h" style={{display:'flex',alignItems:'center',gap:'10px',padding:'10px 12px',borderRadius:'12px',marginBottom:'2px',opacity:already?0.45:1,cursor:already?'default':'pointer'}} onClick={()=>!already&&addFileToNetwork(file)}>
                   <div style={{fontSize:'20px',flexShrink:0}}>📄</div>
                   <div style={{flex:1,minWidth:0}}><div style={{fontSize:'13px',fontWeight:'500',color:'#1a1a1a',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{file.title}</div><div style={{fontSize:'11px',color:'#aeaeb8'}}>{file.name}</div></div>
