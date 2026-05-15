@@ -36,120 +36,23 @@ const tagColor = (tag) => TAG_COLORS[Math.abs([...tag].reduce((a,c)=>a+c.charCod
 const newQid   = () => Math.random().toString(36).slice(2,8);
 const sortCode = (code) => { const m=code.match(/^([Α-Ωα-ω]+)(\d*)$/u); if(!m)return 9999; return m[1].charCodeAt(0)*1000+(parseInt(m[2])||0); };
 
-// ── QR Code generator (pure JS → SVG data URI) ──────────────────────────
-// Minimal QR encoder for alphanumeric / byte mode — sufficient for URLs
-const QR=(()=>{
-  // Pre-computed GF(256) tables
-  const EXP=new Uint8Array(512),LOG=new Uint8Array(256);
-  {let x=1;for(let i=0;i<255;i++){EXP[i]=x;LOG[x]=i;x<<=1;if(x&256)x^=285;}for(let i=255;i<512;i++)EXP[i]=EXP[i-255];}
-  const gfMul=(a,b)=>a&&b?EXP[LOG[a]+LOG[b]]:0;
-  const polyMul=(p,q)=>{const r=new Uint8Array(p.length+q.length-1);for(let i=0;i<p.length;i++)for(let j=0;j<q.length;j++)r[i+j]^=gfMul(p[i],q[j]);return r;};
-  const genPoly=(n)=>{let g=new Uint8Array([1]);for(let i=0;i<n;i++)g=polyMul(g,new Uint8Array([1,EXP[i]]));return g;};
-  const ecBytes=(data,ecLen)=>{const gen=genPoly(ecLen);const msg=new Uint8Array(data.length+ecLen);msg.set(data);for(let i=0;i<data.length;i++){const coef=msg[i];if(coef)for(let j=0;j<gen.length;j++)msg[i+j]^=gfMul(gen[j],coef);}return msg.slice(data.length);};
-
-  // Version/EC tables (versions 1-10, EC level L for maximum data)
-  const VERSIONS=[
-    null,
-    {total:26,ec:7,dcap:19},{total:44,ec:10,dcap:34},{total:70,ec:15,dcap:55},
-    {total:100,ec:20,dcap:80},{total:134,ec:26,dcap:108},{total:172,ec:18,dcap:136},
-    {total:196,ec:20,dcap:156},{total:242,ec:24,dcap:194},{total:292,ec:30,dcap:232},
-    {total:346,ec:18,dcap:274},
-  ];
-
-  const ALIGNMENT=[null,[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50]];
-
-  function encode(text){
-    const data=new TextEncoder().encode(text);
-    const len=data.length;
-    // Find smallest version
-    let ver=1;
-    while(ver<=10&&VERSIONS[ver].dcap<len+3)ver++;
-    if(ver>10)throw new Error('QR: text too long');
-    const v=VERSIONS[ver];
-    const size=17+ver*4;
-    // Build data codewords: byte mode indicator + length + data + terminator + padding
-    const bits=[];
-    const pushBits=(val,n)=>{for(let i=n-1;i>=0;i--)bits.push((val>>i)&1);};
-    pushBits(4,4); // mode: byte
-    pushBits(len,ver<=9?8:16);
-    for(const b of data)pushBits(b,8);
-    pushBits(0,Math.min(4,v.dcap*8-bits.length));
-    while(bits.length%8)bits.push(0);
-    while(bits.length<v.dcap*8){bits.push(1,1,1,0,1,1,0,0);if(bits.length<v.dcap*8)bits.push(0,0,0,1,0,0,0,1);}
-    const codewords=new Uint8Array(v.dcap);
-    for(let i=0;i<v.dcap;i++){let b=0;for(let j=0;j<8;j++)b=(b<<1)|bits[i*8+j];codewords[i]=b;}
-    const ec=ecBytes(codewords,v.ec);
-    const fullData=new Uint8Array(v.total);
-    fullData.set(codewords);fullData.set(ec,v.dcap);
-
-    // Build matrix
-    const grid=Array.from({length:size},()=>new Int8Array(size)); // 0=white, 1=black, unset
-    const reserved=Array.from({length:size},()=>new Uint8Array(size));
-    const set=(r,c,val)=>{if(r>=0&&r<size&&c>=0&&c<size){grid[r][c]=val?1:0;reserved[r][c]=1;}};
-    // Finder patterns
-    const finder=(r,c)=>{for(let dr=-1;dr<=7;dr++)for(let dc=-1;dc<=7;dc++){const v2=(dr>=0&&dr<=6&&dc>=0&&dc<=6)&&(dr===0||dr===6||dc===0||dc===6||(dr>=2&&dr<=4&&dc>=2&&dc<=4));set(r+dr,c+dc,v2?1:0);}};
-    finder(0,0);finder(0,size-7);finder(size-7,0);
-    // Timing
-    for(let i=8;i<size-8;i++){set(6,i,i%2===0);set(i,6,i%2===0);}
-    // Dark module
-    set(size-8,8,1);
-    // Alignment
-    const ap=ALIGNMENT[ver];
-    for(const r of ap)for(const c of ap){if(reserved[r][c])continue;for(let dr=-2;dr<=2;dr++)for(let dc=-2;dc<=2;dc++)set(r+dr,c+dc,(Math.abs(dr)===2||Math.abs(dc)===2||(!dr&&!dc))?1:0);}
-    // Reserve format info areas
-    for(let i=0;i<9;i++){if(!reserved[8][i])reserved[8][i]=1;if(!reserved[i][8])reserved[i][8]=1;if(i<8){if(!reserved[8][size-1-i])reserved[8][size-1-i]=1;if(!reserved[size-1-i][8])reserved[size-1-i][8]=1;}}
-    // Place data
-    const dataBits=[];
-    for(const b of fullData)for(let i=7;i>=0;i--)dataBits.push((b>>i)&1);
-    let di=0;
-    for(let col=size-1;col>=1;col-=2){
-      if(col===6)col--;
-      for(let row=0;row<size;row++){
-        const r=((Math.floor((size-1-col)/2))%2===0)?size-1-row:row;
-        for(const dc of[0,-1]){
-          const c2=col+dc;
-          if(!reserved[r][c2]){grid[r][c2]=di<dataBits.length?dataBits[di]:0;di++;}
-        }
-      }
-    }
-    // Mask (pattern 0: (r+c)%2===0)
-    for(let r=0;r<size;r++)for(let c=0;c<size;c++)if(!reserved[r][c])grid[r][c]^=((r+c)%2===0)?1:0;
-    // Format info for mask 0, EC level L: pre-computed = 0x77c4
-    const fmtBits=0x77c4;
-    const setFmt=(i,val)=>{
-      if(i<6)grid[8][i]=val;else if(i===6)grid[8][7]=val;else if(i===7)grid[8][8]=val;else grid[8][size-15+i]=val;
-      if(i<8)grid[size-1-i][8]=val;else if(i===8)grid[7][8]=val;else grid[14-i][8]=val;
-    };
-    for(let i=0;i<15;i++)setFmt(i,(fmtBits>>i)&1);
-
-    return{grid,size};
-  }
-
-  function toSVG(text,pixelSize=4,margin=2){
-    const{grid,size}=encode(text);
-    const total=(size+margin*2)*pixelSize;
-    let d='';
-    for(let r=0;r<size;r++)for(let c=0;c<size;c++)if(grid[r][c])d+=`M${(c+margin)*pixelSize} ${(r+margin)*pixelSize}h${pixelSize}v${pixelSize}h-${pixelSize}z`;
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${total} ${total}" width="${total}" height="${total}"><rect width="${total}" height="${total}" fill="#fff"/><path d="${d}" fill="#000"/></svg>`;
-  }
-
-  return{toSVG};
-})();
+// ── QR Code — χρήση Google Charts API (αξιόπιστο, χωρίς βιβλιοθήκες) ──
+// Εναλλακτικά: https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=URL
+const qrImageUrl = (text, size=300) =>
+  `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(text)}&margin=8`;
 
 const BASE_URL = typeof window!=='undefined' ? window.location.origin : 'https://leviathan-cloud.vercel.app';
 
 // ── QR Overlay component ────────────────────────────────────────────────
 function QrOverlay({url,title,expiresAt,onClose}){
-  const svgStr = QR.toSVG(url,6,2);
-  const dataUri = 'data:image/svg+xml;base64,'+btoa(svgStr);
   const expDate = expiresAt ? new Date(expiresAt) : null;
   const expStr = expDate ? `${expDate.getHours().toString().padStart(2,'0')}:${expDate.getMinutes().toString().padStart(2,'0')}` : '';
   return (
     <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,cursor:'pointer'}} onClick={onClose}>
-      <div style={{background:'#fff',borderRadius:'20px',padding:'32px 28px',textAlign:'center',maxWidth:'380px',width:'90vw',boxShadow:'0 24px 80px rgba(0,0,0,0.3)',cursor:'default'}} onClick={e=>e.stopPropagation()}>
+      <div style={{background:'#fff',borderRadius:'20px',padding:'32px 28px',textAlign:'center',maxWidth:'420px',width:'90vw',boxShadow:'0 24px 80px rgba(0,0,0,0.3)',cursor:'default'}} onClick={e=>e.stopPropagation()}>
         <div style={{fontSize:'13px',fontWeight:'700',color:'#888',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:'6px'}}>Σκανάρισε με κινητό</div>
         <div style={{fontSize:'15px',fontWeight:'600',color:'#1a1a1a',marginBottom:'18px',lineHeight:1.4,wordBreak:'break-word'}}>{title}</div>
-        <img src={dataUri} alt="QR Code" style={{width:'220px',height:'220px',imageRendering:'pixelated',margin:'0 auto 14px',display:'block'}}/>
+        <img src={qrImageUrl(url,300)} alt="QR Code" style={{width:'240px',height:'240px',margin:'0 auto 14px',display:'block',borderRadius:'8px',border:'1px solid #eee'}}/>
         {expStr&&<div style={{fontSize:'12px',color:'#c97b5a',marginBottom:'8px',fontWeight:'600'}}>⏱ Λήξη: {expStr} (2 ώρες)</div>}
         <div style={{fontSize:'11px',color:'#aeaeb8',marginBottom:'18px',wordBreak:'break-all',maxHeight:'44px',overflow:'hidden'}}>{url}</div>
         <button onClick={onClose} style={{background:'#1a1a1a',color:'#fff',border:'none',padding:'10px 28px',borderRadius:'12px',fontSize:'13px',fontWeight:'600',cursor:'pointer'}}>Κλείσιμο</button>
