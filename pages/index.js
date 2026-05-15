@@ -36,6 +36,171 @@ const tagColor = (tag) => TAG_COLORS[Math.abs([...tag].reduce((a,c)=>a+c.charCod
 const newQid   = () => Math.random().toString(36).slice(2,8);
 const sortCode = (code) => { const m=code.match(/^([Α-Ωα-ω]+)(\d*)$/u); if(!m)return 9999; return m[1].charCodeAt(0)*1000+(parseInt(m[2])||0); };
 
+// ── QR Code generator (pure JS → SVG data URI) ──────────────────────────
+// Minimal QR encoder for alphanumeric / byte mode — sufficient for URLs
+const QR=(()=>{
+  // Pre-computed GF(256) tables
+  const EXP=new Uint8Array(512),LOG=new Uint8Array(256);
+  {let x=1;for(let i=0;i<255;i++){EXP[i]=x;LOG[x]=i;x<<=1;if(x&256)x^=285;}for(let i=255;i<512;i++)EXP[i]=EXP[i-255];}
+  const gfMul=(a,b)=>a&&b?EXP[LOG[a]+LOG[b]]:0;
+  const polyMul=(p,q)=>{const r=new Uint8Array(p.length+q.length-1);for(let i=0;i<p.length;i++)for(let j=0;j<q.length;j++)r[i+j]^=gfMul(p[i],q[j]);return r;};
+  const genPoly=(n)=>{let g=new Uint8Array([1]);for(let i=0;i<n;i++)g=polyMul(g,new Uint8Array([1,EXP[i]]));return g;};
+  const ecBytes=(data,ecLen)=>{const gen=genPoly(ecLen);const msg=new Uint8Array(data.length+ecLen);msg.set(data);for(let i=0;i<data.length;i++){const coef=msg[i];if(coef)for(let j=0;j<gen.length;j++)msg[i+j]^=gfMul(gen[j],coef);}return msg.slice(data.length);};
+
+  // Version/EC tables (versions 1-10, EC level L for maximum data)
+  const VERSIONS=[
+    null,
+    {total:26,ec:7,dcap:19},{total:44,ec:10,dcap:34},{total:70,ec:15,dcap:55},
+    {total:100,ec:20,dcap:80},{total:134,ec:26,dcap:108},{total:172,ec:18,dcap:136},
+    {total:196,ec:20,dcap:156},{total:242,ec:24,dcap:194},{total:292,ec:30,dcap:232},
+    {total:346,ec:18,dcap:274},
+  ];
+
+  const ALIGNMENT=[null,[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50]];
+
+  function encode(text){
+    const data=new TextEncoder().encode(text);
+    const len=data.length;
+    // Find smallest version
+    let ver=1;
+    while(ver<=10&&VERSIONS[ver].dcap<len+3)ver++;
+    if(ver>10)throw new Error('QR: text too long');
+    const v=VERSIONS[ver];
+    const size=17+ver*4;
+    // Build data codewords: byte mode indicator + length + data + terminator + padding
+    const bits=[];
+    const pushBits=(val,n)=>{for(let i=n-1;i>=0;i--)bits.push((val>>i)&1);};
+    pushBits(4,4); // mode: byte
+    pushBits(len,ver<=9?8:16);
+    for(const b of data)pushBits(b,8);
+    pushBits(0,Math.min(4,v.dcap*8-bits.length));
+    while(bits.length%8)bits.push(0);
+    while(bits.length<v.dcap*8){bits.push(1,1,1,0,1,1,0,0);if(bits.length<v.dcap*8)bits.push(0,0,0,1,0,0,0,1);}
+    const codewords=new Uint8Array(v.dcap);
+    for(let i=0;i<v.dcap;i++){let b=0;for(let j=0;j<8;j++)b=(b<<1)|bits[i*8+j];codewords[i]=b;}
+    const ec=ecBytes(codewords,v.ec);
+    const fullData=new Uint8Array(v.total);
+    fullData.set(codewords);fullData.set(ec,v.dcap);
+
+    // Build matrix
+    const grid=Array.from({length:size},()=>new Int8Array(size)); // 0=white, 1=black, unset
+    const reserved=Array.from({length:size},()=>new Uint8Array(size));
+    const set=(r,c,val)=>{if(r>=0&&r<size&&c>=0&&c<size){grid[r][c]=val?1:0;reserved[r][c]=1;}};
+    // Finder patterns
+    const finder=(r,c)=>{for(let dr=-1;dr<=7;dr++)for(let dc=-1;dc<=7;dc++){const v2=(dr>=0&&dr<=6&&dc>=0&&dc<=6)&&(dr===0||dr===6||dc===0||dc===6||(dr>=2&&dr<=4&&dc>=2&&dc<=4));set(r+dr,c+dc,v2?1:0);}};
+    finder(0,0);finder(0,size-7);finder(size-7,0);
+    // Timing
+    for(let i=8;i<size-8;i++){set(6,i,i%2===0);set(i,6,i%2===0);}
+    // Dark module
+    set(size-8,8,1);
+    // Alignment
+    const ap=ALIGNMENT[ver];
+    for(const r of ap)for(const c of ap){if(reserved[r][c])continue;for(let dr=-2;dr<=2;dr++)for(let dc=-2;dc<=2;dc++)set(r+dr,c+dc,(Math.abs(dr)===2||Math.abs(dc)===2||(!dr&&!dc))?1:0);}
+    // Reserve format info areas
+    for(let i=0;i<9;i++){if(!reserved[8][i])reserved[8][i]=1;if(!reserved[i][8])reserved[i][8]=1;if(i<8){if(!reserved[8][size-1-i])reserved[8][size-1-i]=1;if(!reserved[size-1-i][8])reserved[size-1-i][8]=1;}}
+    // Place data
+    const dataBits=[];
+    for(const b of fullData)for(let i=7;i>=0;i--)dataBits.push((b>>i)&1);
+    let di=0;
+    for(let col=size-1;col>=1;col-=2){
+      if(col===6)col--;
+      for(let row=0;row<size;row++){
+        const r=((Math.floor((size-1-col)/2))%2===0)?size-1-row:row;
+        for(const dc of[0,-1]){
+          const c2=col+dc;
+          if(!reserved[r][c2]){grid[r][c2]=di<dataBits.length?dataBits[di]:0;di++;}
+        }
+      }
+    }
+    // Mask (pattern 0: (r+c)%2===0)
+    for(let r=0;r<size;r++)for(let c=0;c<size;c++)if(!reserved[r][c])grid[r][c]^=((r+c)%2===0)?1:0;
+    // Format info for mask 0, EC level L: pre-computed = 0x77c4
+    const fmtBits=0x77c4;
+    const setFmt=(i,val)=>{
+      if(i<6)grid[8][i]=val;else if(i===6)grid[8][7]=val;else if(i===7)grid[8][8]=val;else grid[8][size-15+i]=val;
+      if(i<8)grid[size-1-i][8]=val;else if(i===8)grid[7][8]=val;else grid[14-i][8]=val;
+    };
+    for(let i=0;i<15;i++)setFmt(i,(fmtBits>>i)&1);
+
+    return{grid,size};
+  }
+
+  function toSVG(text,pixelSize=4,margin=2){
+    const{grid,size}=encode(text);
+    const total=(size+margin*2)*pixelSize;
+    let d='';
+    for(let r=0;r<size;r++)for(let c=0;c<size;c++)if(grid[r][c])d+=`M${(c+margin)*pixelSize} ${(r+margin)*pixelSize}h${pixelSize}v${pixelSize}h-${pixelSize}z`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${total} ${total}" width="${total}" height="${total}"><rect width="${total}" height="${total}" fill="#fff"/><path d="${d}" fill="#000"/></svg>`;
+  }
+
+  return{toSVG};
+})();
+
+const BASE_URL = typeof window!=='undefined' ? window.location.origin : 'https://leviathan-cloud.vercel.app';
+
+// ── QR Overlay component ────────────────────────────────────────────────
+function QrOverlay({url,title,expiresAt,onClose}){
+  const svgStr = QR.toSVG(url,6,2);
+  const dataUri = 'data:image/svg+xml;base64,'+btoa(svgStr);
+  const expDate = expiresAt ? new Date(expiresAt) : null;
+  const expStr = expDate ? `${expDate.getHours().toString().padStart(2,'0')}:${expDate.getMinutes().toString().padStart(2,'0')}` : '';
+  return (
+    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,cursor:'pointer'}} onClick={onClose}>
+      <div style={{background:'#fff',borderRadius:'20px',padding:'32px 28px',textAlign:'center',maxWidth:'380px',width:'90vw',boxShadow:'0 24px 80px rgba(0,0,0,0.3)',cursor:'default'}} onClick={e=>e.stopPropagation()}>
+        <div style={{fontSize:'13px',fontWeight:'700',color:'#888',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:'6px'}}>Σκανάρισε με κινητό</div>
+        <div style={{fontSize:'15px',fontWeight:'600',color:'#1a1a1a',marginBottom:'18px',lineHeight:1.4,wordBreak:'break-word'}}>{title}</div>
+        <img src={dataUri} alt="QR Code" style={{width:'220px',height:'220px',imageRendering:'pixelated',margin:'0 auto 14px',display:'block'}}/>
+        {expStr&&<div style={{fontSize:'12px',color:'#c97b5a',marginBottom:'8px',fontWeight:'600'}}>⏱ Λήξη: {expStr} (2 ώρες)</div>}
+        <div style={{fontSize:'11px',color:'#aeaeb8',marginBottom:'18px',wordBreak:'break-all',maxHeight:'44px',overflow:'hidden'}}>{url}</div>
+        <button onClick={onClose} style={{background:'#1a1a1a',color:'#fff',border:'none',padding:'10px 28px',borderRadius:'12px',fontSize:'13px',fontWeight:'600',cursor:'pointer'}}>Κλείσιμο</button>
+      </div>
+    </div>
+  );
+}
+
+// ── QR icon button — ζητά εφήμερο token πριν εμφανίσει QR ──────────────
+function QrButton({resourceType,resourceId,resourceName,title,color,onShowQr}){
+  const [loading,setLoading] = useState(false);
+  const handleClick = async(e)=>{
+    e.stopPropagation();
+    setLoading(true);
+    try{
+      const r = await fetch('/api/share/create',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({type:resourceType,id:resourceId,name:resourceName||title}),
+      });
+      const d = await r.json();
+      if(d.token){
+        const shareUrl = `${BASE_URL}/api/share/${d.token}`;
+        onShowQr({url:shareUrl, title, expiresAt:d.expiresAt});
+      } else {
+        alert('Σφάλμα δημιουργίας QR link');
+      }
+    }catch(err){
+      console.error('QR share error:',err);
+      alert('Σφάλμα σύνδεσης');
+    }
+    setLoading(false);
+  };
+  return (
+    <button
+      onClick={handleClick}
+      disabled={loading}
+      title="QR Code — εφήμερος σύνδεσμος 2 ωρών"
+      style={{width:'28px',height:'28px',borderRadius:'8px',background:'transparent',border:'1.5px solid '+(color||'#ccc'),color:color||'#888',fontSize:'13px',cursor:loading?'wait':'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0,opacity:loading?0.5:1}}
+    >
+      {loading
+        ?<span style={{fontSize:'11px'}}>…</span>
+        :<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="2" y="2" width="8" height="8" rx="1"/><rect x="14" y="2" width="8" height="8" rx="1"/><rect x="2" y="14" width="8" height="8" rx="1"/>
+          <rect x="14" y="14" width="2" height="2"/><rect x="18" y="14" width="4" height="2"/><rect x="14" y="18" width="2" height="4"/><rect x="18" y="18" width="4" height="4"/>
+        </svg>
+      }
+    </button>
+  );
+}
+
 export default function Home() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -89,6 +254,7 @@ export default function Home() {
   const [allFiles, setAllFiles]                   = useState([]);
   const [pickerSearch, setPickerSearch]           = useState('');
   const [openAccordions, setOpenAccordions]       = useState({});
+  const [qrPopup, setQrPopup]                     = useState(null); // {url, title}
 
   const zoomIn    = () => setModalZoom(z=>Math.min(z+10,200));
   const zoomOut   = () => setModalZoom(z=>Math.max(z-10,50));
@@ -592,6 +758,7 @@ if(status==='loading')
                           {tags.length>0&&(<div style={{display:'flex',flexWrap:'wrap',gap:'3px',marginTop:'4px'}} onClick={e=>e.stopPropagation()}>{tags.map(t=>{ const c=tagColor(t); return <span key={t} className="tag-chip" style={{...S.tagChip,background:c.bg,color:c.text,fontSize:'10px',padding:'1px 7px'}}>#{t}<span className="tag-x" style={S.tagX} onClick={e=>{e.stopPropagation();removeTag(file.id,t);}}>✕</span></span>; })}</div>)}
                         </div>
                         <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
+                          <QrButton resourceType="pdf" resourceId={file.id} resourceName={file.name} title={file.title} color={p.deep} onShowQr={setQrPopup}/>
                           <button onClick={e=>{e.stopPropagation();toggleFavorite(file);}} style={{background:'transparent',border:'none',fontSize:'16px',cursor:'pointer',color:favorites.some(f=>f.id===file.id)?'#e8c96a':'#ccc',padding:'4px'}}>{favorites.some(f=>f.id===file.id)?'★':'☆'}</button>
                           <button onClick={e=>{e.stopPropagation();window.open(`/api/files/pdf/${file.id}`,'_blank');}} style={{...S.printBtn, color:p.deep, borderColor:p.deep}} title="Εκτύπωση"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
                           <button style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>
@@ -757,6 +924,7 @@ if(status==='loading')
                           <div style={S.recentMeta}>{file.name}</div>
                         </div>
                         <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
+                          <QrButton resourceType="pdf" resourceId={file.id} resourceName={file.name} title={file.title} color={p.deep} onShowQr={setQrPopup}/>
                           <button onClick={e=>{e.stopPropagation();toggleFavorite(file);}} style={{background:'transparent',border:'none',fontSize:'16px',cursor:'pointer',color:'#e8c96a',padding:'4px'}}>★</button>
                           <button onClick={e=>{e.stopPropagation();window.open(`/api/files/pdf/${file.id}`,'_blank');}} style={{...S.printBtn, color:p.deep, borderColor:p.deep}} title="Εκτύπωση"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
                           <button style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>
@@ -786,6 +954,7 @@ if(status==='loading')
                           <div style={S.recentMeta}>{file.name}</div>
                         </div>
                         <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
+                          <QrButton resourceType="pdf" resourceId={file.id} resourceName={file.name} title={file.title} color={p.deep} onShowQr={setQrPopup}/>
                           <button onClick={e=>{e.stopPropagation();toggleFavorite(file);}} style={{background:'transparent',border:'none',fontSize:'16px',cursor:'pointer',color:favorites.some(f=>f.id===file.id)?'#e8c96a':'#ccc',padding:'4px'}}>{favorites.some(f=>f.id===file.id)?'★':'☆'}</button>
                           <button onClick={e=>{e.stopPropagation();window.open(`/api/files/pdf/${file.id}`,'_blank');}} style={{...S.printBtn, color:p.deep, borderColor:p.deep}} title="Εκτύπωση"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
                           <button style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>
@@ -844,6 +1013,7 @@ if(status==='loading')
                           <div style={S.recentMeta}>{tool.category||''}</div>
                         </div>
                         <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
+                          <QrButton resourceType="tool" resourceId={tool.driveId||tool.file} resourceName={tool.name} title={tool.name} color={p.deep} onShowQr={setQrPopup}/>
                           <button onClick={e=>{e.stopPropagation();toggleFavoriteTool(tool);}} style={{background:'transparent',border:'none',fontSize:'16px',cursor:'pointer',color:favoriteTools.some(t=>t.file===tool.file)?'#e8c96a':'#ccc',padding:'4px'}}>{favoriteTools.some(t=>t.file===tool.file)?'★':'☆'}</button>
                           <button style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Εκκίνηση →</button>
                         </div>
@@ -1180,6 +1350,8 @@ function az(d){if(d===0)az0=100;else az0=Math.min(Math.max(az0+d,50),200);applyZ
           </div>
         </div>
       )}
+
+      {qrPopup&&<QrOverlay url={qrPopup.url} title={qrPopup.title} expiresAt={qrPopup.expiresAt} onClose={()=>setQrPopup(null)}/>}
 
       {showAppPicker&&(
         <div style={S.modal} onClick={()=>setShowAppPicker(false)}>
