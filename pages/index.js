@@ -158,6 +158,9 @@ export default function Home() {
   const [pickerSearch, setPickerSearch]           = useState('');
   const [openAccordions, setOpenAccordions]       = useState({});
   const [qrPopup, setQrPopup]                     = useState(null); // {url, title}
+  const [showPrintMenu, setShowPrintMenu]           = useState(false);
+  const [activeSearchTags, setActiveSearchTags]     = useState([]);   // πολλαπλή επιλογή ετικετών
+  const [tagSearchInput, setTagSearchInput]         = useState('');
 
   const zoomIn    = () => setModalZoom(z=>Math.min(z+10,200));
   const zoomOut   = () => setModalZoom(z=>Math.max(z-10,50));
@@ -268,6 +271,17 @@ export default function Home() {
   const updateFileQuestion=(fileId,qid,field,value)=>{ const cur=fileMeta(fileId); const updated={...metadata,[fileId]:{...cur,questions:(cur.questions||[]).map(q=>q.id===qid?{...q,[field]:value}:q)}}; scheduleMetaSave(updated); };
   const removeFileQuestion=(fileId,qid)=>{ const cur=fileMeta(fileId); const updated={...metadata,[fileId]:{...cur,questions:(cur.questions||[]).filter(q=>q.id!==qid)}}; persistMetadata(updated); };
   const allTagsInFolder=()=>{ const set=new Set(); files.forEach(f=>fileTags(f.id).forEach(t=>set.add(t))); return[...set].sort(); };
+
+  // Ετικέτες από ΟΛΟΥΣ τους φακέλους (Κείμενα + Βιβλία)
+  const allTagsGlobal=()=>{ const set=new Set(); Object.values(metadata).forEach(m=>(m.tags||[]).forEach(t=>set.add(t))); return[...set].sort(); };
+  const toggleSearchTag=(tag)=>setActiveSearchTags(prev=>prev.includes(tag)?prev.filter(t=>t!==tag):[...prev,tag]);
+  const tagSearchResults=allFiles.filter(f=>{
+    if(activeSearchTags.length===0&&!tagSearchInput) return false;
+    const tags=fileTags(f.id);
+    const matchTags=activeSearchTags.length===0||activeSearchTags.every(t=>tags.includes(t));
+    const matchText=!tagSearchInput||f.title.toLowerCase().includes(tagSearchInput.toLowerCase())||f.name.toLowerCase().includes(tagSearchInput.toLowerCase())||tags.some(t=>t.toLowerCase().includes(tagSearchInput.toLowerCase()));
+    return matchTags&&matchText;
+  });
 
   const filteredFiles=files.filter(f=>{ const matchQ=!searchQuery||f.title.toLowerCase().includes(searchQuery.toLowerCase())||f.name.toLowerCase().includes(searchQuery.toLowerCase()); const matchTag=!activeTagFilter||fileTags(f.id).includes(activeTagFilter); return matchQ&&matchTag; });
   const filteredTools=tools.filter(t=>!toolsSearchQuery||t.name.toLowerCase().includes(toolsSearchQuery.toLowerCase()));
@@ -395,7 +409,7 @@ if(status==='loading')
       icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> },
     { label:'Πρόσφατα', value:recentFiles.length, sub:'Τελευταία αρχεία', view:'recent', tone:'peach',
       icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> },
-    { label:'Ετικέτες', value:Object.values(metadata).flatMap(m=>m.tags||[]).filter((v,i,a)=>a.indexOf(v)===i).length, sub:'Μοναδικές ετικέτες', view:'allDocs', tone:'mustard',
+    { label:'Αναζήτηση', value:Object.values(metadata).flatMap(m=>m.tags||[]).filter((v,i,a)=>a.indexOf(v)===i).length, sub:'Αναζήτηση με ετικέτες', view:'tagSearch', tone:'mustard',
       icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg> },
   ];
 
@@ -431,7 +445,7 @@ if(status==='loading')
           </button>
           <div style={S.navDiv}/>
           <button className="nav-h" onClick={()=>{setActiveView('allDocs');setCurrentFolder(null);setNetBuilderActive(false);}}
-            style={{...S.navItem,...(['allDocs','favorites','recent'].includes(activeView)||(activeView==='folder'&&currentFolder!=='diktya')?S.navActive:{})}}>
+            style={{...S.navItem,...(['allDocs','favorites','recent','tagSearch'].includes(activeView)||(activeView==='folder'&&currentFolder!=='diktya')?S.navActive:{})}}>
             <span style={S.navIcon}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/><rect x="1" y="3" width="4" height="4" rx="0.5"/><rect x="1" y="9" width="4" height="4" rx="0.5"/><rect x="1" y="15" width="4" height="4" rx="0.5"/></svg></span>
             {!sidebarCollapsed&&<span>Κείμενα &amp; Βιβλία</span>}
           </button>
@@ -496,7 +510,7 @@ if(status==='loading')
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>
             {!isLandscape&&<span>Αρχική</span>}
           </button>
-          <button onClick={()=>{setActiveView('allDocs');setCurrentFolder(null);}} style={{...S.bottomNavBtn,...(['allDocs','folder'].includes(activeView)&&currentFolder!=='diktya'?S.bottomNavActive:{})}}>
+          <button onClick={()=>{setActiveView('allDocs');setCurrentFolder(null);}} style={{...S.bottomNavBtn,...(['allDocs','folder','tagSearch'].includes(activeView)&&currentFolder!=='diktya'?S.bottomNavActive:{})}}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/><rect x="1" y="3" width="4" height="4" rx="0.5"/><rect x="1" y="9" width="4" height="4" rx="0.5"/><rect x="1" y="15" width="4" height="4" rx="0.5"/></svg>
             {!isLandscape&&<span>Κείμενα</span>}
           </button>
@@ -531,7 +545,7 @@ if(status==='loading')
                   return (
                     <div key={s.view} className="ch"
                       style={{...S.statCard, background:p.bg, cursor:'pointer'}}
-                      onClick={()=>setActiveView(s.view)}>
+                      onClick={()=>{setActiveView(s.view);if(s.view==='tagSearch'){loadAllFiles();setActiveSearchTags([]);setTagSearchInput('');}}}>
                       <div style={S.statInner}>
                         <div style={{flex:1}}>
                           <div style={{...S.statLabel, color:p.text, opacity:0.75}}>{s.label}</div>
@@ -869,6 +883,85 @@ if(status==='loading')
             </>
           )}
 
+          {/* Tag Search — αναζήτηση με ετικέτες σε όλους τους φακέλους */}
+          {activeView==='tagSearch'&&(
+            <>
+              <div style={S.pageHeader}><button onClick={goHome} style={S.backBtn}>← Πίσω</button><div><h1 style={S.pageTitle}>Αναζήτηση</h1><p style={S.pageSub}>Βρες κείμενα με ετικέτες</p></div></div>
+              
+              {/* Πεδίο αναζήτησης */}
+              <div style={{padding:'0 16px',marginBottom:'16px'}}>
+                <input type="search" placeholder="Αναζήτηση τίτλου ή ετικέτας..." value={tagSearchInput} onChange={e=>setTagSearchInput(e.target.value)}
+                  style={{width:'100%',padding:'14px 18px',border:'2px solid '+PALETTE.mustard.accent,borderRadius:'14px',fontSize:'15px',color:'#1a1a1a',background:'#fff',outline:'none'}}
+                  onFocus={e=>e.target.style.borderColor=PALETTE.mustard.deep}
+                  onBlur={e=>e.target.style.borderColor=PALETTE.mustard.accent}/>
+              </div>
+
+              {/* Ενεργές ετικέτες φίλτρου */}
+              {activeSearchTags.length>0&&(
+                <div style={{padding:'0 16px',marginBottom:'10px',display:'flex',flexWrap:'wrap',gap:'6px',alignItems:'center'}}>
+                  <span style={{fontSize:'11px',color:'#888',fontWeight:600}}>Φίλτρα:</span>
+                  {activeSearchTags.map(t=>{const c=tagColor(t);return(
+                    <span key={t} style={{...S.tagChip,background:c.text,color:'#fff',padding:'4px 10px',fontSize:'12px',fontWeight:600,cursor:'pointer'}} onClick={()=>toggleSearchTag(t)}>#{t} ✕</span>
+                  );})}
+                  <button onClick={()=>setActiveSearchTags([])} style={{background:'transparent',border:'none',color:'#dc2626',fontSize:'11px',cursor:'pointer',fontWeight:600}}>Καθαρισμός</button>
+                </div>
+              )}
+
+              {/* Όλες οι ετικέτες */}
+              <div style={{padding:'0 16px',marginBottom:'18px'}}>
+                <div style={{fontSize:'11px',color:'#888',fontWeight:600,marginBottom:'8px',textTransform:'uppercase',letterSpacing:'0.05em'}}>Ετικέτες</div>
+                <div style={{display:'flex',flexWrap:'wrap',gap:'6px'}}>
+                  {allTagsGlobal().filter(t=>!tagSearchInput||t.toLowerCase().includes(tagSearchInput.toLowerCase())).map(t=>{
+                    const c=tagColor(t);
+                    const active=activeSearchTags.includes(t);
+                    return <button key={t} onClick={()=>toggleSearchTag(t)}
+                      style={{padding:'6px 14px',borderRadius:'20px',border:'1.5px solid '+(active?c.text:c.bg),
+                        background:active?c.text:c.bg,color:active?'#fff':c.text,
+                        fontSize:'12px',fontWeight:active?700:500,cursor:'pointer',transition:'all 0.15s'}}>
+                      #{t}
+                    </button>;
+                  })}
+                  {allTagsGlobal().length===0&&<span style={{fontSize:'13px',color:'#aeaeb8'}}>Δεν υπάρχουν ετικέτες ακόμα</span>}
+                </div>
+              </div>
+
+              {/* Αποτελέσματα */}
+              {(activeSearchTags.length>0||tagSearchInput)&&(
+                <>
+                  <div style={{padding:'0 16px',marginBottom:'8px'}}>
+                    <span style={{fontSize:'12px',color:'#888',fontWeight:600}}>{tagSearchResults.length} {tagSearchResults.length===1?'αποτέλεσμα':'αποτελέσματα'}</span>
+                  </div>
+                  <div style={S.recentList}>
+                    {tagSearchResults.length===0
+                      ?<div style={S.empty}>Δεν βρέθηκαν αρχεία με αυτές τις ετικέτες</div>
+                      :tagSearchResults.map((file,idx)=>{
+                        const tags=fileTags(file.id);
+                        const p=PALETTE.mustard;
+                        return (
+                          <div key={file.id} className="ri-h" style={{...S.recentItem, borderBottom:idx<tagSearchResults.length-1?'1px solid #f0f0f0':'none'}} onClick={()=>openFile(file)}>
+                            <div style={{width:'36px',height:'36px',borderRadius:'10px',background:p.bg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={p.deep} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                            </div>
+                            <div style={S.recentInfo}>
+                              <div style={S.recentTitle}>{file.title}</div>
+                              <div style={{display:'flex',flexWrap:'wrap',gap:'3px',marginTop:'3px'}}>
+                                {tags.map(t=>{const c=tagColor(t);return <span key={t} style={{...S.tagChip,background:activeSearchTags.includes(t)?c.text:c.bg,color:activeSearchTags.includes(t)?'#fff':c.text,fontSize:'10px',padding:'1px 7px'}}>#{t}</span>;})}
+                              </div>
+                            </div>
+                            <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
+                              <QrButton resourceType="pdf" resourceId={file.id} resourceName={file.name} title={file.title} color={p.deep} onShowQr={setQrPopup}/>
+                              <button onClick={e=>{e.stopPropagation();toggleFavorite(file);}} style={{background:'transparent',border:'none',fontSize:'16px',cursor:'pointer',color:favorites.some(f2=>f2.id===file.id)?'#e8c96a':'#ccc',padding:'4px'}}>{favorites.some(f2=>f2.id===file.id)?'★':'☆'}</button>
+                              <button style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </>
+              )}
+            </>
+          )}
+
           {/* All Tools — φάκελοι κατηγοριών */}
           {activeView==='allTools'&&(
             <>
@@ -1108,7 +1201,28 @@ function az(d){if(d===0)az0=100;else az0=Math.min(Math.max(az0+d,50),200);applyZ
                   :<button onClick={()=>setShowAppPicker(true)} style={{...S.iconBtn,fontSize:'11px'}} title="Σύνδεση εφαρμογής">+🔗</button>
                 )}
                 {!isMobile&&<button onClick={()=>setShowCommentPanel(p=>!p)} style={{...S.iconBtn,background:showCommentPanel?PALETTE.peach.bgSoft:'#f4f4f4',borderColor:showCommentPanel?PALETTE.peach.deep:'#e0e0e0',color:showCommentPanel?PALETTE.peach.deep:'#444'}} title="Ετικέτες &amp; Σχόλια">🏷️</button>}
-                <button onClick={()=>{setCurrentFile(null);zoomReset();appZoomReset();setShowCommentPanel(false);setShowLinkedApp(false);}} style={S.closeBtn}>✕</button>
+                {/* Εκτύπωση dropdown */}
+                <div style={{position:'relative'}}>
+                  <button onClick={()=>setShowPrintMenu(p=>!p)} style={{...S.iconBtn,background:showPrintMenu?PALETTE.cream.bgSoft:'#f4f4f4',borderColor:showPrintMenu?PALETTE.cream.deep:'#e0e0e0',color:showPrintMenu?PALETTE.cream.deep:'#444'}} title="Εκτύπωση">🖨️</button>
+                  {showPrintMenu&&(
+                    <div style={{position:'absolute',top:'100%',right:0,marginTop:'4px',background:'#fff',borderRadius:'12px',boxShadow:'0 8px 32px rgba(0,0,0,0.15)',border:'1px solid #e0e0e0',overflow:'hidden',zIndex:100,minWidth:'200px'}}>
+                      <button onClick={()=>{setShowPrintMenu(false);window.open(`/api/files/pdf/${modalFile.id}`,'_blank');}}
+                        style={{display:'block',width:'100%',padding:'12px 16px',background:'transparent',border:'none',textAlign:'left',fontSize:'13px',color:'#1a1a1a',cursor:'pointer',borderBottom:'1px solid #f0f0f0'}}
+                        onMouseEnter={e=>e.target.style.background='#f9f6ed'}
+                        onMouseLeave={e=>e.target.style.background='transparent'}>
+                        📄 Μόνο κείμενο
+                      </button>
+                      <button onClick={()=>{setShowPrintMenu(false);window.open(`/api/files/print/${modalFile.id}?withQuestions=true`,'_blank');}}
+                        style={{display:'block',width:'100%',padding:'12px 16px',background:'transparent',border:'none',textAlign:'left',fontSize:'13px',color:fileQuestions(modalFile.id).length>0?'#1a1a1a':'#ccc',cursor:fileQuestions(modalFile.id).length>0?'pointer':'default'}}
+                        disabled={fileQuestions(modalFile.id).length===0}
+                        onMouseEnter={e=>{if(fileQuestions(modalFile.id).length>0)e.target.style.background='#f9f6ed';}}
+                        onMouseLeave={e=>e.target.style.background='transparent'}>
+                        📄+❓ Κείμενο + Ερωτήσεις {fileQuestions(modalFile.id).length===0?'(καμία)':'('+fileQuestions(modalFile.id).length+')'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <button onClick={()=>{setCurrentFile(null);zoomReset();appZoomReset();setShowCommentPanel(false);setShowLinkedApp(false);setShowPrintMenu(false);}} style={S.closeBtn}>✕</button>
               </div>
             </div>
 
