@@ -23,16 +23,20 @@ async function getMetadata(drive) {
     const res = await drive.files.list({
       q: "name='leviathan-metadata.json' and trashed=false",
       fields: 'files(id)',
+      spaces: 'drive',
       pageSize: 1,
     });
+    console.log('[print] metadata search results:', res.data.files?.length || 0);
     if (!res.data.files?.length) return {};
     const content = await drive.files.get(
       { fileId: res.data.files[0].id, alt: 'media' },
       { responseType: 'text' }
     );
-    return typeof content.data === 'string' ? JSON.parse(content.data) : content.data;
+    const parsed = typeof content.data === 'string' ? JSON.parse(content.data) : content.data;
+    console.log('[print] metadata keys:', Object.keys(parsed).length);
+    return parsed;
   } catch (e) {
-    console.error('Failed to load metadata:', e.message);
+    console.error('[print] Failed to load metadata:', e.message);
     return {};
   }
 }
@@ -44,12 +48,14 @@ async function downloadPdf(drive, fileId) {
 
   let buffer;
   if (mimeType === 'application/vnd.google-apps.document') {
+    // Google Doc → export ως PDF
     const exp = await drive.files.export(
       { fileId, mimeType: 'application/pdf' },
       { responseType: 'arraybuffer' }
     );
     buffer = exp.data;
   } else {
+    // Ήδη PDF ή άλλο binary
     const dl = await drive.files.get(
       { fileId, alt: 'media' },
       { responseType: 'arraybuffer' }
@@ -71,8 +77,6 @@ async function buildQuestionsPage(questions, docTitle) {
   const doc = await PDFDocument.create();
   doc.registerFontkit(fontkit);
 
-  // Χρήση ενσωματωμένης γραμματοσειράς — τα ελληνικά απαιτούν embedded font
-  // Χρησιμοποιούμε NotoSans αν υπάρχει, αλλιώς fallback σε Helvetica
   let font, fontBold;
   const notoPath = path.join(process.cwd(), 'public', 'fonts', 'NotoSans-Regular.ttf');
   const notoBoldPath = path.join(process.cwd(), 'public', 'fonts', 'NotoSans-Bold.ttf');
@@ -83,8 +87,6 @@ async function buildQuestionsPage(questions, docTitle) {
     font = await doc.embedFont(notoBytes);
     fontBold = await doc.embedFont(notoBoldBytes);
   } else {
-    // Fallback — Helvetica δεν υποστηρίζει ελληνικά καλά,
-    // αλλά λειτουργεί βασικά
     font = await doc.embedFont(StandardFonts.Helvetica);
     fontBold = await doc.embedFont(StandardFonts.HelveticaBold);
   }
@@ -185,6 +187,8 @@ export default async function handler(req, res) {
   const { id } = req.query;
   const withQuestions = req.query.withQuestions === 'true';
 
+  console.log('[print] fileId:', id, 'withQuestions:', withQuestions);
+
   if (!id) return res.status(400).json({ error: 'Missing file id' });
 
   try {
@@ -192,7 +196,6 @@ export default async function handler(req, res) {
     const { buffer: pdfBytes, name: fileName } = await downloadPdf(drive, id);
 
     if (!withQuestions) {
-      // Απλή εκτύπωση — σερβίρισμα PDF
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(fileName)}"`);
       return res.send(Buffer.from(pdfBytes));
@@ -203,8 +206,11 @@ export default async function handler(req, res) {
     const fileMeta = metadata[id];
     const questions = fileMeta?.questions || [];
 
+    console.log('[print] fileMeta found:', !!fileMeta, 'questions:', questions.length);
+
     if (questions.length === 0) {
-      // Δεν υπάρχουν ερωτήσεις — σερβίρισμα μόνο PDF
+      // Δεν βρέθηκαν ερωτήσεις — επιστρέφει μόνο PDF
+      console.log('[print] No questions found for', id);
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(fileName)}"`);
       return res.send(Buffer.from(pdfBytes));
@@ -212,8 +218,6 @@ export default async function handler(req, res) {
 
     // Ένωση PDF + σελίδα ερωτήσεων
     const mergedDoc = await PDFDocument.load(pdfBytes);
-    
-    // Τίτλος εγγράφου (χωρίς extension)
     const docTitle = fileName.replace(/\.[^.]+$/, '');
     
     const questionsBytes = await buildQuestionsPage(questions, docTitle);
@@ -223,13 +227,15 @@ export default async function handler(req, res) {
 
     const finalBytes = await mergedDoc.save();
 
+    console.log('[print] Success — merged PDF with', questions.length, 'questions');
+
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(docTitle + '_με_ερωτήσεις.pdf')}"`);
     res.setHeader('Cache-Control', 'no-store');
     return res.send(Buffer.from(finalBytes));
 
   } catch (err) {
-    console.error('Print error:', err.message);
+    console.error('[print] Error:', err.message, err.stack);
     return res.status(500).json({ error: 'Failed to generate print PDF' });
   }
 }
