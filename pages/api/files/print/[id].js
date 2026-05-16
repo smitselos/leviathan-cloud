@@ -1,48 +1,20 @@
 // pages/api/files/print/[id].js
-// POST: δέχεται { questions: [...] } και επιστρέφει PDF κειμένου + σελίδα ερωτήσεων
-// GET: επιστρέφει μόνο το PDF (fallback)
+// POST: δέχεται { questions: [...] } → PDF κειμένου + σελίδα ερωτήσεων
+// GET: μόνο PDF
 
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../auth/[...nextauth]';
-import { google } from 'googleapis';
+import { getFileContent } from '../../../../lib/drive';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 
-async function getDrive(session) {
-  const auth = new google.auth.OAuth2();
-  auth.setCredentials({ access_token: session.accessToken });
-  return google.drive({ version: 'v3', auth });
-}
-
-async function downloadPdf(drive, fileId) {
-  const meta = await drive.files.get({ fileId, fields: 'name,mimeType' });
-  const mimeType = meta.data.mimeType;
-  let buffer;
-  if (mimeType === 'application/vnd.google-apps.document') {
-    const exp = await drive.files.export(
-      { fileId, mimeType: 'application/pdf' },
-      { responseType: 'arraybuffer' }
-    );
-    buffer = exp.data;
-  } else {
-    const dl = await drive.files.get(
-      { fileId, alt: 'media' },
-      { responseType: 'arraybuffer' }
-    );
-    buffer = dl.data;
-  }
-  return { buffer: new Uint8Array(buffer), name: meta.data.name };
-}
-
 function sortCode(code) {
-  const m = (code || '').match(/^([Α-Ωα-ω]+)(\d*)$/u);
+  const m = (code || '').match(/^([A-Za-zΑ-Ωα-ω]+)(\d*)$/u);
   if (!m) return 9999;
   return m[1].charCodeAt(0) * 1000 + (parseInt(m[2]) || 0);
 }
 
 async function buildQuestionsPage(questions, docTitle) {
   const doc = await PDFDocument.create();
-
-  // Helvetica — ενσωματωμένη, δεν χρειάζεται fontkit
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const fontBold = await doc.embedFont(StandardFonts.HelveticaBold);
 
@@ -54,7 +26,7 @@ async function buildQuestionsPage(questions, docTitle) {
   let page = doc.addPage([PAGE_W, PAGE_H]);
   let y = PAGE_H - MARGIN;
 
-  // Τίτλος
+  // Header
   page.drawText('EROTISEIS', { x: MARGIN, y, size: 14, font: fontBold, color: rgb(0.15, 0.15, 0.15) });
   y -= 22;
 
@@ -73,7 +45,7 @@ async function buildQuestionsPage(questions, docTitle) {
 
   const sorted = [...questions].sort((a, b) => sortCode(a.code) - sortCode(b.code));
   const qSize = 11;
-  const lineHeight = 16;
+  const lineH = 16;
   const qGap = 14;
 
   for (const q of sorted) {
@@ -82,43 +54,39 @@ async function buildQuestionsPage(questions, docTitle) {
     const fullText = label + '.  ' + text;
     const words = fullText.split(' ');
     const lines = [];
-    let currentLine = '';
+    let cur = '';
 
-    for (const word of words) {
-      const test = currentLine ? currentLine + ' ' + word : word;
-      const width = font.widthOfTextAtSize(test, qSize);
-      if (width > USABLE_W && currentLine) {
-        lines.push(currentLine);
-        currentLine = word;
+    for (const w of words) {
+      const test = cur ? cur + ' ' + w : w;
+      if (font.widthOfTextAtSize(test, qSize) > USABLE_W && cur) {
+        lines.push(cur);
+        cur = w;
       } else {
-        currentLine = test;
+        cur = test;
       }
     }
-    if (currentLine) lines.push(currentLine);
+    if (cur) lines.push(cur);
 
-    const neededHeight = lines.length * lineHeight + qGap;
-    if (y - neededHeight < MARGIN) {
+    if (y - (lines.length * lineH + qGap) < MARGIN) {
       page = doc.addPage([PAGE_W, PAGE_H]);
       y = PAGE_H - MARGIN;
     }
 
-    // Bold label
     const labelStr = label + '.';
-    const labelWidth = fontBold.widthOfTextAtSize(labelStr + '  ', qSize);
+    const labelW = fontBold.widthOfTextAtSize(labelStr + '  ', qSize);
     page.drawText(labelStr, { x: MARGIN, y, size: qSize, font: fontBold, color: rgb(0.1, 0.1, 0.1) });
 
-    const firstLineText = lines[0]?.substring((label + '.  ').length) || '';
-    if (firstLineText) {
-      page.drawText(firstLineText, { x: MARGIN + labelWidth, y, size: qSize, font, color: rgb(0.15, 0.15, 0.15) });
+    const first = lines[0]?.substring((label + '.  ').length) || '';
+    if (first) {
+      page.drawText(first, { x: MARGIN + labelW, y, size: qSize, font, color: rgb(0.15, 0.15, 0.15) });
     }
-    y -= lineHeight;
+    y -= lineH;
 
     for (let i = 1; i < lines.length; i++) {
       page.drawText(lines[i], { x: MARGIN, y, size: qSize, font, color: rgb(0.15, 0.15, 0.15) });
-      y -= lineHeight;
+      y -= lineH;
     }
-
-    y -= qGap - lineHeight;
+    y -= qGap - lineH;
   }
 
   return doc.save();
@@ -132,13 +100,14 @@ export default async function handler(req, res) {
   if (!id) return res.status(400).json({ error: 'Missing file id' });
 
   try {
-    const drive = await getDrive(session);
-    const { buffer: pdfBytes, name: fileName } = await downloadPdf(drive, id);
+    // Χρησιμοποιεί το ίδιο getFileContent που δουλεύει στο pdf/[fileId].js
+    const content = await getFileContent(session.accessToken, id);
+    const pdfBytes = new Uint8Array(content);
 
     // GET → μόνο PDF
     if (req.method === 'GET') {
       res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(fileName)}"`);
+      res.setHeader('Content-Disposition', 'inline');
       return res.send(Buffer.from(pdfBytes));
     }
 
@@ -148,13 +117,12 @@ export default async function handler(req, res) {
 
       if (!questions || questions.length === 0) {
         res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(fileName)}"`);
+        res.setHeader('Content-Disposition', 'inline');
         return res.send(Buffer.from(pdfBytes));
       }
 
       const mergedDoc = await PDFDocument.load(pdfBytes);
-      const docTitle = fileName.replace(/\.[^.]+$/, '');
-      const questionsBytes = await buildQuestionsPage(questions, docTitle);
+      const questionsBytes = await buildQuestionsPage(questions, 'Document');
       const questionsDoc = await PDFDocument.load(questionsBytes);
       const copiedPages = await mergedDoc.copyPages(questionsDoc, questionsDoc.getPageIndices());
       copiedPages.forEach(p => mergedDoc.addPage(p));
@@ -162,7 +130,7 @@ export default async function handler(req, res) {
       const finalBytes = await mergedDoc.save();
 
       res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(docTitle + '_me_erotiseis.pdf')}"`);
+      res.setHeader('Content-Disposition', 'inline');
       res.setHeader('Cache-Control', 'no-store');
       return res.send(Buffer.from(finalBytes));
     }
@@ -170,7 +138,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
 
   } catch (err) {
-    console.error('[print] Error:', err.message);
-    return res.status(500).json({ error: 'Failed to generate print PDF' });
+    console.error('[print] Error:', err);
+    return res.status(500).json({ error: 'Failed to generate print PDF: ' + err.message });
   }
 }
