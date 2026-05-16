@@ -1212,7 +1212,22 @@ function az(d){if(d===0)az0=100;else az0=Math.min(Math.max(az0+d,50),200);applyZ
                         onMouseLeave={e=>e.target.style.background='transparent'}>
                         📄 Μόνο κείμενο
                       </button>
-                      <button onClick={()=>{setShowPrintMenu(false);window.open(`/api/files/print/${modalFile.id}?withQuestions=true`,'_blank');}}
+                      <button onClick={async()=>{
+                          setShowPrintMenu(false);
+                          const qs=fileQuestions(modalFile.id);
+                          if(!qs.length)return;
+                          try{
+                            const r=await fetch(`/api/files/print/${modalFile.id}`,{
+                              method:'POST',
+                              headers:{'Content-Type':'application/json'},
+                              body:JSON.stringify({questions:qs}),
+                            });
+                            if(!r.ok){alert('Σφάλμα εκτύπωσης');return;}
+                            const blob=await r.blob();
+                            const url=URL.createObjectURL(blob);
+                            window.open(url,'_blank');
+                          }catch(e){alert('Σφάλμα: '+e.message);}
+                        }}
                         style={{display:'block',width:'100%',padding:'12px 16px',background:'transparent',border:'none',textAlign:'left',fontSize:'13px',color:fileQuestions(modalFile.id).length>0?'#1a1a1a':'#ccc',cursor:fileQuestions(modalFile.id).length>0?'pointer':'default'}}
                         disabled={fileQuestions(modalFile.id).length===0}
                         onMouseEnter={e=>{if(fileQuestions(modalFile.id).length>0)e.target.style.background='#f9f6ed';}}
