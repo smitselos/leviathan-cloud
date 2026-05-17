@@ -104,22 +104,22 @@ export default async function handler(req, res) {
     const fileName = meta.data.name || 'document';
 
     if (mimeType === 'application/vnd.google-apps.document') {
-      const exp = await drive.files.export({ fileId, mimeType: 'application/pdf' }, { responseType: 'stream' });
+      const exp = await drive.files.export({ fileId, mimeType: 'application/pdf' }, { responseType: 'arraybuffer' });
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(fileName)}"`);
       res.setHeader('Cache-Control', 'no-store');
-      exp.data.pipe(res);
+      res.send(Buffer.from(exp.data));
     } else if (mimeType === 'text/html' || fileName.endsWith('.html')) {
       const dl = await drive.files.get({ fileId, alt: 'media' }, { responseType: 'text' });
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
       res.setHeader('Cache-Control', 'no-store');
       res.send(dl.data);
     } else {
-      const dl = await drive.files.get({ fileId, alt: 'media' }, { responseType: 'stream' });
+      const dl = await drive.files.get({ fileId, alt: 'media' }, { responseType: 'arraybuffer' });
       res.setHeader('Content-Type', mimeType);
       res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(fileName)}"`);
       res.setHeader('Cache-Control', 'no-store');
-      dl.data.pipe(res);
+      res.send(Buffer.from(dl.data));
     }
   } catch (err) {
     console.error('[content] Error:', err.message);
