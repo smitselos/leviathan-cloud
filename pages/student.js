@@ -101,7 +101,7 @@ export default function StudentPage() {
       {!isMobile && (
         <div className="student-sidebar" style={{...S.sidebar, width: sidebarOpen ? '220px' : '56px'}}>
           <div style={S.sidebarHeader}>
-            {sidebarOpen && <span style={S.logoText}>ΛΕΒΙΑΘΑΝ</span>}
+            {sidebarOpen && <img src="/logo-white.png" alt="Leviathan" style={{ height:'86px', objectFit:'contain' }}/>}
             <button onClick={() => setSidebarOpen(p => !p)} style={S.collapseBtn}>{sidebarOpen ? '◀' : '▶'}</button>
           </div>
           <nav style={S.nav}>
