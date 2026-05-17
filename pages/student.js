@@ -36,6 +36,8 @@ export default function StudentPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [qrPopup, setQrPopup] = useState(null); // {url, title}
+  const [showPinDialog, setShowPinDialog] = useState(false);
+  const [pinValue, setPinValue] = useState('');
   const iframeRef = useRef(null);
 
   useEffect(() => {
@@ -95,6 +97,7 @@ export default function StudentPage() {
         }
         .ri-h:hover{background:#f9f6ed !important;}
         .stat-card:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,0.10);}
+        @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
       `}</style>
 
       {/* ── Sidebar ── */}
@@ -115,6 +118,11 @@ export default function StudentPage() {
               <span style={S.navIcon}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span>
               {sidebarOpen && 'Σύνδεση Εκπαιδευτικού'}
             </a>
+            <div style={S.navDiv} />
+            <button onClick={()=>{setShowPinDialog(true);setPinValue('');}} style={S.navItem}>
+              <span style={S.navIcon}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 010 8.49"/><path d="M19.07 4.93a10 10 0 010 14.14"/><path d="M7.76 16.24a6 6 0 010-8.49"/><path d="M4.93 19.07a10 10 0 010-14.14"/></svg></span>
+              {sidebarOpen && 'Live'}
+            </button>
           </nav>
           <div style={S.sidebarFooter}>
             <div style={S.userCard}>
@@ -138,10 +146,16 @@ export default function StudentPage() {
         {isMobile && !currentItem && (
           <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'14px 16px',borderBottom:'1px solid #eee',background:'#fff'}}>
             <span style={{fontSize:'16px',fontWeight:'700',color:'#1a1a1a'}}>ΛΕΒΙΑΘΑΝ</span>
-            <a href="/" style={{fontSize:'12px',color:PALETTE.peach.deep,textDecoration:'none',fontWeight:'600',display:'flex',alignItems:'center',gap:'4px'}}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-              Σύνδεση
-            </a>
+            <div style={{display:'flex',gap:'10px',alignItems:'center'}}>
+              <button onClick={()=>{setShowPinDialog(true);setPinValue('');}} style={{fontSize:'12px',color:'#107a5a',background:'transparent',border:'1px solid #107a5a',borderRadius:'6px',padding:'4px 10px',fontWeight:'600',cursor:'pointer',display:'flex',alignItems:'center',gap:'4px'}}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 010 8.49"/><path d="M19.07 4.93a10 10 0 010 14.14"/></svg>
+                Live
+              </button>
+              <a href="/" style={{fontSize:'12px',color:PALETTE.peach.deep,textDecoration:'none',fontWeight:'600',display:'flex',alignItems:'center',gap:'4px'}}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                Σύνδεση
+              </a>
+            </div>
           </div>
         )}
 
@@ -193,7 +207,7 @@ export default function StudentPage() {
                           <div style={S.recentInfo}>
                             <div style={S.recentTitle}>{item.title}</div>
                             <div style={S.recentMeta}>
-                              {typeLabel(item.type)} — {item.linkedAppTitle ? `+ ${item.linkedAppTitle}` : ''} ⏱ {timeLeft(item.expiresAt)}
+                              {typeLabel(item.type)} {item.linkedAppTitle ? `· ${item.linkedAppTitle}` : ''} · ⏱ {timeLeft(item.expiresAt)}
                             </div>
                           </div>
                           <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
@@ -279,6 +293,38 @@ export default function StudentPage() {
         )}
 
       </div>
+
+      {/* PIN Dialog */}
+      {showPinDialog && (
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9998}} onClick={()=>setShowPinDialog(false)}>
+          <div style={{background:'#fff',borderRadius:'20px',padding:'32px 28px',maxWidth:'340px',width:'90vw',textAlign:'center',boxShadow:'0 24px 80px rgba(0,0,0,0.25)'}} onClick={e=>e.stopPropagation()}>
+            <div style={{fontSize:'32px',marginBottom:'12px'}}>📡</div>
+            <div style={{fontSize:'16px',fontWeight:'700',color:'#1a1a1a',marginBottom:'6px'}}>Live Παρουσίαση</div>
+            <div style={{fontSize:'13px',color:'#6b6b80',marginBottom:'20px'}}>Πληκτρολόγησε τον κωδικό που σου έδωσε ο εκπαιδευτικός</div>
+            <input
+              type="tel"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={4}
+              placeholder="π.χ. 1234"
+              value={pinValue}
+              onChange={e=>setPinValue(e.target.value.replace(/\D/g,'').slice(0,4))}
+              autoFocus
+              onKeyDown={e=>{if(e.key==='Enter'&&pinValue.length===4){window.location.href=`/live/${pinValue}`;}}}
+              style={{width:'100%',padding:'14px',fontSize:'28px',fontWeight:'700',textAlign:'center',border:'2px solid #e0e0e0',borderRadius:'14px',letterSpacing:'0.3em',color:'#1a1a1a',outline:'none'}}
+            />
+            <div style={{display:'flex',gap:'10px',marginTop:'20px'}}>
+              <button onClick={()=>setShowPinDialog(false)} style={{flex:1,padding:'12px',borderRadius:'12px',border:'1px solid #e0e0e0',background:'#fff',fontSize:'13px',fontWeight:'600',cursor:'pointer',color:'#888'}}>Άκυρο</button>
+              <button
+                onClick={()=>{if(pinValue.length===4)window.location.href=`/live/${pinValue}`;}}
+                disabled={pinValue.length!==4}
+                style={{flex:1,padding:'12px',borderRadius:'12px',border:'none',background:pinValue.length===4?'#107a5a':'#e0e0e0',color:pinValue.length===4?'#fff':'#aaa',fontSize:'13px',fontWeight:'700',cursor:pinValue.length===4?'pointer':'default'}}>
+                Άνοιγμα
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* QR Overlay */}
       {qrPopup && <QrOverlay url={qrPopup.url} title={qrPopup.title} onClose={()=>setQrPopup(null)}/>}
