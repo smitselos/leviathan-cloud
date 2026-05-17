@@ -274,6 +274,20 @@ export default function Home() {
   // Ετικέτες από ΟΛΟΥΣ τους φακέλους (Κείμενα + Βιβλία)
   const allTagsGlobal=()=>{ const set=new Set(); Object.values(metadata).forEach(m=>(m.tags||[]).forEach(t=>set.add(t))); return[...set].sort(); };
   const toggleSearchTag=(tag)=>setActiveSearchTags(prev=>prev.includes(tag)?prev.filter(t=>t!==tag):[...prev,tag]);
+
+  // ── Δημοσίευση στη σελίδα μαθητών ──
+  const publishItem = async(type, id, title, linkedApp, linkedAppTitle)=>{
+    try{
+      const r = await fetch('/api/share/publish',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({type, id, title, linkedApp, linkedAppTitle}),
+      });
+      const d = await r.json();
+      if(d.key) alert(`✅ Δημοσιεύτηκε για 2 ώρες!\n\nΟι μαθητές μπορούν να το δουν στο:\nleviathan-cloud.vercel.app/student`);
+      else alert('Σφάλμα δημοσίευσης');
+    }catch(e){ alert('Σφάλμα: '+e.message); }
+  };
   const tagSearchResults=allFiles.filter(f=>{
     if(activeSearchTags.length===0&&!tagSearchInput) return false;
     const tags=fileTags(f.id);
@@ -675,6 +689,7 @@ if(status==='loading')
                         </div>
                         <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
                           <QrButton resourceType="pdf" resourceId={file.id} resourceName={file.name} title={file.title} color={p.deep} onShowQr={setQrPopup}/>
+                          <button onClick={e=>{e.stopPropagation();publishItem(isDiktya&&metadata[file.id]?.linkedApp?'pair':'pdf',file.id,file.title,metadata[file.id]?.linkedApp||null,metadata[file.id]?.linkedAppTitle||null);}} style={{width:'28px',height:'28px',borderRadius:'8px',background:'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:p.deep||'#888',fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title="Δημοσίευση στους μαθητές">📤</button>
                           <button onClick={e=>{e.stopPropagation();toggleFavorite(file);}} style={{background:'transparent',border:'none',fontSize:'16px',cursor:'pointer',color:favorites.some(f=>f.id===file.id)?'#e8c96a':'#ccc',padding:'4px'}}>{favorites.some(f=>f.id===file.id)?'★':'☆'}</button>
                           <button onClick={e=>{e.stopPropagation();window.open(`/api/files/pdf/${file.id}`,'_blank');}} style={{...S.printBtn, color:p.deep, borderColor:p.deep}} title="Εκτύπωση"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
                           <button style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>
@@ -1009,6 +1024,7 @@ if(status==='loading')
                         </div>
                         <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
                           <QrButton resourceType="tool" resourceId={tool.driveId||tool.file} resourceName={tool.name} title={tool.name} color={p.deep} onShowQr={setQrPopup}/>
+                          <button onClick={e=>{e.stopPropagation();publishItem('tool',tool.driveId||tool.file,tool.name);}} style={{width:'28px',height:'28px',borderRadius:'8px',background:'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:p.deep||'#888',fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title="Δημοσίευση στους μαθητές">📤</button>
                           <button onClick={e=>{e.stopPropagation();toggleFavoriteTool(tool);}} style={{background:'transparent',border:'none',fontSize:'16px',cursor:'pointer',color:favoriteTools.some(t=>t.file===tool.file)?'#e8c96a':'#ccc',padding:'4px'}}>{favoriteTools.some(t=>t.file===tool.file)?'★':'☆'}</button>
                           <button style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Εκκίνηση →</button>
                         </div>
