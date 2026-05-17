@@ -1225,7 +1225,14 @@ function az(d){if(d===0)az0=100;else az0=Math.min(Math.max(az0+d,50),200);applyZ
                             if(!r.ok){alert('Σφάλμα εκτύπωσης');return;}
                             const blob=await r.blob();
                             const url=URL.createObjectURL(blob);
-                            window.open(url,'_blank');
+                            const a=document.createElement('a');
+                            a.href=url;
+                            a.target='_blank';
+                            a.rel='noopener';
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            setTimeout(()=>URL.revokeObjectURL(url),5000);
                           }catch(e){alert('Σφάλμα: '+e.message);}
                         }}
                         style={{display:'block',width:'100%',padding:'12px 16px',background:'transparent',border:'none',textAlign:'left',fontSize:'13px',color:fileQuestions(modalFile.id).length>0?'#1a1a1a':'#ccc',cursor:fileQuestions(modalFile.id).length>0?'pointer':'default'}}
