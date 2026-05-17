@@ -1,46 +1,91 @@
 // pages/api/share/content/[key].js
-// Σερβίρει δημοσιευμένο αρχείο χωρίς auth
-// Διαβάζει accessToken από leviathan-metadata.json
+// Σερβίρει δημοσιευμένο αρχείο χωρίς user auth
+// Διαβάζει published items + accessToken από leviathan-metadata.json στο Drive
+// Χρησιμοποιεί service-level access μέσω του αποθηκευμένου accessToken
 
 import { google } from 'googleapis';
 
 const FILENAME = 'leviathan-metadata.json';
 
-// Cache: αποθηκεύει published items με accessTokens
-// Γεμίζει από publish.js POST ή lazy-load
-if (!global.__publishDataCache) {
-  global.__publishDataCache = null;
-}
+// Cache metadata με TTL 30 δευτερόλεπτα
+let metaCache = { data: null, accessToken: null, timestamp: 0 };
+const CACHE_TTL = 30 * 1000;
 
-async function getPublishedItem(key) {
-  // Πρώτα ελέγχει cache
-  const cache = global.__publishDataCache;
-  if (cache && cache[key] && cache[key].expiresAt > Date.now()) {
-    return cache[key];
+async function loadPublishedFromDrive() {
+  // Αν υπάρχει fresh cache, χρήσε τον
+  if (metaCache.data && Date.now() - metaCache.timestamp < CACHE_TTL) {
+    return metaCache.data;
   }
+
+  // Δοκίμασε πρώτα global cache (γεμίζει από publish.js)
+  if (global.__publishDataCache && Object.keys(global.__publishDataCache).length > 0) {
+    return global.__publishDataCache;
+  }
+
   return null;
 }
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { key } = req.query;
+  const rawKey = req.query.key;
+  // Next.js catch-all μπορεί να δώσει array
+  const key = Array.isArray(rawKey) ? rawKey.join('/') : rawKey;
   const part = req.query.part || 'main';
 
-  // Ψάχνει στο in-memory cache (γεμίζει από publish.js)
-  // Αν δεν βρει, δοκιμάζει να φορτώσει από Drive μέσω fallback
-  let entry = null;
+  // Βρες published data
+  let published = await loadPublishedFromDrive();
 
-  // Check global publish data cache
-  if (global.__publishDataCache && global.__publishDataCache[key]) {
-    entry = global.__publishDataCache[key];
+  // Αν δεν υπάρχει καθόλου cache, δοκίμασε να φορτώσει από Drive
+  // χρησιμοποιώντας ένα fallback accessToken αν υπάρχει
+  if (!published && global.__lastPublishAccessToken) {
+    try {
+      const auth = new google.auth.OAuth2();
+      auth.setCredentials({ access_token: global.__lastPublishAccessToken });
+      const drive = google.drive({ version: 'v3', auth });
+      
+      const searchRes = await drive.files.list({
+        q: `name='${FILENAME}' and trashed=false`,
+        fields: 'files(id)',
+        spaces: 'drive',
+        pageSize: 1,
+      });
+      
+      if (searchRes.data.files?.length) {
+        const content = await drive.files.get(
+          { fileId: searchRes.data.files[0].id, alt: 'media' },
+          { responseType: 'text' }
+        );
+        const meta = typeof content.data === 'string' ? JSON.parse(content.data) : content.data;
+        published = meta._published || {};
+        
+        // Update caches
+        metaCache = { data: published, timestamp: Date.now() };
+        global.__publishDataCache = published;
+      }
+    } catch (e) {
+      console.error('[content] Drive fallback failed:', e.message);
+    }
   }
 
-  if (!entry || Date.now() > entry.expiresAt) {
+  if (!published) {
+    return res.status(404).send(errorPage('Το περιεχόμενο δεν βρέθηκε. Δοκιμάστε να ξαναφορτώσετε τη σελίδα.'));
+  }
+
+  const entry = published[key];
+
+  if (!entry) {
     return res.status(404).send(errorPage('Το περιεχόμενο δεν βρέθηκε ή έχει λήξει.'));
   }
 
+  if (Date.now() > entry.expiresAt) {
+    return res.status(410).send(errorPage('Ο σύνδεσμος έληξε. Ζητήστε νέο υλικό από τον εκπαιδευτικό.'));
+  }
+
   const { accessToken } = entry;
+  if (!accessToken) {
+    return res.status(500).send(errorPage('Σφάλμα πρόσβασης. Ο εκπαιδευτικός πρέπει να δημοσιεύσει ξανά.'));
+  }
 
   try {
     const auth = new google.auth.OAuth2();
@@ -77,7 +122,7 @@ export default async function handler(req, res) {
       dl.data.pipe(res);
     }
   } catch (err) {
-    console.error('[share/content] Error:', err.message);
+    console.error('[content] Error:', err.message);
     if (err.code === 401 || err.message?.includes('invalid_grant')) {
       return res.status(410).send(errorPage('Η συνεδρία έληξε. Ζητήστε νέο υλικό από τον εκπαιδευτικό.'));
     }
