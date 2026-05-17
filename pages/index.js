@@ -1088,18 +1088,17 @@ if(status==='loading')
                 const qs=fileQuestions(currentFile.id);
                 if(!qs.length){window.open(`/api/files/pdf/${currentFile.id}`,'_blank');return;}
                 if(!confirm('Εκτύπωση με ερωτήσεις;')){window.open(`/api/files/pdf/${currentFile.id}`,'_blank');return;}
+                const w=window.open('about:blank','_blank');
                 try{
                   const r=await fetch(`/api/files/print/${currentFile.id}`,{
                     method:'POST',headers:{'Content-Type':'application/json'},
                     body:JSON.stringify({questions:qs}),
                   });
-                  if(!r.ok){alert('Σφάλμα');return;}
+                  if(!r.ok){if(w)w.close();alert('Σφάλμα');return;}
                   const blob=await r.blob();
                   const url=URL.createObjectURL(blob);
-                  const a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener';
-                  document.body.appendChild(a);a.click();document.body.removeChild(a);
-                  setTimeout(()=>URL.revokeObjectURL(url),5000);
-                }catch(er){alert('Σφάλμα: '+er.message);}
+                  if(w)w.location.href=url; else window.location.href=url;
+                }catch(er){if(w)w.close();alert('Σφάλμα: '+er.message);}
               }}
               style={{width:'44px',height:'44px',borderRadius:'50%',background:'rgba(0,0,0,0.55)',backdropFilter:'blur(8px)',border:'1px solid rgba(255,255,255,0.2)',color:'#fff',fontSize:'18px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
               🖨️
@@ -1238,24 +1237,18 @@ function az(d){if(d===0)az0=100;else az0=Math.min(Math.max(az0+d,50),200);applyZ
                           setShowPrintMenu(false);
                           const qs=fileQuestions(modalFile.id);
                           if(!qs.length)return;
+                          const w=window.open('about:blank','_blank');
                           try{
                             const r=await fetch(`/api/files/print/${modalFile.id}`,{
                               method:'POST',
                               headers:{'Content-Type':'application/json'},
                               body:JSON.stringify({questions:qs}),
                             });
-                            if(!r.ok){alert('Σφάλμα εκτύπωσης');return;}
+                            if(!r.ok){if(w)w.close();alert('Σφάλμα εκτύπωσης');return;}
                             const blob=await r.blob();
                             const url=URL.createObjectURL(blob);
-                            const a=document.createElement('a');
-                            a.href=url;
-                            a.target='_blank';
-                            a.rel='noopener';
-                            document.body.appendChild(a);
-                            a.click();
-                            document.body.removeChild(a);
-                            setTimeout(()=>URL.revokeObjectURL(url),5000);
-                          }catch(e){alert('Σφάλμα: '+e.message);}
+                            if(w)w.location.href=url; else window.location.href=url;
+                          }catch(e){if(w)w.close();alert('Σφάλμα: '+e.message);}
                         }}
                         style={{display:'block',width:'100%',padding:'12px 16px',background:'transparent',border:'none',textAlign:'left',fontSize:'13px',color:fileQuestions(modalFile.id).length>0?'#1a1a1a':'#ccc',cursor:fileQuestions(modalFile.id).length>0?'pointer':'default'}}
                         disabled={fileQuestions(modalFile.id).length===0}
