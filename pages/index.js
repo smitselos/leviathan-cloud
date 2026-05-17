@@ -1082,6 +1082,28 @@ if(status==='loading')
               style={{width:'44px',height:'44px',borderRadius:'50%',background:'rgba(16,122,90,0.75)',backdropFilter:'blur(8px)',border:'1px solid rgba(255,255,255,0.2)',color:'#fff',fontSize:'20px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
               📡
             </button>
+            {/* Εκτύπωση με ερωτήσεις */}
+            <button onClick={async(e)=>{
+                e.stopPropagation();
+                const qs=fileQuestions(currentFile.id);
+                if(!qs.length){window.open(`/api/files/pdf/${currentFile.id}`,'_blank');return;}
+                if(!confirm('Εκτύπωση με ερωτήσεις;')){window.open(`/api/files/pdf/${currentFile.id}`,'_blank');return;}
+                try{
+                  const r=await fetch(`/api/files/print/${currentFile.id}`,{
+                    method:'POST',headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({questions:qs}),
+                  });
+                  if(!r.ok){alert('Σφάλμα');return;}
+                  const blob=await r.blob();
+                  const url=URL.createObjectURL(blob);
+                  const a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener';
+                  document.body.appendChild(a);a.click();document.body.removeChild(a);
+                  setTimeout(()=>URL.revokeObjectURL(url),5000);
+                }catch(er){alert('Σφάλμα: '+er.message);}
+              }}
+              style={{width:'44px',height:'44px',borderRadius:'50%',background:'rgba(0,0,0,0.55)',backdropFilter:'blur(8px)',border:'1px solid rgba(255,255,255,0.2)',color:'#fff',fontSize:'18px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
+              🖨️
+            </button>
             {/* Σχόλια */}
             <button onClick={e=>{e.stopPropagation();setShowCommentPanel(p=>!p);}}
               style={{width:'44px',height:'44px',borderRadius:'50%',background:showCommentPanel?'rgba(201,123,90,0.85)':'rgba(0,0,0,0.55)',backdropFilter:'blur(8px)',border:'1px solid rgba(255,255,255,0.2)',color:'#fff',fontSize:'18px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
