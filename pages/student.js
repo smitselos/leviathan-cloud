@@ -224,9 +224,6 @@ export default function StudentPage() {
                 <h2 style={S.modalTitle}>{modalFile.title}</h2>
                 <div style={{display:'flex',gap:'6px',alignItems:'center'}}>
                   <button onClick={()=>window.open(contentUrl(modalFile,showApp?'app':'main'),'_blank')} style={S.iconBtn} title="Πλήρης οθόνη">↗</button>
-                  <button onClick={()=>setQrPopup({url:`${BASE_URL}/api/share/content/${modalFile.key}`,title:modalFile.title})} style={S.iconBtn} title="QR Code">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="8" height="8" rx="1"/><rect x="14" y="2" width="8" height="8" rx="1"/><rect x="2" y="14" width="8" height="8" rx="1"/><rect x="14" y="14" width="2" height="2"/><rect x="18" y="14" width="4" height="2"/><rect x="14" y="18" width="2" height="4"/><rect x="18" y="18" width="4" height="4"/></svg>
-                  </button>
                   {modalFile.linkedAppTitle && (
                     <button onClick={() => setShowApp(p => !p)}
                       style={{...S.iconBtn, background: showApp ? PALETTE.mustard.bgSoft : '#f4f4f4', borderColor: showApp ? PALETTE.mustard.deep : '#e0e0e0', color: showApp ? PALETTE.mustard.deep : '#444'}}
