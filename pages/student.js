@@ -3,6 +3,7 @@
 // Εμφανίζει υλικό που ο εκπαιδευτικός έχει δημοσιεύσει
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import Head from 'next/head';
 
 const PALETTE = {
   cream:   { bg:'#f5f0e1', bgSoft:'#faf6ea', accent:'#e8dfc4', text:'#3d3a2e', deep:'#8a7d4a' },
@@ -90,6 +91,12 @@ export default function StudentPage() {
 
   return (
     <div style={S.app}>
+      <Head>
+        <link rel="manifest" href="/manifest-student.json" />
+        <link rel="apple-touch-icon" href="/icon-192.png" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-title" content="ΛΕΒΙΑΘΑΝ" />
+      </Head>
       <style>{`
         @media(max-width:767px){
           .student-sidebar{display:none !important;}
