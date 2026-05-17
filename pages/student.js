@@ -306,12 +306,12 @@ export default function StudentPage() {
               inputMode="numeric"
               pattern="[0-9]*"
               maxLength={4}
-              placeholder="π.χ. 1234"
+              placeholder="____"
               value={pinValue}
               onChange={e=>setPinValue(e.target.value.replace(/\D/g,'').slice(0,4))}
               autoFocus
               onKeyDown={e=>{if(e.key==='Enter'&&pinValue.length===4){window.location.href=`/live/${pinValue}`;}}}
-              style={{width:'100%',padding:'14px',fontSize:'28px',fontWeight:'700',textAlign:'center',border:'2px solid #e0e0e0',borderRadius:'14px',letterSpacing:'0.3em',color:'#1a1a1a',outline:'none'}}
+              style={{width:'160px',padding:'14px',fontSize:'28px',fontWeight:'700',textAlign:'center',border:'2px solid #e0e0e0',borderRadius:'14px',letterSpacing:'0.4em',color:'#1a1a1a',outline:'none',margin:'0 auto',display:'block'}}
             />
             <div style={{display:'flex',gap:'10px',marginTop:'20px'}}>
               <button onClick={()=>setShowPinDialog(false)} style={{flex:1,padding:'12px',borderRadius:'12px',border:'1px solid #e0e0e0',background:'#fff',fontSize:'13px',fontWeight:'600',cursor:'pointer',color:'#888'}}>Άκυρο</button>
