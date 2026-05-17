@@ -410,7 +410,10 @@ if(status==='loading')
 
     </div>
   );
-  if(!session) return null;
+  if(!session) {
+    if(typeof window!=='undefined') window.location.href='/student';
+    return null;
+  }
 
   const toolCategories=getToolCategories();
   const modalFile=currentFile;
