@@ -460,12 +460,6 @@ if(status==='loading')
             {!sidebarCollapsed&&<span>Αρχική</span>}
           </button>
           <div style={S.navDiv}/>
-          <button className="nav-h" onClick={()=>{setActiveView('allDocs');setCurrentFolder(null);setNetBuilderActive(false);}}
-            style={{...S.navItem,...(['allDocs','favorites','recent','tagSearch'].includes(activeView)||(activeView==='folder'&&currentFolder!=='diktya')?S.navActive:{})}}>
-            <span style={S.navIcon}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/><rect x="1" y="3" width="4" height="4" rx="0.5"/><rect x="1" y="9" width="4" height="4" rx="0.5"/><rect x="1" y="15" width="4" height="4" rx="0.5"/></svg></span>
-            {!sidebarCollapsed&&<span>Κείμενα &amp; Βιβλία</span>}
-          </button>
-          <div style={S.navDiv}/>
           <button className="nav-h" onClick={()=>{ openFolder('diktya'); }}
             style={{...S.navItem,...(activeView==='folder'&&currentFolder==='diktya'?S.navActive:{})}}>
             <span style={S.navIcon}>
@@ -494,13 +488,19 @@ if(status==='loading')
               {!sidebarCollapsed&&<><span style={{flex:1,textAlign:'left'}}>Εφαρμογές</span><span style={S.badge}>{tools.length}</span></>}
             </button>
           )}
+          <div style={S.navDiv}/>
+          <button className="nav-h" onClick={()=>window.location.href='/student'}
+            style={S.navItem}>
+            <span style={S.navIcon}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/><rect x="1" y="3" width="4" height="4" rx="0.5"/><rect x="1" y="9" width="4" height="4" rx="0.5"/><rect x="1" y="15" width="4" height="4" rx="0.5"/></svg></span>
+            {!sidebarCollapsed&&<span>Student</span>}
+          </button>
         </nav>
         <div style={S.sidebarFooter}>
           <div style={S.userCard}>
             <div style={S.userAvatar}>{session.user?.email?.charAt(0).toUpperCase()}</div>
             {!sidebarCollapsed&&(<div style={S.userInfo}><div style={S.userName}>{session.user?.email?.split('@')[0]}</div><button onClick={()=>signOut()} style={S.logoutLink}>Αποσύνδεση</button></div>)}
           </div>
-          <div style={{display:'flex',alignItems:'center',justifyContent:'center',marginTop:'8px',...(!sidebarCollapsed?{gap:'10px'}:{})}}>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'flex-start',marginTop:'8px',paddingLeft:'10px',...(!sidebarCollapsed?{gap:'10px'}:{})}}>
             <button onClick={()=>signOut()} className="nav-h" title="Αποσύνδεση"
               style={{width:'30px',height:'30px',borderRadius:'50%',background:'rgba(220,38,38,0.12)',border:'1.5px solid rgba(220,38,38,0.3)',color:'#dc2626',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0,padding:0}}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -526,10 +526,6 @@ if(status==='loading')
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>
             {!isLandscape&&<span>Αρχική</span>}
           </button>
-          <button onClick={()=>{setActiveView('allDocs');setCurrentFolder(null);}} style={{...S.bottomNavBtn,...(['allDocs','folder','tagSearch'].includes(activeView)&&currentFolder!=='diktya'?S.bottomNavActive:{})}}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/><rect x="1" y="3" width="4" height="4" rx="0.5"/><rect x="1" y="9" width="4" height="4" rx="0.5"/><rect x="1" y="15" width="4" height="4" rx="0.5"/></svg>
-            {!isLandscape&&<span>Κείμενα</span>}
-          </button>
           <button onClick={()=>openFolder('diktya')} style={{...S.bottomNavBtn,...(activeView==='folder'&&currentFolder==='diktya'?S.bottomNavActive:{})}}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><line x1="12" y1="7" x2="5" y2="17"/><line x1="12" y1="7" x2="19" y2="17"/><line x1="5" y1="19" x2="19" y2="19"/></svg>
             {!isLandscape&&<span>Δίκτυα</span>}
@@ -537,6 +533,10 @@ if(status==='loading')
           <button onClick={openAllTools} style={{...S.bottomNavBtn,...(['allTools','toolCategory'].includes(activeView)?S.bottomNavActive:{})}}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
             {!isLandscape&&<span>Εφαρμογές</span>}
+          </button>
+          <button onClick={()=>window.location.href='/student'} style={S.bottomNavBtn}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/><rect x="1" y="3" width="4" height="4" rx="0.5"/><rect x="1" y="9" width="4" height="4" rx="0.5"/><rect x="1" y="15" width="4" height="4" rx="0.5"/></svg>
+            {!isLandscape&&<span>Student</span>}
           </button>
           <button onClick={()=>signOut()} style={S.bottomNavBtn}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
