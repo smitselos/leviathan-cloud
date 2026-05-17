@@ -121,7 +121,7 @@ export default function StudentPage() {
               {sidebarOpen && 'Αρχική'}
             </button>
             <div style={S.navDiv} />
-            <a href="/" style={{...S.navItem, textDecoration: 'none'}}>
+            <a href="/login" style={{...S.navItem, textDecoration: 'none'}}>
               <span style={S.navIcon}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span>
               {sidebarOpen && 'Σύνδεση Εκπαιδευτικού'}
             </a>
@@ -158,7 +158,7 @@ export default function StudentPage() {
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 010 8.49"/><path d="M19.07 4.93a10 10 0 010 14.14"/></svg>
                 Live
               </button>
-              <a href="/" style={{fontSize:'12px',color:PALETTE.peach.deep,textDecoration:'none',fontWeight:'600',display:'flex',alignItems:'center',gap:'4px'}}>
+              <a href="/login" style={{fontSize:'12px',color:PALETTE.peach.deep,textDecoration:'none',fontWeight:'600',display:'flex',alignItems:'center',gap:'4px'}}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
                 Σύνδεση
               </a>
