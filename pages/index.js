@@ -158,7 +158,6 @@ export default function Home() {
   const [pickerSearch, setPickerSearch]           = useState('');
   const [openAccordions, setOpenAccordions]       = useState({});
   const [qrPopup, setQrPopup]                     = useState(null); // {url, title}
-  const [showPrintMenu, setShowPrintMenu]           = useState(false);
   const [activeSearchTags, setActiveSearchTags]     = useState([]);   // πολλαπλή επιλογή ετικετών
   const [tagSearchInput, setTagSearchInput]         = useState('');
 
@@ -1082,27 +1081,6 @@ if(status==='loading')
               style={{width:'44px',height:'44px',borderRadius:'50%',background:'rgba(16,122,90,0.75)',backdropFilter:'blur(8px)',border:'1px solid rgba(255,255,255,0.2)',color:'#fff',fontSize:'20px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
               📡
             </button>
-            {/* Εκτύπωση με ερωτήσεις */}
-            <button onClick={async(e)=>{
-                e.stopPropagation();
-                const qs=fileQuestions(currentFile.id);
-                if(!qs.length){window.open(`/api/files/pdf/${currentFile.id}`,'_blank');return;}
-                if(!confirm('Εκτύπωση με ερωτήσεις;')){window.open(`/api/files/pdf/${currentFile.id}`,'_blank');return;}
-                const w=window.open('about:blank','_blank');
-                try{
-                  const r=await fetch(`/api/files/print/${currentFile.id}`,{
-                    method:'POST',headers:{'Content-Type':'application/json'},
-                    body:JSON.stringify({questions:qs}),
-                  });
-                  if(!r.ok){if(w)w.close();alert('Σφάλμα');return;}
-                  const blob=await r.blob();
-                  const url=URL.createObjectURL(blob);
-                  if(w)w.location.href=url; else window.location.href=url;
-                }catch(er){if(w)w.close();alert('Σφάλμα: '+er.message);}
-              }}
-              style={{width:'44px',height:'44px',borderRadius:'50%',background:'rgba(0,0,0,0.55)',backdropFilter:'blur(8px)',border:'1px solid rgba(255,255,255,0.2)',color:'#fff',fontSize:'18px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
-              🖨️
-            </button>
             {/* Σχόλια */}
             <button onClick={e=>{e.stopPropagation();setShowCommentPanel(p=>!p);}}
               style={{width:'44px',height:'44px',borderRadius:'50%',background:showCommentPanel?'rgba(201,123,90,0.85)':'rgba(0,0,0,0.55)',backdropFilter:'blur(8px)',border:'1px solid rgba(255,255,255,0.2)',color:'#fff',fontSize:'18px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
@@ -1222,44 +1200,7 @@ function az(d){if(d===0)az0=100;else az0=Math.min(Math.max(az0+d,50),200);applyZ
                   :<button onClick={()=>setShowAppPicker(true)} style={{...S.iconBtn,fontSize:'11px'}} title="Σύνδεση εφαρμογής">+🔗</button>
                 )}
                 {!isMobile&&<button onClick={()=>setShowCommentPanel(p=>!p)} style={{...S.iconBtn,background:showCommentPanel?PALETTE.peach.bgSoft:'#f4f4f4',borderColor:showCommentPanel?PALETTE.peach.deep:'#e0e0e0',color:showCommentPanel?PALETTE.peach.deep:'#444'}} title="Ετικέτες &amp; Σχόλια">🏷️</button>}
-                {/* Εκτύπωση dropdown */}
-                <div style={{position:'relative'}}>
-                  <button onClick={()=>setShowPrintMenu(p=>!p)} style={{...S.iconBtn,background:showPrintMenu?PALETTE.cream.bgSoft:'#f4f4f4',borderColor:showPrintMenu?PALETTE.cream.deep:'#e0e0e0',color:showPrintMenu?PALETTE.cream.deep:'#444'}} title="Εκτύπωση">🖨️</button>
-                  {showPrintMenu&&(
-                    <div style={{position:'absolute',top:'100%',right:0,marginTop:'4px',background:'#fff',borderRadius:'12px',boxShadow:'0 8px 32px rgba(0,0,0,0.15)',border:'1px solid #e0e0e0',overflow:'hidden',zIndex:100,minWidth:'200px'}}>
-                      <button onClick={()=>{setShowPrintMenu(false);window.open(`/api/files/pdf/${modalFile.id}`,'_blank');}}
-                        style={{display:'block',width:'100%',padding:'12px 16px',background:'transparent',border:'none',textAlign:'left',fontSize:'13px',color:'#1a1a1a',cursor:'pointer',borderBottom:'1px solid #f0f0f0'}}
-                        onMouseEnter={e=>e.target.style.background='#f9f6ed'}
-                        onMouseLeave={e=>e.target.style.background='transparent'}>
-                        📄 Μόνο κείμενο
-                      </button>
-                      <button onClick={async()=>{
-                          setShowPrintMenu(false);
-                          const qs=fileQuestions(modalFile.id);
-                          if(!qs.length)return;
-                          const w=window.open('about:blank','_blank');
-                          try{
-                            const r=await fetch(`/api/files/print/${modalFile.id}`,{
-                              method:'POST',
-                              headers:{'Content-Type':'application/json'},
-                              body:JSON.stringify({questions:qs}),
-                            });
-                            if(!r.ok){if(w)w.close();alert('Σφάλμα εκτύπωσης');return;}
-                            const blob=await r.blob();
-                            const url=URL.createObjectURL(blob);
-                            if(w)w.location.href=url; else window.location.href=url;
-                          }catch(e){if(w)w.close();alert('Σφάλμα: '+e.message);}
-                        }}
-                        style={{display:'block',width:'100%',padding:'12px 16px',background:'transparent',border:'none',textAlign:'left',fontSize:'13px',color:fileQuestions(modalFile.id).length>0?'#1a1a1a':'#ccc',cursor:fileQuestions(modalFile.id).length>0?'pointer':'default'}}
-                        disabled={fileQuestions(modalFile.id).length===0}
-                        onMouseEnter={e=>{if(fileQuestions(modalFile.id).length>0)e.target.style.background='#f9f6ed';}}
-                        onMouseLeave={e=>e.target.style.background='transparent'}>
-                        📄+❓ Κείμενο + Ερωτήσεις {fileQuestions(modalFile.id).length===0?'(καμία)':'('+fileQuestions(modalFile.id).length+')'}
-                      </button>
-                    </div>
-                  )}
-                </div>
-                <button onClick={()=>{setCurrentFile(null);zoomReset();appZoomReset();setShowCommentPanel(false);setShowLinkedApp(false);setShowPrintMenu(false);}} style={S.closeBtn}>✕</button>
+                <button onClick={()=>{setCurrentFile(null);zoomReset();appZoomReset();setShowCommentPanel(false);setShowLinkedApp(false);}} style={S.closeBtn}>✕</button>
               </div>
             </div>
 
