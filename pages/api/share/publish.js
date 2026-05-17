@@ -104,6 +104,9 @@ export default async function handler(req, res) {
         global.__publishDataCache[k] = { ...item, accessToken: session.accessToken };
       }
 
+      // Fallback token
+      global.__lastPublishAccessToken = session.accessToken;
+
       return res.status(200).json({ items });
     } catch (e) {
       console.error('[publish GET]', e.message);
@@ -162,6 +165,9 @@ export default async function handler(req, res) {
       for (const [k, item] of Object.entries(meta._published)) {
         global.__publishDataCache[k] = item;
       }
+
+      // Αποθήκευση accessToken για fallback σε content/[key].js
+      global.__lastPublishAccessToken = session.accessToken;
 
       return res.status(200).json({ key, expiresAt: now + TTL_MS });
     } catch (e) {
