@@ -5,7 +5,42 @@
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../auth/[...nextauth]';
 import { getFileContent } from '../../../../lib/drive';
-import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import { PDFDocument, rgb } from 'pdf-lib';
+import fontkit from '@pdf-lib/fontkit';
+
+// URL για NotoSans — Google Fonts CDN (αξιόπιστο, γρήγορο)
+const FONT_REGULAR_URL = 'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/notosans/NotoSans%5Bwdth%2Cwght%5D.ttf';
+const FONT_BOLD_URL = 'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/notosans/NotoSans-Bold.ttf';
+
+// Cache fonts στη μνήμη του serverless function
+let cachedFontRegular = null;
+let cachedFontBold = null;
+
+async function fetchFont(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error('Failed to fetch font: ' + url);
+  return new Uint8Array(await r.arrayBuffer());
+}
+
+async function getFonts() {
+  if (!cachedFontRegular) {
+    // Δοκιμή πρώτα τοπικό αρχείο, μετά CDN
+    const fs = await import('fs');
+    const path = await import('path');
+    const localReg = path.join(process.cwd(), 'public', 'fonts', 'NotoSans-Regular.ttf');
+    const localBold = path.join(process.cwd(), 'public', 'fonts', 'NotoSans-Bold.ttf');
+    
+    if (fs.existsSync(localReg) && fs.existsSync(localBold)) {
+      cachedFontRegular = fs.readFileSync(localReg);
+      cachedFontBold = fs.readFileSync(localBold);
+    } else {
+      // Κατέβασμα από CDN
+      cachedFontRegular = await fetchFont('https://cdn.jsdelivr.net/gh/notofonts/notofonts.github.io/fonts/NotoSans/hinted/ttf/NotoSans-Regular.ttf');
+      cachedFontBold = await fetchFont('https://cdn.jsdelivr.net/gh/notofonts/notofonts.github.io/fonts/NotoSans/hinted/ttf/NotoSans-Bold.ttf');
+    }
+  }
+  return { regular: cachedFontRegular, bold: cachedFontBold };
+}
 
 function sortCode(code) {
   const m = (code || '').match(/^([A-Za-zΑ-Ωα-ω]+)(\d*)$/u);
@@ -15,8 +50,11 @@ function sortCode(code) {
 
 async function buildQuestionsPage(questions, docTitle) {
   const doc = await PDFDocument.create();
-  const font = await doc.embedFont(StandardFonts.Helvetica);
-  const fontBold = await doc.embedFont(StandardFonts.HelveticaBold);
+  doc.registerFontkit(fontkit);
+
+  const fonts = await getFonts();
+  const font = await doc.embedFont(fonts.regular);
+  const fontBold = await doc.embedFont(fonts.bold);
 
   const PAGE_W = 595.28;
   const PAGE_H = 841.89;
@@ -27,7 +65,7 @@ async function buildQuestionsPage(questions, docTitle) {
   let y = PAGE_H - MARGIN;
 
   // Header
-  page.drawText('EROTISEIS', { x: MARGIN, y, size: 14, font: fontBold, color: rgb(0.15, 0.15, 0.15) });
+  page.drawText('ΕΡΩΤΗΣΕΙΣ', { x: MARGIN, y, size: 14, font: fontBold, color: rgb(0.15, 0.15, 0.15) });
   y -= 22;
 
   if (docTitle) {
@@ -49,7 +87,7 @@ async function buildQuestionsPage(questions, docTitle) {
   const qGap = 14;
 
   for (const q of sorted) {
-    const label = q.code || '-';
+    const label = q.code || '•';
     const text = q.text || '';
     const fullText = label + '.  ' + text;
     const words = fullText.split(' ');
@@ -100,7 +138,6 @@ export default async function handler(req, res) {
   if (!id) return res.status(400).json({ error: 'Missing file id' });
 
   try {
-    // Χρησιμοποιεί το ίδιο getFileContent που δουλεύει στο pdf/[fileId].js
     const content = await getFileContent(session.accessToken, id);
     const pdfBytes = new Uint8Array(content);
 
@@ -122,7 +159,8 @@ export default async function handler(req, res) {
       }
 
       const mergedDoc = await PDFDocument.load(pdfBytes);
-      const questionsBytes = await buildQuestionsPage(questions, 'Document');
+      const docTitle = 'Ερωτήσεις';
+      const questionsBytes = await buildQuestionsPage(questions, docTitle);
       const questionsDoc = await PDFDocument.load(questionsBytes);
       const copiedPages = await mergedDoc.copyPages(questionsDoc, questionsDoc.getPageIndices());
       copiedPages.forEach(p => mergedDoc.addPage(p));
@@ -139,6 +177,6 @@ export default async function handler(req, res) {
 
   } catch (err) {
     console.error('[print] Error:', err);
-    return res.status(500).json({ error: 'Failed to generate print PDF: ' + err.message });
+    return res.status(500).json({ error: 'Failed: ' + err.message });
   }
 }
