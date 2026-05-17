@@ -655,6 +655,12 @@ if(status==='loading')
                   <h1 style={S.pageTitle}>{FOLDERS[currentFolder].name}</h1>
                   <p style={S.pageSub}>{filteredFiles.length} αρχεία{activeTagFilter&&<span style={S.filterBadge}> · #{activeTagFilter} <button onClick={()=>setActiveTagFilter(null)} style={S.clearFilterBtn}>✕</button></span>}</p>
                 </div>
+                {isMobile&&isDiktya&&(
+                  <button onClick={()=>{setNetBuilderActive(true);setActiveView('mobileNetBuilder');loadAllFiles();setCurrentNetwork({id:newQid(),name:'Νέο Δίκτυο',items:[]});}}
+                    style={{padding:'6px 14px',borderRadius:'10px',border:'none',background:PALETTE.mustard.deep,color:'#fff',fontSize:'12px',fontWeight:'700',cursor:'pointer',display:'flex',alignItems:'center',gap:'4px',flexShrink:0}}>
+                    + Δημιουργία
+                  </button>
+                )}
               </div>
               {allTagsInFolder().length>0&&(
                 <div style={S.tagFilterBar}>
@@ -973,6 +979,89 @@ if(status==='loading')
                   </div>
                 </>
               )}
+            </>
+          )}
+
+          {/* ── Mobile Net Builder — απλοποιημένη δημιουργία δικτύου ── */}
+          {activeView==='mobileNetBuilder'&&currentNetwork&&(
+            <>
+              <div style={S.pageHeader}>
+                <button onClick={()=>{setActiveView('folder');setCurrentFolder('diktya');setNetBuilderActive(false);setCurrentNetwork(null);}} style={S.backBtn}>← Πίσω</button>
+                <div style={{flex:1}}>
+                  <h1 style={S.pageTitle}>Νέο Δίκτυο</h1>
+                  <p style={S.pageSub}>{currentNetwork.items.length} κείμενα επιλεγμένα</p>
+                </div>
+              </div>
+
+              {/* Όνομα δικτύου */}
+              <div style={{padding:'0 16px',marginBottom:'14px'}}>
+                <input type="text" placeholder="Όνομα δικτύου…" value={currentNetwork.name} onChange={e=>{const updated={...currentNetwork,name:e.target.value};updateNet(updated);}}
+                  style={{width:'100%',padding:'12px 16px',border:'2px solid '+PALETTE.mustard.accent,borderRadius:'14px',fontSize:'15px',color:'#1a1a1a',background:'#fff',fontWeight:'600'}}/>
+              </div>
+
+              {/* Αναζήτηση κειμένων */}
+              <div style={{padding:'0 16px',marginBottom:'10px'}}>
+                <input type="search" placeholder="Αναζήτηση κειμένου ή ετικέτας…" value={pickerSearch} onChange={e=>setPickerSearch(e.target.value)}
+                  style={{width:'100%',padding:'10px 14px',border:'1.5px solid #e0e0e0',borderRadius:'12px',fontSize:'13px',color:'#1a1a1a',background:'#fff'}}/>
+              </div>
+
+              {/* Λίστα κειμένων — tap για add/remove */}
+              <div style={{padding:'0 16px',marginBottom:'16px'}}>
+                <div style={{fontSize:'11px',fontWeight:'700',color:'#888',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:'8px'}}>Πάτησε για προσθήκη / αφαίρεση</div>
+                <div style={{maxHeight:'200px',overflowY:'auto',borderRadius:'14px',border:'1px solid #ebebeb',background:'#fff'}}>
+                  {allFiles.filter(f=>!pickerSearch||f.title.toLowerCase().includes(pickerSearch.toLowerCase())||fileTags(f.id).some(t=>t.toLowerCase().includes(pickerSearch.toLowerCase())))
+                    .map(file=>{
+                      const already=currentNetwork.items.some(i=>i.fileId===file.id);
+                      return (
+                        <div key={file.id} onClick={()=>{
+                          if(already){removeFromNetwork(file.id);}
+                          else{addFileToNetwork(file);}
+                        }}
+                          style={{display:'flex',alignItems:'center',gap:'10px',padding:'10px 14px',borderBottom:'1px solid #f0f0f0',background:already?PALETTE.mustard.bgSoft:'transparent',cursor:'pointer'}}>
+                          <div style={{width:'24px',height:'24px',borderRadius:'7px',background:already?PALETTE.mustard.deep:'#e0e0e0',color:already?'#fff':'#aaa',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'14px',fontWeight:'700',flexShrink:0}}>
+                            {already?'✓':'+'}
+                          </div>
+                          <div style={{flex:1,fontSize:'13px',fontWeight:already?'600':'400',color:'#1a1a1a',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{file.title}</div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+
+              {/* Επιλεγμένα κείμενα — σειρά + drag */}
+              {currentNetwork.items.length>0&&(
+                <div style={{padding:'0 16px',marginBottom:'16px'}}>
+                  <div style={{fontSize:'11px',fontWeight:'700',color:'#888',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:'8px'}}>Σειρά κειμένων (↑↓ για αλλαγή)</div>
+                  <div style={{borderRadius:'14px',border:'1px solid '+PALETTE.mustard.accent,background:PALETTE.mustard.bgSoft,overflow:'hidden'}}>
+                    {currentNetwork.items.map((item,idx)=>(
+                      <div key={item.fileId} style={{display:'flex',alignItems:'center',gap:'8px',padding:'10px 14px',borderBottom:idx<currentNetwork.items.length-1?'1px solid '+PALETTE.mustard.accent:'none'}}>
+                        <span style={{fontSize:'14px',fontWeight:'700',color:PALETTE.mustard.deep,width:'22px',textAlign:'center'}}>{idx+1}</span>
+                        <span style={{flex:1,fontSize:'13px',fontWeight:'600',color:'#1a1a1a',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{item.title}</span>
+                        <div style={{display:'flex',gap:'4px',flexShrink:0}}>
+                          <button onClick={()=>moveItem(idx,-1)} disabled={idx===0} style={{width:'28px',height:'28px',borderRadius:'7px',border:'1px solid '+PALETTE.mustard.accent,background:'#fff',color:idx===0?'#ccc':PALETTE.mustard.deep,fontSize:'14px',cursor:idx===0?'default':'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>↑</button>
+                          <button onClick={()=>moveItem(idx,1)} disabled={idx===currentNetwork.items.length-1} style={{width:'28px',height:'28px',borderRadius:'7px',border:'1px solid '+PALETTE.mustard.accent,background:'#fff',color:idx===currentNetwork.items.length-1?'#ccc':PALETTE.mustard.deep,fontSize:'14px',cursor:idx===currentNetwork.items.length-1?'default':'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>↓</button>
+                          <button onClick={()=>removeFromNetwork(item.fileId)} style={{width:'28px',height:'28px',borderRadius:'7px',border:'1px solid #fca5a5',background:'#fff',color:'#dc2626',fontSize:'12px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Κουμπί αποθήκευσης */}
+              <div style={{padding:'0 16px',marginBottom:'24px'}}>
+                <button onClick={async()=>{
+                  if(!currentNetwork.items.length){alert('Προσθέστε κείμενα πρώτα.');return;}
+                  if(!currentNetwork.name.trim()){alert('Δώστε όνομα στο δίκτυο.');return;}
+                  await saveNetwork(currentNetwork);
+                  await mergeAndSave();
+                }}
+                  disabled={merging||!currentNetwork.items.length}
+                  style={{width:'100%',padding:'14px',borderRadius:'14px',border:'none',background:currentNetwork.items.length?PALETTE.mustard.deep:'#e0e0e0',color:currentNetwork.items.length?'#fff':'#aaa',fontSize:'15px',fontWeight:'700',cursor:currentNetwork.items.length?'pointer':'default',opacity:merging?0.6:1}}>
+                  {merging?'⏳ Δημιουργία PDF…':'💾 Αποθήκευση Δικτύου + PDF'}
+                </button>
+                {netMsg&&<div style={{textAlign:'center',marginTop:'8px',fontSize:'13px',color:netMsg.startsWith('✓')?PALETTE.mustard.deep:'#dc2626',fontWeight:'600'}}>{netMsg}</div>}
+              </div>
             </>
           )}
 
