@@ -10,6 +10,24 @@ const PALETTE = {
   mustard: { bg:'#efe5b8', bgSoft:'#f7f0d0', accent:'#d4b348', text:'#4a3f1a', deep:'#a68a2e' },
 };
 
+const BASE_URL = typeof window!=='undefined' ? window.location.origin : 'https://leviathan-cloud.vercel.app';
+const qrImageUrl = (text, size=300) =>
+  `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(text)}&margin=8`;
+
+function QrOverlay({url,title,onClose}){
+  return (
+    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,cursor:'pointer'}} onClick={onClose}>
+      <div style={{background:'#fff',borderRadius:'20px',padding:'32px 28px',textAlign:'center',maxWidth:'420px',width:'90vw',boxShadow:'0 24px 80px rgba(0,0,0,0.3)',cursor:'default'}} onClick={e=>e.stopPropagation()}>
+        <div style={{fontSize:'13px',fontWeight:'700',color:'#888',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:'6px'}}>Σκανάρισε με κινητό</div>
+        <div style={{fontSize:'15px',fontWeight:'600',color:'#1a1a1a',marginBottom:'18px',lineHeight:1.4,wordBreak:'break-word'}}>{title}</div>
+        <img src={qrImageUrl(url,300)} alt="QR Code" style={{width:'240px',height:'240px',margin:'0 auto 14px',display:'block',borderRadius:'8px',border:'1px solid #eee'}}/>
+        <div style={{fontSize:'11px',color:'#aeaeb8',marginBottom:'18px',wordBreak:'break-all',maxHeight:'44px',overflow:'hidden'}}>{url}</div>
+        <button onClick={onClose} style={{background:'#1a1a1a',color:'#fff',border:'none',padding:'10px 28px',borderRadius:'12px',fontSize:'13px',fontWeight:'600',cursor:'pointer'}}>Κλείσιμο</button>
+      </div>
+    </div>
+  );
+}
+
 export default function StudentPage() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -17,6 +35,7 @@ export default function StudentPage() {
   const [showApp, setShowApp] = useState(false); // false = PDF, true = app
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [qrPopup, setQrPopup] = useState(null); // {url, title}
   const iframeRef = useRef(null);
 
   useEffect(() => {
@@ -88,18 +107,20 @@ export default function StudentPage() {
           <nav style={S.nav}>
             <button onClick={() => setCurrentItem(null)}
               style={{...S.navItem, ...(!currentItem ? S.navActive : {})}}>
-              <span style={S.navIcon}>🏠</span>
+              <span style={S.navIcon}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg></span>
               {sidebarOpen && 'Αρχική'}
             </button>
             <div style={S.navDiv} />
             <a href="/" style={{...S.navItem, textDecoration: 'none'}}>
-              <span style={S.navIcon}>🔐</span>
+              <span style={S.navIcon}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span>
               {sidebarOpen && 'Σύνδεση Εκπαιδευτικού'}
             </a>
           </nav>
           <div style={S.sidebarFooter}>
             <div style={S.userCard}>
-              <div style={{...S.userAvatar, background:'#b8d4e3'}}>📚</div>
+              <div style={{...S.userAvatar, background:'#b8d4e3'}}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </div>
               {sidebarOpen && (
                 <div style={S.userInfo}>
                   <div style={S.userName}>Μαθητής</div>
@@ -116,8 +137,11 @@ export default function StudentPage() {
         {/* ── Mobile top bar ── */}
         {isMobile && !currentItem && (
           <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'14px 16px',borderBottom:'1px solid #eee',background:'#fff'}}>
-            <span style={{fontSize:'16px',fontWeight:'700',color:'#1a1a1a'}}>📚 ΛΕΒΙΑΘΑΝ</span>
-            <a href="/" style={{fontSize:'12px',color:PALETTE.peach.deep,textDecoration:'none',fontWeight:'600'}}>🔐 Σύνδεση</a>
+            <span style={{fontSize:'16px',fontWeight:'700',color:'#1a1a1a'}}>ΛΕΒΙΑΘΑΝ</span>
+            <a href="/" style={{fontSize:'12px',color:PALETTE.peach.deep,textDecoration:'none',fontWeight:'600',display:'flex',alignItems:'center',gap:'4px'}}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+              Σύνδεση
+            </a>
           </div>
         )}
 
@@ -172,7 +196,16 @@ export default function StudentPage() {
                               {typeLabel(item.type)} — {item.linkedAppTitle ? `+ ${item.linkedAppTitle}` : ''} ⏱ {timeLeft(item.expiresAt)}
                             </div>
                           </div>
-                          <button style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>
+                          <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
+                            <button onClick={e=>{e.stopPropagation();setQrPopup({url:`${BASE_URL}/api/share/content/${item.key}`,title:item.title});}}
+                              style={{width:'28px',height:'28px',borderRadius:'8px',background:'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:p.deep||'#888',fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title="QR Code">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="2" y="2" width="8" height="8" rx="1"/><rect x="14" y="2" width="8" height="8" rx="1"/><rect x="2" y="14" width="8" height="8" rx="1"/>
+                                <rect x="14" y="14" width="2" height="2"/><rect x="18" y="14" width="4" height="2"/><rect x="14" y="18" width="2" height="4"/><rect x="18" y="18" width="4" height="4"/>
+                              </svg>
+                            </button>
+                            <button style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>
+                          </div>
                         </div>
                       );
                     })}
@@ -190,6 +223,10 @@ export default function StudentPage() {
               <div style={S.modalHeader}>
                 <h2 style={S.modalTitle}>{modalFile.title}</h2>
                 <div style={{display:'flex',gap:'6px',alignItems:'center'}}>
+                  <button onClick={()=>window.open(contentUrl(modalFile,showApp?'app':'main'),'_blank')} style={S.iconBtn} title="Πλήρης οθόνη">↗</button>
+                  <button onClick={()=>setQrPopup({url:`${BASE_URL}/api/share/content/${modalFile.key}`,title:modalFile.title})} style={S.iconBtn} title="QR Code">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="8" height="8" rx="1"/><rect x="14" y="2" width="8" height="8" rx="1"/><rect x="2" y="14" width="8" height="8" rx="1"/><rect x="14" y="14" width="2" height="2"/><rect x="18" y="14" width="4" height="2"/><rect x="14" y="18" width="2" height="4"/><rect x="18" y="18" width="4" height="4"/></svg>
+                  </button>
                   {modalFile.linkedAppTitle && (
                     <button onClick={() => setShowApp(p => !p)}
                       style={{...S.iconBtn, background: showApp ? PALETTE.mustard.bgSoft : '#f4f4f4', borderColor: showApp ? PALETTE.mustard.deep : '#e0e0e0', color: showApp ? PALETTE.mustard.deep : '#444'}}
@@ -245,6 +282,9 @@ export default function StudentPage() {
         )}
 
       </div>
+
+      {/* QR Overlay */}
+      {qrPopup && <QrOverlay url={qrPopup.url} title={qrPopup.title} onClose={()=>setQrPopup(null)}/>}
     </div>
   );
 }
