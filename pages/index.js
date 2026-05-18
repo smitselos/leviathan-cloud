@@ -56,7 +56,6 @@ function QrOverlay({url,title,expiresAt,onClose}){
         {expStr&&<div style={{fontSize:'12px',color:'#c97b5a',marginBottom:'8px',fontWeight:'600'}}>⏱ Λήξη: {expStr} (2 ώρες)</div>}
         <div style={{fontSize:'11px',color:'#aeaeb8',marginBottom:'18px',wordBreak:'break-all',maxHeight:'44px',overflow:'hidden'}}>{url}</div>
         <button onClick={onClose} style={{background:'#1a1a1a',color:'#fff',border:'none',padding:'10px 28px',borderRadius:'12px',fontSize:'13px',fontWeight:'600',cursor:'pointer'}}>Κλείσιμο</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
       </div>
     </div>
   );
@@ -102,7 +101,6 @@ function QrButton({resourceType,resourceId,resourceName,title,color,onShowQr}){
         </svg>
       }
     </button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
   );
 }
 
@@ -455,14 +453,12 @@ if(status==='loading')
           <button onClick={()=>setSidebarCollapsed(!sidebarCollapsed)} style={S.collapseBtn}>
             {sidebarCollapsed?<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>}
           </button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
         </div>
         <nav style={S.nav}>
           <button onClick={goHome} className="nav-h" style={{...S.navItem,...(activeView==='home'?S.navActive:{})}}>
             <span style={S.navIcon}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg></span>
             {!sidebarCollapsed&&<span>Αρχική</span>}
           </button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
           <div style={S.navDiv}/>
           <button className="nav-h" onClick={()=>{ openFolder('diktya'); }}
             style={{...S.navItem,...(activeView==='folder'&&currentFolder==='diktya'?S.navActive:{})}}>
@@ -474,7 +470,6 @@ if(status==='loading')
             </span>
             {!sidebarCollapsed&&<span>Δίκτυα Κειμένων</span>}
           </button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
           <button className="nav-h" onClick={()=>{ setNetBuilderActive(true); setActiveView('netBuilder'); setCurrentFolder(null); setCurrentFile(null); }}
             style={{...S.navItem,...(activeView==='netBuilder'?S.navActive:{})}}>
             <span style={S.navIcon}>
@@ -485,7 +480,6 @@ if(status==='loading')
             </span>
             {!sidebarCollapsed&&<span>Δημιουργία Δικτύου</span>}
           </button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
           <div style={S.navDiv}/>
           {tools.length>0&&(
             <button className="nav-h" onClick={openAllTools}
@@ -493,7 +487,6 @@ if(status==='loading')
               <span style={S.navIcon}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>
               {!sidebarCollapsed&&<><span style={{flex:1,textAlign:'left'}}>Εφαρμογές</span><span style={S.badge}>{tools.length}</span></>}
             </button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
           )}
           <div style={S.navDiv}/>
           <button className="nav-h" onClick={()=>window.location.href='/student'}
@@ -501,7 +494,6 @@ if(status==='loading')
             <span style={S.navIcon}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/><rect x="1" y="3" width="4" height="4" rx="0.5"/><rect x="1" y="9" width="4" height="4" rx="0.5"/><rect x="1" y="15" width="4" height="4" rx="0.5"/></svg></span>
             {!sidebarCollapsed&&<span>Student</span>}
           </button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
         </nav>
         <div style={S.sidebarFooter}>
           <div style={S.userCard}>
@@ -517,7 +509,6 @@ if(status==='loading')
                 <line x1="21" y1="12" x2="9" y2="12"/>
               </svg>
             </button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
             {!sidebarCollapsed&&<span style={{fontSize:'11px',color:'#dc2626',cursor:'pointer',fontWeight:'500'}} onClick={()=>signOut()}>Αποσύνδεση</span>}
           </div>
         </div>
@@ -535,27 +526,22 @@ if(status==='loading')
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>
             {!isLandscape&&<span>Αρχική</span>}
           </button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
           <button onClick={()=>openFolder('diktya')} style={{...S.bottomNavBtn,...(activeView==='folder'&&currentFolder==='diktya'?S.bottomNavActive:{})}}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><line x1="12" y1="7" x2="5" y2="17"/><line x1="12" y1="7" x2="19" y2="17"/><line x1="5" y1="19" x2="19" y2="19"/></svg>
             {!isLandscape&&<span>Δίκτυα</span>}
           </button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
           <button onClick={openAllTools} style={{...S.bottomNavBtn,...(['allTools','toolCategory'].includes(activeView)?S.bottomNavActive:{})}}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
             {!isLandscape&&<span>Εφαρμογές</span>}
           </button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
           <button onClick={()=>window.location.href='/student'} style={S.bottomNavBtn}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/><rect x="1" y="3" width="4" height="4" rx="0.5"/><rect x="1" y="9" width="4" height="4" rx="0.5"/><rect x="1" y="15" width="4" height="4" rx="0.5"/></svg>
             {!isLandscape&&<span>Student</span>}
           </button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
           <button onClick={()=>signOut()} style={S.bottomNavBtn}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
             {!isLandscape&&<span>Έξοδος</span>}
           </button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
         </nav>
       )}
 
@@ -608,7 +594,6 @@ if(status==='loading')
                         <p style={{...S.folderDesc, color:p.text, opacity:0.65}}>{f.desc}</p>
                         <div style={{...S.folderFoot, borderTopColor:p.accent}}>
                           <button style={{...S.linkBtn, color:p.deep}}>Προβολή →</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                         </div>
                       </div>
                     );
@@ -628,9 +613,7 @@ if(status==='loading')
                         </div>
                         <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
                           <button onClick={e=>{e.stopPropagation();window.open(`/api/files/pdf/${file.id}`,'_blank');}} style={S.printBtn} title="Εκτύπωση"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                           <button className="quick-btn" style={S.quickBtn}>Άνοιγμα →</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                         </div>
                       </div>
                     ))}
@@ -658,7 +641,6 @@ if(status==='loading')
                       <p style={{...S.folderDesc, color:p.text, opacity:0.65}}>{f.desc}</p>
                       <div style={{...S.folderFoot, borderTopColor:p.accent}}>
                         <button style={{...S.linkBtn, color:p.deep}}>Προβολή →</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                       </div>
                     </div>
                   );
@@ -672,7 +654,6 @@ if(status==='loading')
             <>
               <div style={S.pageHeader}>
                 <button onClick={goHome} style={S.backBtn}>← Πίσω</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                 <div style={{flex:1}}>
                   <h1 style={S.pageTitle}>{FOLDERS[currentFolder].name}</h1>
                   <p style={S.pageSub}>{filteredFiles.length} αρχεία{activeTagFilter&&<span style={S.filterBadge}> · #{activeTagFilter} <button onClick={()=>setActiveTagFilter(null)} style={S.clearFilterBtn}>✕</button></span>}</p>
@@ -682,7 +663,6 @@ if(status==='loading')
                     style={{padding:'6px 14px',borderRadius:'10px',border:'none',background:PALETTE.mustard.deep,color:'#fff',fontSize:'12px',fontWeight:'700',cursor:'pointer',display:'flex',alignItems:'center',gap:'4px',flexShrink:0}}>
                     + Δημιουργία
                   </button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                 )}
               </div>
               {allTagsInFolder().length>0&&(
@@ -719,13 +699,9 @@ if(status==='loading')
                         <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
                           <QrButton resourceType="pdf" resourceId={file.id} resourceName={file.name} title={file.title} color={p.deep} onShowQr={setQrPopup}/>
                           <button onClick={e=>{e.stopPropagation();publishItem(isDiktya&&metadata[file.id]?.linkedApp?'pair':'pdf',file.id,file.title,metadata[file.id]?.linkedApp||null,metadata[file.id]?.linkedAppTitle||null);}} className="action-btn" style={{width:'28px',height:'28px',borderRadius:'8px',background:'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:p.deep||'#888',fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title="Δημοσίευση στους μαθητές">📤</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                           <button onClick={e=>{e.stopPropagation();toggleFavorite(file);}} style={{background:'transparent',border:'none',fontSize:'16px',cursor:'pointer',color:favorites.some(f=>f.id===file.id)?'#e8c96a':'#ccc',padding:'4px'}}>{favorites.some(f=>f.id===file.id)?'★':'☆'}</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                           <button onClick={e=>{e.stopPropagation();window.open(`/api/files/pdf/${file.id}`,'_blank');}} className="action-btn" style={{...S.printBtn, color:p.deep, borderColor:p.deep}} title="Εκτύπωση"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                           <button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                         </div>
                       </div>
                     );
@@ -739,19 +715,15 @@ if(status==='loading')
             <>
               <div style={S.pageHeader}>
                 <button onClick={goHome} style={S.backBtn}>← Πίσω</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                 <div style={{flex:1}}><h1 style={S.pageTitle}>Δημιουργία Δικτύου</h1><p style={S.pageSub}>Σύνθεση κειμένων + ερωτήσεων → αποθήκευση PDF στο Drive</p></div>
                 <button onClick={()=>setShowNewNetForm(true)} style={S.greenBtn}>+ Νέο Δίκτυο</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
               </div>
 
               {showNewNetForm&&(
                 <div style={S.newNetForm}>
                   <input autoFocus type="text" placeholder="Όνομα δικτύου…" value={newNetName} onChange={e=>setNewNetName(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')createNetwork();if(e.key==='Escape')setShowNewNetForm(false);}} style={S.newNetInput}/>
                   <button onClick={createNetwork} style={S.greenBtn}>Δημιουργία</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                   <button onClick={()=>setShowNewNetForm(false)} style={S.cancelBtn}>Ακύρωση</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                 </div>
               )}
 
@@ -767,10 +739,8 @@ if(status==='loading')
                         </div>
                         <div style={{display:'flex',gap:'8px',alignItems:'center'}}>
                           <button onClick={()=>setCurrentNetwork(net)} style={S.greenSmall}>Επεξεργασία →</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                           {net.pdfFileId&&<button onClick={()=>window.open(`/api/files/pdf/${net.pdfFileId}`,'_blank')} style={S.pdfBtn}>📄 PDF</button>}
                           <button onClick={()=>deleteNetwork(net)} style={S.deleteSmall}>✕</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                         </div>
                       </div>
                     ))}
@@ -800,11 +770,9 @@ if(status==='loading')
                               <div style={{fontSize:'12px',fontWeight:'600',color:'#1a1a1a',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',maxWidth:'55vw'}}>{file.title}</div>
                             </div>
                             <button onClick={()=>openFile(file)} style={{background:'#f4f4f4',border:'1px solid #e0e0e0',width:'24px',height:'24px',borderRadius:'6px',fontSize:'12px',cursor:'pointer',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center'}}>👁</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                             {already
                               ?<span style={{fontSize:'11px',color:PALETTE.mustard.deep,flexShrink:0,minWidth:'16px',textAlign:'center'}}>✓</span>
                               :<button onClick={()=>addFileToNetwork(file)} style={{background:PALETTE.mustard.deep,border:'none',color:'#fff',width:'24px',height:'24px',borderRadius:'6px',fontSize:'14px',cursor:'pointer',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center'}}>+</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                             }
                           </div>
                         );
@@ -816,7 +784,6 @@ if(status==='loading')
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{...S.pageHeader,marginBottom:'16px'}}>
                       <button onClick={()=>setCurrentNetwork(null)} style={S.backBtn}>← Λίστα</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                       <div style={{flex:1}}>
                         <h2 style={{fontSize:'17px',fontWeight:'600',color:'#1a1a1a',marginBottom:'2px'}}>{currentNetwork.name}</h2>
                         <p style={S.pageSub}>
@@ -830,7 +797,6 @@ if(status==='loading')
                         <button onClick={mergeAndSave} disabled={merging||!currentNetwork.items.length} style={{...S.mergeBtn,opacity:(merging||!currentNetwork.items.length)?0.6:1}}>
                           {merging?'⏳ Δημιουργία…':`💾 ${currentNetwork.pdfFileId?'Ενημέρωση PDF':'Αποθήκευση PDF'}`}
                         </button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                       </div>
                     </div>
 
@@ -846,13 +812,9 @@ if(status==='loading')
                               <div style={S.netItemTitle}>{item.title}</div>
                               <div style={{display:'flex',gap:'5px',alignItems:'center',flexShrink:0}}>
                                 <button onClick={()=>moveItem(idx,-1)} disabled={idx===0} style={{...S.moveBtn,opacity:idx===0?0.3:1}}>↑</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                                 <button onClick={()=>moveItem(idx,1)} disabled={idx===currentNetwork.items.length-1} style={{...S.moveBtn,opacity:idx===currentNetwork.items.length-1?0.3:1}}>↓</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                                 <button onClick={()=>openFile({id:item.fileId,title:item.title,name:item.name})} style={S.viewSmall}>👁</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                                 <button onClick={()=>removeFromNetwork(item.fileId)} style={S.deleteSmall}>✕</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                               </div>
                             </div>
                             <div className="acc-h" style={{...S.accToggle,cursor:'pointer',background:isOpen?PALETTE.mustard.bgSoft:'#fafaf9'}} onClick={()=>toggleAccordion(item.fileId)}>
@@ -868,11 +830,9 @@ if(status==='loading')
                                     <input type="text" placeholder="Κωδ." value={q.code} onChange={e=>updateQuestion(item.fileId,q.id,'code',e.target.value)} onBlur={saveQuestionsNow} style={S.qCodeInput}/>
                                     <textarea rows={3} placeholder="Κείμενο ερώτησης…" value={q.text} onChange={e=>updateQuestion(item.fileId,q.id,'text',e.target.value)} onBlur={saveQuestionsNow} style={S.qTextInput}/>
                                     <button onClick={()=>removeQuestion(item.fileId,q.id)} style={S.qDelBtn}>✕</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                                   </div>
                                 ))}
                                 <button onClick={()=>addQuestion(item.fileId)} style={S.addQBtn}>+ Ερώτηση</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                               </div>
                             )}
                           </div>
@@ -906,11 +866,8 @@ if(status==='loading')
                         <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
                           <QrButton resourceType="pdf" resourceId={file.id} resourceName={file.name} title={file.title} color={p.deep} onShowQr={setQrPopup}/>
                           <button onClick={e=>{e.stopPropagation();toggleFavorite(file);}} style={{background:'transparent',border:'none',fontSize:'16px',cursor:'pointer',color:'#e8c96a',padding:'4px'}}>★</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                           <button onClick={e=>{e.stopPropagation();window.open(`/api/files/pdf/${file.id}`,'_blank');}} className="action-btn" style={{...S.printBtn, color:p.deep, borderColor:p.deep}} title="Εκτύπωση"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                           <button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                         </div>
                       </div>
                     );
@@ -939,11 +896,8 @@ if(status==='loading')
                         <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
                           <QrButton resourceType="pdf" resourceId={file.id} resourceName={file.name} title={file.title} color={p.deep} onShowQr={setQrPopup}/>
                           <button onClick={e=>{e.stopPropagation();toggleFavorite(file);}} style={{background:'transparent',border:'none',fontSize:'16px',cursor:'pointer',color:favorites.some(f=>f.id===file.id)?'#e8c96a':'#ccc',padding:'4px'}}>{favorites.some(f=>f.id===file.id)?'★':'☆'}</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                           <button onClick={e=>{e.stopPropagation();window.open(`/api/files/pdf/${file.id}`,'_blank');}} className="action-btn" style={{...S.printBtn, color:p.deep, borderColor:p.deep}} title="Εκτύπωση"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                           <button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                         </div>
                       </div>
                     );
@@ -973,7 +927,6 @@ if(status==='loading')
                     <span key={t} style={{...S.tagChip,background:c.text,color:'#fff',padding:'4px 10px',fontSize:'12px',fontWeight:600,cursor:'pointer'}} onClick={()=>toggleSearchTag(t)}>#{t} ✕</span>
                   );})}
                   <button onClick={()=>setActiveSearchTags([])} style={{background:'transparent',border:'none',color:'#dc2626',fontSize:'11px',cursor:'pointer',fontWeight:600}}>Καθαρισμός</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                 </div>
               )}
 
@@ -1021,9 +974,7 @@ if(status==='loading')
                             <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
                               <QrButton resourceType="pdf" resourceId={file.id} resourceName={file.name} title={file.title} color={p.deep} onShowQr={setQrPopup}/>
                               <button onClick={e=>{e.stopPropagation();toggleFavorite(file);}} style={{background:'transparent',border:'none',fontSize:'16px',cursor:'pointer',color:favorites.some(f2=>f2.id===file.id)?'#e8c96a':'#ccc',padding:'4px'}}>{favorites.some(f2=>f2.id===file.id)?'★':'☆'}</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                               <button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                             </div>
                           </div>
                         );
@@ -1039,7 +990,6 @@ if(status==='loading')
             <>
               <div style={S.pageHeader}>
                 <button onClick={()=>{setActiveView('folder');setCurrentFolder('diktya');setNetBuilderActive(false);setCurrentNetwork(null);}} style={S.backBtn}>← Πίσω</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                 <div style={{flex:1}}>
                   <h1 style={S.pageTitle}>Νέο Δίκτυο</h1>
                   <p style={S.pageSub}>{currentNetwork.items.length} κείμενα επιλεγμένα</p>
@@ -1092,11 +1042,8 @@ if(status==='loading')
                         <span style={{flex:1,fontSize:'13px',fontWeight:'600',color:'#1a1a1a',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{item.title}</span>
                         <div style={{display:'flex',gap:'4px',flexShrink:0}}>
                           <button onClick={()=>moveItem(idx,-1)} disabled={idx===0} style={{width:'28px',height:'28px',borderRadius:'7px',border:'1px solid '+PALETTE.mustard.accent,background:'#fff',color:idx===0?'#ccc':PALETTE.mustard.deep,fontSize:'14px',cursor:idx===0?'default':'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>↑</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                           <button onClick={()=>moveItem(idx,1)} disabled={idx===currentNetwork.items.length-1} style={{width:'28px',height:'28px',borderRadius:'7px',border:'1px solid '+PALETTE.mustard.accent,background:'#fff',color:idx===currentNetwork.items.length-1?'#ccc':PALETTE.mustard.deep,fontSize:'14px',cursor:idx===currentNetwork.items.length-1?'default':'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>↓</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                           <button onClick={()=>removeFromNetwork(item.fileId)} style={{width:'28px',height:'28px',borderRadius:'7px',border:'1px solid #fca5a5',background:'#fff',color:'#dc2626',fontSize:'12px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                         </div>
                       </div>
                     ))}
@@ -1116,7 +1063,6 @@ if(status==='loading')
                   style={{width:'100%',padding:'14px',borderRadius:'14px',border:'none',background:currentNetwork.items.length?PALETTE.mustard.deep:'#e0e0e0',color:currentNetwork.items.length?'#fff':'#aaa',fontSize:'15px',fontWeight:'700',cursor:currentNetwork.items.length?'pointer':'default',opacity:merging?0.6:1}}>
                   {merging?'⏳ Δημιουργία PDF…':'💾 Αποθήκευση Δικτύου + PDF'}
                 </button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                 {netMsg&&<div style={{textAlign:'center',marginTop:'8px',fontSize:'13px',color:netMsg.startsWith('✓')?PALETTE.mustard.deep:'#dc2626',fontWeight:'600'}}>{netMsg}</div>}
               </div>
             </>
@@ -1141,7 +1087,6 @@ if(status==='loading')
                       <p style={{...S.folderDesc, color:p.text, opacity:0.65}}>{catTools.length} {catTools.length===1?'εφαρμογή':'εφαρμογές'}</p>
                       <div style={{...S.folderFoot, borderTopColor:p.accent}}>
                         <button style={{...S.linkBtn, color:p.deep}}>Προβολή →</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                       </div>
                     </div>
                   );
@@ -1172,11 +1117,8 @@ if(status==='loading')
                         <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
                           <QrButton resourceType="tool" resourceId={tool.driveId||tool.file} resourceName={tool.name} title={tool.name} color={p.deep} onShowQr={setQrPopup}/>
                           <button onClick={e=>{e.stopPropagation();publishItem('tool',tool.driveId||tool.file,tool.name);}} className="action-btn" style={{width:'28px',height:'28px',borderRadius:'8px',background:'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:p.deep||'#888',fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title="Δημοσίευση στους μαθητές">📤</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                           <button onClick={e=>{e.stopPropagation();toggleFavoriteTool(tool);}} style={{background:'transparent',border:'none',fontSize:'16px',cursor:'pointer',color:favoriteTools.some(t=>t.file===tool.file)?'#e8c96a':'#ccc',padding:'4px'}}>{favoriteTools.some(t=>t.file===tool.file)?'★':'☆'}</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                           <button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Εκκίνηση →</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                         </div>
                       </div>
                     );
@@ -1247,27 +1189,23 @@ if(status==='loading')
               style={{width:'44px',height:'44px',borderRadius:'50%',background:'rgba(16,122,90,0.75)',backdropFilter:'blur(8px)',border:'1px solid rgba(255,255,255,0.2)',color:'#fff',fontSize:'20px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
               📡
             </button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
             {/* Σχόλια */}
             <button onClick={e=>{e.stopPropagation();setShowCommentPanel(p=>!p);}}
               style={{width:'44px',height:'44px',borderRadius:'50%',background:showCommentPanel?'rgba(201,123,90,0.85)':'rgba(0,0,0,0.55)',backdropFilter:'blur(8px)',border:'1px solid rgba(255,255,255,0.2)',color:'#fff',fontSize:'18px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
               💬
             </button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
             {/* Εναλλαγή */}
             {linkedApp&&(
               <button onClick={e=>{e.stopPropagation();setMobileTab(t=>t==='pdf'?'app':'pdf');}}
                 style={{width:'44px',height:'44px',borderRadius:'50%',background:'rgba(0,0,0,0.55)',backdropFilter:'blur(8px)',border:'1px solid rgba(255,255,255,0.2)',color:'#fff',fontSize:'18px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
                 {mobileTab==='pdf'?'🔗':'📄'}
               </button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
             )}
             {/* Κλείσιμο */}
             <button onClick={e=>{e.stopPropagation();setActiveView('folder');setCurrentFile(null);setShowCommentPanel(false);if(document.exitFullscreen)document.exitFullscreen().catch(()=>{});}}
               style={{width:'44px',height:'44px',borderRadius:'50%',background:'rgba(220,38,38,0.75)',backdropFilter:'blur(8px)',border:'1px solid rgba(255,255,255,0.2)',color:'#fff',fontSize:'18px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:'700'}}>
               ✕
             </button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
           </div>
 
           {/* Bottom sheet σχολίων */}
@@ -1293,7 +1231,6 @@ if(status==='loading')
             style={{position:'absolute',top:'env(safe-area-inset-top, 12px)',right:'12px',width:'44px',height:'44px',borderRadius:'50%',background:'rgba(220,38,38,0.75)',backdropFilter:'blur(8px)',border:'1px solid rgba(255,255,255,0.2)',color:'#fff',fontSize:'18px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:'700',zIndex:10}}>
             ✕
           </button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
         </div>
       )}
 
@@ -1335,19 +1272,15 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:sans-serif;}
     <div class="zgroup">
       <span class="zlbl">Κείμενο</span>
       <button class="zbtn" onclick="pz(-10)">−</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
       <span class="zval" id="pv" onclick="pz(0)">100%</span>
       <button class="zbtn" onclick="pz(10)">+</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
     </div>
     <div class="sep"></div>
     <div class="zgroup">
       <span class="zlbl">Εφαρμογή</span>
       <button class="zbtn" onclick="az(-10)">−</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
       <span class="zval" id="av" onclick="az(0)">100%</span>
       <button class="zbtn" onclick="az(10)">+</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
     </div>
   </div>
 </div>
@@ -1366,21 +1299,16 @@ function az(d){if(d===0)az0=100;else az0=Math.min(Math.max(az0+d,50),200);applyZ
                     w.document.write(html);
                     w.document.close();
                   }} style={{...S.iconBtn,background:PALETTE.mustard.bgSoft,borderColor:PALETTE.mustard.deep,color:PALETTE.mustard.deep}} title="Ενιαία πλήρης οθόνη">⛶</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                 )}
                 {!isMobile&&(linkedApp
                   ?<>
                     <button onClick={()=>setShowLinkedApp(p=>!p)} style={{...S.iconBtn,background:showLinkedApp?PALETTE.mustard.bgSoft:'#f4f4f4',borderColor:showLinkedApp?PALETTE.mustard.deep:'#e0e0e0',color:showLinkedApp?PALETTE.mustard.deep:'#444'}} title={linkedApp.name}>🔗</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                     <button onClick={unlinkApp} style={{...S.iconBtn,fontSize:'10px',color:'#dc2626',borderColor:'#fca5a5'}} title="Αποσύνδεση">✕🔗</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                   </>
                   :<button onClick={()=>setShowAppPicker(true)} style={{...S.iconBtn,fontSize:'11px'}} title="Σύνδεση εφαρμογής">+🔗</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                 )}
                 {!isMobile&&<button onClick={()=>setShowCommentPanel(p=>!p)} style={{...S.iconBtn,background:showCommentPanel?PALETTE.peach.bgSoft:'#f4f4f4',borderColor:showCommentPanel?PALETTE.peach.deep:'#e0e0e0',color:showCommentPanel?PALETTE.peach.deep:'#444'}} title="Ετικέτες &amp; Σχόλια">🏷️</button>}
                 <button onClick={()=>{setCurrentFile(null);zoomReset();appZoomReset();setShowCommentPanel(false);setShowLinkedApp(false);}} style={S.closeBtn}>✕</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
               </div>
             </div>
 
@@ -1393,9 +1321,7 @@ function az(d){if(d===0)az0=100;else az0=Math.min(Math.max(az0+d,50),200);applyZ
                   {linkedApp&&(
                     <div style={{display:'flex',borderBottom:'1px solid #e0e0e0',flexShrink:0,background:'#fff'}}>
                       <button onClick={()=>setMobileTab('pdf')} style={{flex:1,padding:'10px',fontSize:'13px',fontWeight:mobileTab==='pdf'?700:400,color:mobileTab==='pdf'?PALETTE.mustard.deep:'#888',background:'transparent',border:'none',borderBottom:mobileTab==='pdf'?'2px solid '+PALETTE.mustard.deep:'2px solid transparent',cursor:'pointer'}}>📄 Κείμενο</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                       <button onClick={()=>setMobileTab('app')} style={{flex:1,padding:'10px',fontSize:'13px',fontWeight:mobileTab==='app'?700:400,color:mobileTab==='app'?PALETTE.mustard.deep:'#888',background:'transparent',border:'none',borderBottom:mobileTab==='app'?'2px solid '+PALETTE.mustard.deep:'2px solid transparent',cursor:'pointer'}}>🔗 {linkedApp.name}</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                     </div>
                   )}
                   {/* PDF tab */}
@@ -1419,10 +1345,8 @@ function az(d){if(d===0)az0=100;else az0=Math.min(Math.max(az0+d,50),200);applyZ
                 {/* Zoom bar PDF */}
                 <div style={{position:'sticky',top:0,left:0,zIndex:10,display:'flex',alignItems:'center',gap:'6px',padding:'6px 10px',background:'rgba(0,0,0,0.55)',backdropFilter:'blur(4px)',width:'fit-content',borderRadius:'0 0 10px 0'}}>
                   <button onClick={zoomOut} style={{...S.zoomBtn,width:'26px',height:'26px',fontSize:'14px'}}>−</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                   <span onClick={zoomReset} style={{...S.zoomLabel,color:'#fff',cursor:'pointer',minWidth:'38px',textAlign:'center',fontSize:'11px'}}>{modalZoom}%</span>
                   <button onClick={zoomIn} style={{...S.zoomBtn,width:'26px',height:'26px',fontSize:'14px'}}>+</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                 </div>
                 <div style={{
                   transformOrigin:'top left',
@@ -1444,14 +1368,11 @@ function az(d){if(d===0)az0=100;else az0=Math.min(Math.max(az0+d,50),200);applyZ
                     <div style={{display:'flex',alignItems:'center',gap:'6px'}}>
                       <span style={{fontSize:'12px',fontWeight:'600',color:PALETTE.mustard.deep}}>🔗 {linkedApp.name}</span>
                       <button onClick={()=>window.open(linkedApp.isUrl?linkedApp.file:`/api/tool/${linkedApp.driveId||linkedApp.file}`,'_blank')} style={{...S.iconBtn,width:'22px',height:'22px',fontSize:'11px'}} title="Νέα καρτέλα">↗</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                     </div>
                     <div style={{display:'flex',gap:'4px',alignItems:'center'}}>
                       <button onClick={appZoomOut} style={{...S.zoomBtn,width:'24px',height:'24px',fontSize:'13px'}}>−</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                       <span onClick={appZoomReset} style={{...S.zoomLabel,cursor:'pointer',minWidth:'34px',textAlign:'center',fontSize:'11px'}}>{appZoom}%</span>
                       <button onClick={appZoomIn} style={{...S.zoomBtn,width:'24px',height:'24px',fontSize:'13px'}}>+</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                     </div>
                   </div>
                   <div style={{flex:1,overflow:'auto',position:'relative'}}>
@@ -1496,7 +1417,6 @@ function az(d){if(d===0)az0=100;else az0=Math.min(Math.max(az0+d,50),200);applyZ
                           style={{background:'transparent',color:PALETTE.peach.deep,border:'1px dashed '+PALETTE.peach.accent,padding:'4px 10px',borderRadius:'8px',fontSize:'11px',fontWeight:'600',cursor:'pointer'}}>
                           + Ερώτηση
                         </button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                       </div>
                       {fileQuestions(modalFile.id).length===0
                         ?<div style={{fontSize:'12px',color:'#aeaeb8',fontStyle:'italic',padding:'8px 0'}}>Δεν υπάρχουν ερωτήσεις. Πατήστε «+ Ερώτηση» για να προσθέσετε.</div>
@@ -1507,7 +1427,6 @@ function az(d){if(d===0)az0=100;else az0=Math.min(Math.max(az0+d,50),200);applyZ
                                 placeholder={(idx+1).toString()} style={{width:'52px',flexShrink:0,padding:'6px',border:'1px solid #e0e0e0',borderRadius:'6px',fontSize:'12px',fontWeight:'600',color:'#1a1a1a',background:'#fff',textAlign:'center'}}/>
                               <button onClick={()=>removeFileQuestion(modalFile.id,q.id)}
                                 style={{background:'transparent',border:'1px solid #fca5a5',color:'#dc2626',width:'24px',height:'24px',borderRadius:'6px',fontSize:'10px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>✕</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                             </div>
                             <textarea value={q.text} onChange={e=>updateFileQuestion(modalFile.id,q.id,'text',e.target.value)}
                               placeholder="Κείμενο ερώτησης…" rows={2}
@@ -1549,7 +1468,6 @@ function az(d){if(d===0)az0=100;else az0=Math.min(Math.max(az0+d,50),200);applyZ
                 <div style={{display:'flex',gap:'8px'}}>
                   <input type="url" placeholder="https://..." id="customUrlInput" style={{flex:1,padding:'9px 12px',border:'1px solid #e0e0e0',borderRadius:'10px',fontSize:'13px',color:'#1a1a1a'}}/>
                   <button onClick={()=>{const url=document.getElementById('customUrlInput').value.trim();if(url)linkAppToFile({file:url,name:url,driveId:null,isUrl:true});}} style={{...S.greenBtn,padding:'9px 14px',fontSize:'12px'}}>Σύνδεση</button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                 </div>
               </div>
 
@@ -1569,7 +1487,6 @@ function az(d){if(d===0)az0=100;else az0=Math.min(Math.max(az0+d,50),200);applyZ
                       style={{display:'flex',alignItems:'center',gap:'6px',padding:'8px 14px',borderRadius:'10px',border:'1px solid #e0e0e0',background:'#fafafa',cursor:'pointer',fontSize:'13px',fontWeight:'500'}}>
                       <span>{q.icon}</span>{q.name}
                     </button>
-                          {!isMobile&&<button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                   ))}
                 </div>
               </div>
@@ -1765,7 +1682,7 @@ const S = {
   recentList:{background:'#fff',borderRadius:'16px',border:'1px solid #ebebeb',overflow:'hidden'},
   recentItem:{display:'flex',alignItems:'center',gap:'12px',padding:'14px 16px',cursor:'pointer'},
   recentInfo:{flex:1,minWidth:0,overflow:'hidden',maxWidth:'calc(100% - 140px)'},
-  recentTitle:{fontSize:'13px',fontWeight:'600',color:'#1a1a1a',marginBottom:'2px',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',maxWidth:'55vw'},
+  recentTitle:{fontSize:'12px',fontWeight:'600',color:'#1a1a1a',marginBottom:'2px',overflow:'hidden',textOverflow:'ellipsis',maxWidth:'100%',overflowWrap:'break-word',wordBreak:'break-word'},
   recentMeta:{fontSize:'11px',color:'#aeaeb8',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'},
   quickBtn:{background:'transparent',border:'1.5px solid '+PALETTE.peach.deep,color:PALETTE.peach.deep,padding:'6px 14px',borderRadius:'10px',fontSize:'12px',fontWeight:'600',cursor:'pointer',flexShrink:0},
   printBtn:{background:'transparent',border:'1.5px solid '+PALETTE.peach.deep,color:PALETTE.peach.deep,width:'32px',height:'32px',borderRadius:'10px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0},
