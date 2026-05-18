@@ -1681,7 +1681,7 @@ const S = {
 
   recentList:{background:'#fff',borderRadius:'16px',border:'1px solid #ebebeb',overflow:'hidden'},
   recentItem:{display:'flex',alignItems:'center',gap:'12px',padding:'14px 16px',cursor:'pointer'},
-  recentInfo:{flex:1,minWidth:0,overflow:'hidden',maxWidth:'120px'},
+  recentInfo:{flex:1,minWidth:0,overflow:'hidden',maxWidth:'calc(100% - 140px)'},
   recentTitle:{fontSize:'12px',fontWeight:'600',color:'#1a1a1a',marginBottom:'2px',overflow:'hidden',textOverflow:'ellipsis',maxWidth:'100%',overflowWrap:'break-word',wordBreak:'break-word'},
   recentMeta:{fontSize:'11px',color:'#aeaeb8',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'},
   quickBtn:{background:'transparent',border:'1.5px solid '+PALETTE.peach.deep,color:PALETTE.peach.deep,padding:'6px 14px',borderRadius:'10px',fontSize:'12px',fontWeight:'600',cursor:'pointer',flexShrink:0},
