@@ -906,30 +906,6 @@ if(status==='loading')
               </div>
             </>
           )}
-              <div style={S.recentList}>
-                {recentFiles.length===0?<div style={S.empty}>Δεν έχεις ανοίξει αρχεία ακόμα</div>
-                  :recentFiles.map((file,idx)=>{
-                    const p=PALETTE.peach;
-                    return (
-                      <div key={file.id} className="ri-h" style={{...S.recentItem, borderBottom:idx<recentFiles.length-1?'1px solid #f0f0f0':'none'}} onClick={()=>openFile(file)}>
-                        <div style={{width:'36px',height:'36px',borderRadius:'10px',background:p.bg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={p.deep} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                        </div>
-                        <div style={S.recentInfo}>
-                          <div style={S.recentTitle}>{file.title}</div>
-                          <div style={S.recentMeta}>{file.name}</div>
-                        </div>
-                        <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
-                          <QrButton resourceType="pdf" resourceId={file.id} resourceName={file.name} title={file.title} color={p.deep} onShowQr={setQrPopup}/>
-                          <button onClick={e=>{e.stopPropagation();window.open('/api/files/pdf/'+file.id,'_blank');}} className="action-btn" style={{width:'28px',height:'28px',borderRadius:'8px',background:'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:p.deep||'#888',fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title="Εκτύπωση"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
-                          <button onClick={e=>{e.stopPropagation();publishItem('pdf',file.id,file.title,null,null);}} className="action-btn" style={{width:'28px',height:'28px',borderRadius:'8px',background:'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:p.deep||'#888',fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title="Δημοσίευση στους μαθητές">📤</button>
-                        </div>
-                      </div>
-                    );
-                  })}
-              </div>
-            </>
-          )}
 
           {/* Tag Search — αναζήτηση με ετικέτες σε όλους τους φακέλους */}
           {activeView==='tagSearch'&&(
