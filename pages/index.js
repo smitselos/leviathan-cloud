@@ -767,7 +767,7 @@ if(status==='loading')
                         return (
                           <div key={file.id} style={{display:'flex',alignItems:'center',gap:'6px',padding:'8px 10px',borderRadius:'10px',background:already?PALETTE.mustard.bgSoft:'#fff',border:'1px solid '+(already?PALETTE.mustard.accent:'#ebebeb')}}>
                             <div style={{flex:1,minWidth:0}}>
-                              <div style={{fontSize:'12px',fontWeight:'600',color:'#1a1a1a',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{file.title}</div>
+                              <div style={{fontSize:'12px',fontWeight:'600',color:'#1a1a1a',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',maxWidth:'55vw'}}>{file.title}</div>
                             </div>
                             <button onClick={()=>openFile(file)} style={{background:'#f4f4f4',border:'1px solid #e0e0e0',width:'24px',height:'24px',borderRadius:'6px',fontSize:'12px',cursor:'pointer',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center'}}>👁</button>
                             {already
@@ -1682,8 +1682,8 @@ const S = {
   recentList:{background:'#fff',borderRadius:'16px',border:'1px solid #ebebeb',overflow:'hidden'},
   recentItem:{display:'flex',alignItems:'center',gap:'12px',padding:'14px 16px',cursor:'pointer'},
   recentInfo:{flex:1,minWidth:0,overflow:'hidden'},
-  recentTitle:{fontSize:'13px',fontWeight:'600',color:'#1a1a1a',marginBottom:'2px',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'},
-  recentMeta:{fontSize:'11px',color:'#aeaeb8'},
+  recentTitle:{fontSize:'13px',fontWeight:'600',color:'#1a1a1a',marginBottom:'2px',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',maxWidth:'55vw'},
+  recentMeta:{fontSize:'11px',color:'#aeaeb8',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'},
   quickBtn:{background:'transparent',border:'1.5px solid '+PALETTE.peach.deep,color:PALETTE.peach.deep,padding:'6px 14px',borderRadius:'10px',fontSize:'12px',fontWeight:'600',cursor:'pointer',flexShrink:0},
   printBtn:{background:'transparent',border:'1.5px solid '+PALETTE.peach.deep,color:PALETTE.peach.deep,width:'32px',height:'32px',borderRadius:'10px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0},
 
