@@ -391,7 +391,7 @@ const S = {
 
   recentList:{background:'#ffffff',borderRadius:'18px',overflow:'hidden',border:'1px solid #f0f0f0'},
   recentItem:{display:'flex',alignItems:'center',gap:'10px',padding:'12px 14px',transition:'background 0.1s'},
-  recentInfo:{flex:1,minWidth:0,maxWidth:'120px'},
+  recentInfo:{flex:1,minWidth:0,maxWidth:'calc(100% - 130px)'},
   recentTitle:{fontSize:'14px',fontWeight:'600',color:'#1a1a1a',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',maxWidth:'200px'},
   recentMeta:{fontSize:'12px',color:'#aeaeb8',marginTop:'3px'},
   quickBtn:{background:'transparent',border:'1.5px solid',borderRadius:'10px',padding:'6px 14px',fontSize:'12px',fontWeight:'600',cursor:'pointer'},
