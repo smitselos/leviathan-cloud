@@ -195,7 +195,7 @@ export default function Home() {
 
   const loadTools = async()=>{ try{ const r=await fetch('/api/tools'); const d=await r.json(); setTools(d.tools||[]); }catch(e){} };
   const loadMetadata = async()=>{ try{ const r=await fetch('/api/metadata'); const d=await r.json(); setMetadata(d.metadata||{}); }catch(e){} };
-  const loadAllFiles = async()=>{ try{ const results=await Promise.all(['keimena','biblia','diktya'].map(fid=>fetch(`/api/files/${fid}`).then(r=>r.json()))); setAllFiles(results.flatMap(r=>r.files||[])); }catch(e){} };
+  const loadAllFiles = async()=>{ try{ const results=await Promise.all(['keimena','biblia','diktya'].map(fid=>fetch('/api/files/'+fid).then(r=>r.json()))); setAllFiles(results.flatMap(r=>r.files||[])); }catch(e){} };
   const loadNetworks = async()=>{
     try{
       const r=await fetch('/api/networks');
@@ -219,14 +219,14 @@ export default function Home() {
 
   const loadFiles=useCallback(async(folderId)=>{
     setLoading(true);
-    try{ const r=await fetch(`/api/files/${folderId}`); const d=await r.json(); setFiles(d.files||[]); }catch(e){ setFiles([]); }
+    try{ const r=await fetch('/api/files/'+folderId); const d=await r.json(); setFiles(d.files||[]); }catch(e){ setFiles([]); }
     setLoading(false);
   },[]);
 
   const openFolder=(id)=>{ setCurrentFolder(id); setActiveView('folder'); setCurrentFile(null); setActiveTagFilter(null); setNetBuilderActive(false); loadFiles(id); };
   const openTool=(t)=>{ 
     if(isMobile){ 
-      window.open(`/api/tool/${t.driveId||t.file}`,'_blank'); 
+      window.open('/api/tool/'+(t.driveId||t.file),'_blank'); 
     } else { 
       setCurrentTool(t); 
     } 
@@ -617,7 +617,7 @@ if(status==='loading')
                           <div style={S.recentMeta}>{file.name}</div>
                         </div>
                         <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
-                          <button onClick={e=>{e.stopPropagation();window.open(`/api/files/pdf/${file.id}`,'_blank');}} style={S.printBtn} title="Εκτύπωση"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
+                          <button onClick={e=>{e.stopPropagation();window.open('/api/files/pdf/'+file.id,'_blank');}} style={S.printBtn} title="Εκτύπωση"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
                           <button className="quick-btn" style={S.quickBtn}>Άνοιγμα →</button>
                         </div>
                       </div>
@@ -703,7 +703,7 @@ if(status==='loading')
                         </div>
                         <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
                           <QrButton resourceType="pdf" resourceId={file.id} resourceName={file.name} title={file.title} color={p.deep} onShowQr={setQrPopup}/>
-                          <button onClick={e=>{e.stopPropagation();window.open(`/api/files/pdf/${file.id}`,'_blank');}} className="action-btn" style={{width:'28px',height:'28px',borderRadius:'8px',background:'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:p.deep||'#888',fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title="Εκτύπωση"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
+                          <button onClick={e=>{e.stopPropagation();window.open('/api/files/pdf/'+file.id,'_blank');}} className="action-btn" style={{width:'28px',height:'28px',borderRadius:'8px',background:'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:p.deep||'#888',fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title="Εκτύπωση"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
                           <button onClick={e=>{e.stopPropagation();publishItem(isDiktya&&metadata[file.id]?.linkedApp?'pair':'pdf',file.id,file.title,metadata[file.id]?.linkedApp||null,metadata[file.id]?.linkedAppTitle||null);}} className="action-btn" style={{width:'28px',height:'28px',borderRadius:'8px',background:'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:p.deep||'#888',fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title="Δημοσίευση στους μαθητές">📤</button>
                         </div>
                       </div>
@@ -742,7 +742,7 @@ if(status==='loading')
                         </div>
                         <div style={{display:'flex',gap:'8px',alignItems:'center'}}>
                           <button onClick={()=>setCurrentNetwork(net)} style={S.greenSmall}>Επεξεργασία →</button>
-                          {net.pdfFileId&&<button onClick={()=>window.open(`/api/files/pdf/${net.pdfFileId}`,'_blank')} style={S.pdfBtn}>📄 PDF</button>}
+                          {net.pdfFileId&&<button onClick={()=>window.open('/api/files/pdf/'+net.pdfFileId,'_blank')} style={S.pdfBtn}>📄 PDF</button>}
                           <button onClick={()=>deleteNetwork(net)} style={S.deleteSmall}>✕</button>
                         </div>
                       </div>
@@ -796,7 +796,7 @@ if(status==='loading')
                         </p>
                       </div>
                       <div style={{display:'flex',gap:'8px'}}>
-                        {currentNetwork.pdfFileId&&<button onClick={()=>window.open(`/api/files/pdf/${currentNetwork.pdfFileId}`,'_blank')} style={S.pdfBtn}>📄 PDF</button>}
+                        {currentNetwork.pdfFileId&&<button onClick={()=>window.open('/api/files/pdf/'+currentNetwork.pdfFileId,'_blank')} style={S.pdfBtn}>📄 PDF</button>}
                         <button onClick={mergeAndSave} disabled={merging||!currentNetwork.items.length} style={{...S.mergeBtn,opacity:(merging||!currentNetwork.items.length)?0.6:1}}>
                           {merging?'⏳ Δημιουργία…':`💾 ${currentNetwork.pdfFileId?'Ενημέρωση PDF':'Αποθήκευση PDF'}`}
                         </button>
@@ -868,9 +868,17 @@ if(status==='loading')
                         </div>
                         <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
                           <QrButton resourceType="pdf" resourceId={file.id} resourceName={file.name} title={file.title} color={p.deep} onShowQr={setQrPopup}/>
-                          <button onClick={e=>{e.stopPropagation();window.open(`/api/files/pdf/${file.id}`,'_blank');}} className="action-btn" style={{width:'28px',height:'28px',borderRadius:'8px',background:'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:p.deep||'#888',fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title="Εκτύπωση"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
+                          <button onClick={e=>{e.stopPropagation();window.open('/api/files/pdf/'+file.id,'_blank');}} className="action-btn" style={{width:'28px',height:'28px',borderRadius:'8px',background:'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:p.deep||'#888',fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title="Εκτύπωση"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
                           <button onClick={e=>{e.stopPropagation();publishItem('pdf',file.id,file.title,null,null);}} className="action-btn" style={{width:'28px',height:'28px',borderRadius:'8px',background:'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:p.deep||'#888',fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title="Δημοσίευση στους μαθητές">📤</button>
                         </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </>
+          )}
+
+          {/* Recent — compact list */}
           {activeView==='recent'&&(
             <>
               <div style={S.pageHeader}><button onClick={goHome} style={S.backBtn}>← Πίσω</button><div><h1 style={S.pageTitle}>Πρόσφατα</h1><p style={S.pageSub}>{recentFiles.length} αρχεία</p></div></div>
@@ -889,9 +897,41 @@ if(status==='loading')
                         </div>
                         <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
                           <QrButton resourceType="pdf" resourceId={file.id} resourceName={file.name} title={file.title} color={p.deep} onShowQr={setQrPopup}/>
-                          <button onClick={e=>{e.stopPropagation();window.open(`/api/files/pdf/${file.id}`,'_blank');}} className="action-btn" style={{width:'28px',height:'28px',borderRadius:'8px',background:'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:p.deep||'#888',fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title="Εκτύπωση"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
+                          <button onClick={e=>{e.stopPropagation();window.open('/api/files/pdf/'+file.id,'_blank');}} className="action-btn" style={{width:'28px',height:'28px',borderRadius:'8px',background:'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:p.deep||'#888',fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title="Εκτύπωση"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
                           <button onClick={e=>{e.stopPropagation();publishItem('pdf',file.id,file.title,null,null);}} className="action-btn" style={{width:'28px',height:'28px',borderRadius:'8px',background:'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:p.deep||'#888',fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title="Δημοσίευση στους μαθητές">📤</button>
                         </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </>
+          )}
+              <div style={S.recentList}>
+                {recentFiles.length===0?<div style={S.empty}>Δεν έχεις ανοίξει αρχεία ακόμα</div>
+                  :recentFiles.map((file,idx)=>{
+                    const p=PALETTE.peach;
+                    return (
+                      <div key={file.id} className="ri-h" style={{...S.recentItem, borderBottom:idx<recentFiles.length-1?'1px solid #f0f0f0':'none'}} onClick={()=>openFile(file)}>
+                        <div style={{width:'36px',height:'36px',borderRadius:'10px',background:p.bg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={p.deep} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        </div>
+                        <div style={S.recentInfo}>
+                          <div style={S.recentTitle}>{file.title}</div>
+                          <div style={S.recentMeta}>{file.name}</div>
+                        </div>
+                        <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
+                          <QrButton resourceType="pdf" resourceId={file.id} resourceName={file.name} title={file.title} color={p.deep} onShowQr={setQrPopup}/>
+                          <button onClick={e=>{e.stopPropagation();window.open('/api/files/pdf/'+file.id,'_blank');}} className="action-btn" style={{width:'28px',height:'28px',borderRadius:'8px',background:'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:p.deep||'#888',fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title="Εκτύπωση"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
+                          <button onClick={e=>{e.stopPropagation();publishItem('pdf',file.id,file.title,null,null);}} className="action-btn" style={{width:'28px',height:'28px',borderRadius:'8px',background:'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:p.deep||'#888',fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title="Δημοσίευση στους μαθητές">📤</button>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </>
+          )}
+
+          {/* Tag Search — αναζήτηση με ετικέτες σε όλους τους φακέλους */}
           {activeView==='tagSearch'&&(
             <>
               <div style={S.pageHeader}><button onClick={goHome} style={S.backBtn}>← Πίσω</button><div><h1 style={S.pageTitle}>Αναζήτηση</h1><p style={S.pageSub}>Βρες κείμενα με ετικέτες</p></div></div>
@@ -958,7 +998,7 @@ if(status==='loading')
                             </div>
                             <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
                               <QrButton resourceType="pdf" resourceId={file.id} resourceName={file.name} title={file.title} color={p.deep} onShowQr={setQrPopup}/>
-                              <button onClick={e=>{e.stopPropagation();window.open(`/api/files/pdf/${file.id}`,'_blank');}} className="action-btn" style={{width:'28px',height:'28px',borderRadius:'8px',background:'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:p.deep||'#888',fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title="Εκτύπωση"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
+                              <button onClick={e=>{e.stopPropagation();window.open('/api/files/pdf/'+file.id,'_blank');}} className="action-btn" style={{width:'28px',height:'28px',borderRadius:'8px',background:'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:p.deep||'#888',fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title="Εκτύπωση"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
                               <button onClick={e=>{e.stopPropagation();publishItem('pdf',file.id,file.title,null,null);}} className="action-btn" style={{width:'28px',height:'28px',borderRadius:'8px',background:'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:p.deep||'#888',fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title="Δημοσίευση στους μαθητές">📤</button>
                             </div>
                           </div>
@@ -1131,7 +1171,7 @@ if(status==='loading')
               title="PDF" allow="fullscreen"/>
           )}
           {mobileTab==='app'&&linkedApp&&(
-            <iframe src={linkedApp.isUrl?linkedApp.file:`/api/tool/${linkedApp.driveId||linkedApp.file}`}
+            <iframe src={linkedApp.isUrl?linkedApp.file:'/api/tool/'+(linkedApp.driveId||linkedApp.file)}
               style={{position:'absolute',inset:0,width:'100%',height:'100%',border:'none'}}
               title={linkedApp.name} allow="fullscreen"/>
           )}
@@ -1150,7 +1190,7 @@ if(status==='loading')
               let appName = linkedApp?.name || null;
               if (linkedApp && !linkedApp.isUrl) {
                 try {
-                  const r = await fetch(`/api/tool/${linkedApp.driveId||linkedApp.file}`);
+                  const r = await fetch('/api/tool/'+(linkedApp.driveId||linkedApp.file));
                   if (r.ok) appHtml = await r.text();
                 } catch(e) {}
               }
@@ -1208,7 +1248,7 @@ if(status==='loading')
       {/* ── Mobile Tool Viewer — true fullscreen ── */}
       {isMobile&&activeView==='mobileToolViewer'&&currentTool&&(
         <div style={{position:'fixed',inset:0,zIndex:150,background:'#000',overflow:'hidden'}}>
-          <iframe src={`/api/tool/${currentTool.driveId||currentTool.file}`}
+          <iframe src={'/api/tool/'+(currentTool.driveId||currentTool.file)}
             style={{position:'absolute',inset:0,width:'100%',height:'100%',border:'none'}}
             title={currentTool.name} allow="fullscreen"/>
           {/* Floating κλείσιμο */}
@@ -1228,13 +1268,13 @@ if(status==='loading')
             <div style={S.modalHead}>
               <h2 style={S.modalTitle}>{modalFile.title}</h2>
               <div style={S.modalBtns}>
-                {!isMobile&&<button onClick={()=>window.open(`/api/files/pdf/${modalFile.id}`,'_blank')} style={S.iconBtn} title="PDF σε νέα καρτέλα">↗</button>}
+                {!isMobile&&<button onClick={()=>window.open('/api/files/pdf/'+modalFile.id,'_blank')} style={S.iconBtn} title="PDF σε νέα καρτέλα">↗</button>}
                 {!isMobile&&showLinkedApp&&linkedApp&&(
                   <button onClick={()=>{
                     const w=window.open('','_blank');
-                    const appSrc=linkedApp.isUrl?linkedApp.file:`/api/tool/${linkedApp.driveId||linkedApp.file}`;
-                    const pdfSrc=`/api/files/pdf/${modalFile.id}`;
-                    const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><style>
+                    const appSrc=linkedApp.isUrl?linkedApp.file:'/api/tool/'+(linkedApp.driveId||linkedApp.file);
+                    const pdfSrc='/api/files/pdf/'+modalFile.id;
+                    const html='<!DOCTYPE html><html><head><meta charset="utf-8"><style>
 *{margin:0;padding:0;box-sizing:border-box;}
 html,body{width:100%;height:100%;overflow:hidden;font-family:sans-serif;}
 #bar{width:100%;height:46px;background:#1a1a1a;display:flex;align-items:center;justify-content:space-between;padding:0 16px;flex-shrink:0;}
@@ -1312,13 +1352,13 @@ function az(d){if(d===0)az0=100;else az0=Math.min(Math.max(az0+d,50),200);applyZ
                   {/* PDF tab */}
                   {(!linkedApp||mobileTab==='pdf')&&(
                     <div style={{flex:1,overflow:'auto',background:'#525659'}}>
-                      <iframe src={`/api/files/pdf/${modalFile.id}`} style={{width:'100%',height:'100%',minHeight:'100vh',border:'none'}} title="PDF Viewer"/>
+                      <iframe src={'/api/files/pdf/'+modalFile.id} style={{width:'100%',height:'100%',minHeight:'100vh',border:'none'}} title="PDF Viewer"/>
                     </div>
                   )}
                   {/* App tab */}
                   {linkedApp&&mobileTab==='app'&&(
                     <div style={{flex:1,overflow:'auto'}}>
-                      <iframe src={linkedApp.isUrl?linkedApp.file:`/api/tool/${linkedApp.driveId||linkedApp.file}`} style={{width:'100%',height:'100%',minHeight:'100vh',border:'none'}} title={linkedApp.name}/>
+                      <iframe src={linkedApp.isUrl?linkedApp.file:'/api/tool/'+(linkedApp.driveId||linkedApp.file)} style={{width:'100%',height:'100%',minHeight:'100vh',border:'none'}} title={linkedApp.name}/>
                     </div>
                   )}
                 </div>
@@ -1341,7 +1381,7 @@ function az(d){if(d===0)az0=100;else az0=Math.min(Math.max(az0+d,50),200);applyZ
                   minHeight:'100vh',
                   marginTop:'-38px',
                 }}>
-                  <iframe src={`/api/files/pdf/${modalFile.id}`} style={{width:'100%',height:'100%',minHeight:'100vh',border:'none'}} title="PDF Viewer"/>
+                  <iframe src={'/api/files/pdf/'+modalFile.id} style={{width:'100%',height:'100%',minHeight:'100vh',border:'none'}} title="PDF Viewer"/>
                 </div>
               </div>
 
@@ -1352,7 +1392,7 @@ function az(d){if(d===0)az0=100;else az0=Math.min(Math.max(az0+d,50),200);applyZ
                   <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'5px 10px',background:PALETTE.mustard.bgSoft,borderBottom:'1px solid '+PALETTE.mustard.accent,flexShrink:0}}>
                     <div style={{display:'flex',alignItems:'center',gap:'6px'}}>
                       <span style={{fontSize:'12px',fontWeight:'600',color:PALETTE.mustard.deep}}>🔗 {linkedApp.name}</span>
-                      <button onClick={()=>window.open(linkedApp.isUrl?linkedApp.file:`/api/tool/${linkedApp.driveId||linkedApp.file}`,'_blank')} style={{...S.iconBtn,width:'22px',height:'22px',fontSize:'11px'}} title="Νέα καρτέλα">↗</button>
+                      <button onClick={()=>window.open(linkedApp.isUrl?linkedApp.file:'/api/tool/'+(linkedApp.driveId||linkedApp.file),'_blank')} style={{...S.iconBtn,width:'22px',height:'22px',fontSize:'11px'}} title="Νέα καρτέλα">↗</button>
                     </div>
                     <div style={{display:'flex',gap:'4px',alignItems:'center'}}>
                       <button onClick={appZoomOut} style={{...S.zoomBtn,width:'24px',height:'24px',fontSize:'13px'}}>−</button>
@@ -1368,7 +1408,7 @@ function az(d){if(d===0)az0=100;else az0=Math.min(Math.max(az0+d,50),200);applyZ
                       height:`${10000/appZoom}%`,
                       minHeight:'100%',
                     }}>
-                      <iframe src={linkedApp.isUrl ? linkedApp.file : `/api/tool/${linkedApp.driveId||linkedApp.file}`} style={{width:'100%',height:'100%',minHeight:'80vh',border:'none'}} title={linkedApp.name}/>
+                      <iframe src={linkedApp.isUrl ? linkedApp.file : '/api/tool/'+(linkedApp.driveId||linkedApp.file)} style={{width:'100%',height:'100%',minHeight:'80vh',border:'none'}} title={linkedApp.name}/>
                     </div>
                   </div>
                 </div>
@@ -1433,8 +1473,8 @@ function az(d){if(d===0)az0=100;else az0=Math.min(Math.max(az0+d,50),200);applyZ
       {currentTool&&!currentFile&&(
         <div style={S.modal} onClick={()=>{setCurrentTool(null);zoomReset();}}>
           <div style={S.modalBox} onClick={e=>e.stopPropagation()}>
-            <div style={S.modalHead}><h2 style={S.modalTitle}>{currentTool.name}</h2><div style={S.modalBtns}><button onClick={zoomOut} style={S.zoomBtn}>−</button><span style={S.zoomLabel} onClick={zoomReset}>{modalZoom}%</span><button onClick={zoomIn} style={S.zoomBtn}>+</button><div style={S.modalDiv}/><button onClick={()=>window.open(`/api/tool/${currentTool.driveId||currentTool.file}`,'_blank')} style={S.iconBtn}>↗</button><button onClick={()=>{setCurrentTool(null);zoomReset();}} style={S.closeBtn}>✕</button></div></div>
-            <div style={{flex:1,overflow:'auto'}}><div style={{transform:`scale(${modalZoom/100})`,transformOrigin:'top center',height:modalZoom>100?`${modalZoom}%`:'100%',width:modalZoom>100?`${10000/modalZoom}%`:'100%'}}><iframe src={`/api/tool/${currentTool.driveId||currentTool.file}`} style={S.iframe} title={currentTool.name}/></div></div>
+            <div style={S.modalHead}><h2 style={S.modalTitle}>{currentTool.name}</h2><div style={S.modalBtns}><button onClick={zoomOut} style={S.zoomBtn}>−</button><span style={S.zoomLabel} onClick={zoomReset}>{modalZoom}%</span><button onClick={zoomIn} style={S.zoomBtn}>+</button><div style={S.modalDiv}/><button onClick={()=>window.open('/api/tool/'+(currentTool.driveId||currentTool.file),'_blank')} style={S.iconBtn}>↗</button><button onClick={()=>{setCurrentTool(null);zoomReset();}} style={S.closeBtn}>✕</button></div></div>
+            <div style={{flex:1,overflow:'auto'}}><div style={{transform:'scale('+modalZoom/100+')',transformOrigin:'top center',height:modalZoom>100?modalZoom+'%':'100%',width:modalZoom>100?(10000/modalZoom)+'%':'100%'}}><iframe src={'/api/tool/'+(currentTool.driveId||currentTool.file)} style={S.iframe} title={currentTool.name}/></div></div>
           </div>
         </div>
       )}
@@ -1484,7 +1524,8 @@ function az(d){if(d===0)az0=100;else az0=Math.min(Math.max(az0+d,50),200);applyZ
                   :tools.map(tool=>(
                     <div key={tool.file} className="picker-h" style={{display:'flex',alignItems:'center',gap:'12px',padding:'10px 12px',borderRadius:'12px',cursor:'pointer',marginBottom:'4px'}} onClick={()=>linkAppToFile(tool)}>
                       <div style={{width:'36px',height:'36px',borderRadius:'10px',background:PALETTE.peach.bg,overflow:'hidden',flexShrink:0}}>
-                        <img src={`/api/thumbnail/${tool.driveId||tool.file}`} alt={tool.name} style={{width:'100%',height:'100%',objectFit:'cover'}} onError={e=>{e.target.style.display='none';e.target.parentNode.innerHTML=`<span style="font-size:18px;display:flex;align-items:center;justify-content:center;width:100%;height:100%">${tool.icon||'🔧'}</span>`;}}/>
+                        <img src={'/api/thumbnail/'+(tool.driveId||tool.file)} alt={tool.name} style={{width:'100%',height:'100%',objectFit:'cover'}} onError={e=>{e.target.style.display='none';e.target.parentNode.innerHTML='<span style="font-size:18px;display:flex;align-items:center;justify-content:center;width:100%;height:100%">'+(tool.icon||'🔧')+'</span>';}}/>
+
                       </div>
                       <div style={{flex:1}}><div style={{fontSize:'13px',fontWeight:'500',color:'#1a1a1a'}}>{tool.name}</div>{tool.category&&<div style={{fontSize:'11px',color:'#aeaeb8'}}>{tool.category}</div>}</div>
                       <span style={{fontSize:'12px',color:PALETTE.mustard.deep}}>+ Σύνδεση</span>
