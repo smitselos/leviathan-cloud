@@ -606,13 +606,14 @@ if(status==='loading')
                   <h2 style={S.secTitle}>Πρόσφατα Αρχεία</h2>
                   <div style={S.recentList}>
                     {recentFiles.map(file=>(
-                      <div key={file.id} className="ri-h" style={{...S.recentItem, padding:isMobile?'10px 12px':'14px 16px'}} onClick={()=>openFile(file)}>
+                      <div key={file.id} className="ri-h" style={S.recentItem} onClick={()=>openFile(file)}>
                         <div style={S.recentInfo}>
-                          <div style={{...S.recentTitle, fontSize:isMobile?'12px':'13px'}}>{file.title}</div>
+                          <div style={S.recentTitle}>{file.title}</div>
                           <div style={S.recentMeta}>{file.name}</div>
                         </div>
-                        <div style={{display:'flex',alignItems:'center',gap:isMobile?'2px':'6px',flexShrink:0}}>
+                        <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
                           <button onClick={e=>{e.stopPropagation();window.open(`/api/files/pdf/${file.id}`,'_blank');}} style={S.printBtn} title="Εκτύπωση"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
+                          <button className="quick-btn" style={S.quickBtn}>Άνοιγμα →</button>
                         </div>
                       </div>
                     ))}
@@ -681,13 +682,13 @@ if(status==='loading')
                     const isActive=currentFile?.id===file.id;
                     return (
                       <div key={file.id} className="ri-h"
-                        style={{...S.recentItem, padding:isMobile?'10px 12px':'14px 16px', background:isActive?p.bgSoft:'transparent', borderBottom:idx<filteredFiles.length-1?'1px solid #f0f0f0':'none'}}
+                        style={{...S.recentItem, background:isActive?p.bgSoft:'transparent', borderBottom:idx<filteredFiles.length-1?'1px solid #f0f0f0':'none'}}
                         onClick={()=>openFile(file)}>
                         <div style={{width:'36px',height:'36px',borderRadius:'10px',background:p.bg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
                           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={p.deep} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                         </div>
                         <div style={S.recentInfo}>
-                          <div style={{...S.recentTitle, fontSize:isMobile?'12px':'13px'}}>{file.title}</div>
+                          <div style={S.recentTitle}>{file.title}</div>
                           <div style={S.recentMeta}>
                             {file.name}
                             {hasComment&&<span style={{marginLeft:'6px'}}>💬</span>}
@@ -695,11 +696,12 @@ if(status==='loading')
                           </div>
                           {!isMobile&&tags.length>0&&(<div style={{display:'flex',flexWrap:'wrap',gap:'3px',marginTop:'4px'}} onClick={e=>e.stopPropagation()}>{tags.map(t=>{ const c=tagColor(t); return <span key={t} className="tag-chip" style={{...S.tagChip,background:c.bg,color:c.text,fontSize:'10px',padding:'1px 7px'}}>#{t}<span className="tag-x" style={S.tagX} onClick={e=>{e.stopPropagation();removeTag(file.id,t);}}>✕</span></span>; })}</div>)}
                         </div>
-                        <div style={{display:'flex',alignItems:'center',gap:isMobile?'2px':'6px',flexShrink:0}}>
+                        <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
                           <QrButton resourceType="pdf" resourceId={file.id} resourceName={file.name} title={file.title} color={p.deep} onShowQr={setQrPopup}/>
                           <button onClick={e=>{e.stopPropagation();publishItem(isDiktya&&metadata[file.id]?.linkedApp?'pair':'pdf',file.id,file.title,metadata[file.id]?.linkedApp||null,metadata[file.id]?.linkedAppTitle||null);}} className="action-btn" style={{width:'28px',height:'28px',borderRadius:'8px',background:'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:p.deep||'#888',fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title="Δημοσίευση στους μαθητές">📤</button>
-                          <button onClick={e=>{e.stopPropagation();toggleFavorite(file);}} style={{background:'transparent',border:'none',fontSize:isMobile?'14px':'16px',cursor:'pointer',color:favorites.some(f=>f.id===file.id)?'#e8c96a':'#ccc',padding:isMobile?'2px':'4px',flexShrink:0}}>★</button>
+                          <button onClick={e=>{e.stopPropagation();toggleFavorite(file);}} style={{background:'transparent',border:'none',fontSize:'16px',cursor:'pointer',color:favorites.some(f=>f.id===file.id)?'#e8c96a':'#ccc',padding:'4px'}}>{favorites.some(f=>f.id===file.id)?'★':'☆'}</button>
                           <button onClick={e=>{e.stopPropagation();window.open(`/api/files/pdf/${file.id}`,'_blank');}} className="action-btn" style={{...S.printBtn, color:p.deep, borderColor:p.deep}} title="Εκτύπωση"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
+                          <button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>
                         </div>
                       </div>
                     );
@@ -853,18 +855,19 @@ if(status==='loading')
                   :favorites.map((file,idx)=>{
                     const p=PALETTE.cream;
                     return (
-                      <div key={file.id} className="ri-h" style={{...S.recentItem, padding:isMobile?'10px 12px':'14px 16px', borderBottom:idx<favorites.length-1?'1px solid #f0f0f0':'none'}} onClick={()=>openFile(file)}>
+                      <div key={file.id} className="ri-h" style={{...S.recentItem, borderBottom:idx<favorites.length-1?'1px solid #f0f0f0':'none'}} onClick={()=>openFile(file)}>
                         <div style={{width:'36px',height:'36px',borderRadius:'10px',background:p.bg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
                           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={p.deep} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                         </div>
                         <div style={S.recentInfo}>
-                          <div style={{...S.recentTitle, fontSize:isMobile?'12px':'13px'}}>{file.title}</div>
+                          <div style={S.recentTitle}>{file.title}</div>
                           <div style={S.recentMeta}>{file.name}</div>
                         </div>
-                        <div style={{display:'flex',alignItems:'center',gap:isMobile?'2px':'6px',flexShrink:0}}>
+                        <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
                           <QrButton resourceType="pdf" resourceId={file.id} resourceName={file.name} title={file.title} color={p.deep} onShowQr={setQrPopup}/>
-                          <button onClick={e=>{e.stopPropagation();toggleFavorite(file);}} style={{background:'transparent',border:'none',fontSize:isMobile?'14px':'16px',cursor:'pointer',color:'#e8c96a',padding:isMobile?'2px':'4px'}}>★</button>
+                          <button onClick={e=>{e.stopPropagation();toggleFavorite(file);}} style={{background:'transparent',border:'none',fontSize:'16px',cursor:'pointer',color:'#e8c96a',padding:'4px'}}>★</button>
                           <button onClick={e=>{e.stopPropagation();window.open(`/api/files/pdf/${file.id}`,'_blank');}} className="action-btn" style={{...S.printBtn, color:p.deep, borderColor:p.deep}} title="Εκτύπωση"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
+                          <button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>
                         </div>
                       </div>
                     );
@@ -882,18 +885,19 @@ if(status==='loading')
                   :recentFiles.map((file,idx)=>{
                     const p=PALETTE.peach;
                     return (
-                      <div key={file.id} className="ri-h" style={{...S.recentItem, padding:isMobile?'10px 12px':'14px 16px', borderBottom:idx<recentFiles.length-1?'1px solid #f0f0f0':'none'}} onClick={()=>openFile(file)}>
+                      <div key={file.id} className="ri-h" style={{...S.recentItem, borderBottom:idx<recentFiles.length-1?'1px solid #f0f0f0':'none'}} onClick={()=>openFile(file)}>
                         <div style={{width:'36px',height:'36px',borderRadius:'10px',background:p.bg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
                           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={p.deep} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                         </div>
                         <div style={S.recentInfo}>
-                          <div style={{...S.recentTitle, fontSize:isMobile?'12px':'13px'}}>{file.title}</div>
+                          <div style={S.recentTitle}>{file.title}</div>
                           <div style={S.recentMeta}>{file.name}</div>
                         </div>
-                        <div style={{display:'flex',alignItems:'center',gap:isMobile?'2px':'6px',flexShrink:0}}>
+                        <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
                           <QrButton resourceType="pdf" resourceId={file.id} resourceName={file.name} title={file.title} color={p.deep} onShowQr={setQrPopup}/>
-                          <button onClick={e=>{e.stopPropagation();toggleFavorite(file);}} style={{background:'transparent',border:'none',fontSize:isMobile?'14px':'16px',cursor:'pointer',color:favorites.some(f=>f.id===file.id)?'#e8c96a':'#ccc',padding:isMobile?'2px':'4px'}}>{favorites.some(f=>f.id===file.id)?'★':'☆'}</button>
+                          <button onClick={e=>{e.stopPropagation();toggleFavorite(file);}} style={{background:'transparent',border:'none',fontSize:'16px',cursor:'pointer',color:favorites.some(f=>f.id===file.id)?'#e8c96a':'#ccc',padding:'4px'}}>{favorites.some(f=>f.id===file.id)?'★':'☆'}</button>
                           <button onClick={e=>{e.stopPropagation();window.open(`/api/files/pdf/${file.id}`,'_blank');}} className="action-btn" style={{...S.printBtn, color:p.deep, borderColor:p.deep}} title="Εκτύπωση"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
+                          <button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>
                         </div>
                       </div>
                     );
@@ -957,19 +961,20 @@ if(status==='loading')
                         const tags=fileTags(file.id);
                         const p=PALETTE.mustard;
                         return (
-                          <div key={file.id} className="ri-h" style={{...S.recentItem, padding:isMobile?'10px 12px':'14px 16px', borderBottom:idx<tagSearchResults.length-1?'1px solid #f0f0f0':'none'}} onClick={()=>openFile(file)}>
+                          <div key={file.id} className="ri-h" style={{...S.recentItem, borderBottom:idx<tagSearchResults.length-1?'1px solid #f0f0f0':'none'}} onClick={()=>openFile(file)}>
                             <div style={{width:'36px',height:'36px',borderRadius:'10px',background:p.bg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
                               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={p.deep} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                             </div>
                             <div style={S.recentInfo}>
-                              <div style={{...S.recentTitle, fontSize:isMobile?'12px':'13px'}}>{file.title}</div>
+                              <div style={S.recentTitle}>{file.title}</div>
                               <div style={{display:'flex',flexWrap:'wrap',gap:'3px',marginTop:'3px'}}>
                                 {tags.map(t=>{const c=tagColor(t);return <span key={t} style={{...S.tagChip,background:activeSearchTags.includes(t)?c.text:c.bg,color:activeSearchTags.includes(t)?'#fff':c.text,fontSize:'10px',padding:'1px 7px'}}>#{t}</span>;})}
                               </div>
                             </div>
-                            <div style={{display:'flex',alignItems:'center',gap:isMobile?'2px':'6px',flexShrink:0}}>
+                            <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
                               <QrButton resourceType="pdf" resourceId={file.id} resourceName={file.name} title={file.title} color={p.deep} onShowQr={setQrPopup}/>
-                              <button onClick={e=>{e.stopPropagation();toggleFavorite(file);}} style={{background:'transparent',border:'none',fontSize:isMobile?'14px':'16px',cursor:'pointer',color:favorites.some(f2=>f2.id===file.id)?'#e8c96a':'#ccc',padding:isMobile?'2px':'4px'}}>{favorites.some(f2=>f2.id===file.id)?'★':'☆'}</button>
+                              <button onClick={e=>{e.stopPropagation();toggleFavorite(file);}} style={{background:'transparent',border:'none',fontSize:'16px',cursor:'pointer',color:favorites.some(f2=>f2.id===file.id)?'#e8c96a':'#ccc',padding:'4px'}}>{favorites.some(f2=>f2.id===file.id)?'★':'☆'}</button>
+                              <button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>
                             </div>
                           </div>
                         );
@@ -1101,18 +1106,19 @@ if(status==='loading')
                   :filteredCategoryTools.map((tool,idx)=>{
                     const p=PALETTE.peach;
                     return (
-                      <div key={tool.file} className="ri-h" style={{...S.recentItem, padding:isMobile?'10px 12px':'14px 16px', borderBottom:idx<filteredCategoryTools.length-1?'1px solid #f0f0f0':'none'}} onClick={()=>openTool(tool)}>
+                      <div key={tool.file} className="ri-h" style={{...S.recentItem, borderBottom:idx<filteredCategoryTools.length-1?'1px solid #f0f0f0':'none'}} onClick={()=>openTool(tool)}>
                         <div style={{width:'36px',height:'36px',borderRadius:'10px',background:p.bg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
                           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={p.deep} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
                         </div>
                         <div style={S.recentInfo}>
-                          <div style={{...S.recentTitle, fontSize:isMobile?'12px':'13px'}}>{tool.name}</div>
+                          <div style={S.recentTitle}>{tool.name}</div>
                           <div style={S.recentMeta}>{tool.category||''}</div>
                         </div>
-                        <div style={{display:'flex',alignItems:'center',gap:isMobile?'2px':'6px',flexShrink:0}}>
+                        <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
                           <QrButton resourceType="tool" resourceId={tool.driveId||tool.file} resourceName={tool.name} title={tool.name} color={p.deep} onShowQr={setQrPopup}/>
                           <button onClick={e=>{e.stopPropagation();publishItem('tool',tool.driveId||tool.file,tool.name);}} className="action-btn" style={{width:'28px',height:'28px',borderRadius:'8px',background:'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:p.deep||'#888',fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title="Δημοσίευση στους μαθητές">📤</button>
-                          <button onClick={e=>{e.stopPropagation();toggleFavoriteTool(tool);}} style={{background:'transparent',border:'none',fontSize:isMobile?'14px':'16px',cursor:'pointer',color:favoriteTools.some(t=>t.file===tool.file)?'#e8c96a':'#ccc',padding:isMobile?'2px':'4px'}}>{favoriteTools.some(t=>t.file===tool.file)?'★':'☆'}</button>
+                          <button onClick={e=>{e.stopPropagation();toggleFavoriteTool(tool);}} style={{background:'transparent',border:'none',fontSize:'16px',cursor:'pointer',color:favoriteTools.some(t=>t.file===tool.file)?'#e8c96a':'#ccc',padding:'4px'}}>{favoriteTools.some(t=>t.file===tool.file)?'★':'☆'}</button>
+                          <button className="quick-btn" style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Εκκίνηση →</button>
                         </div>
                       </div>
                     );
@@ -1675,8 +1681,8 @@ const S = {
 
   recentList:{background:'#fff',borderRadius:'16px',border:'1px solid #ebebeb',overflow:'hidden'},
   recentItem:{display:'flex',alignItems:'center',gap:'12px',padding:'14px 16px',cursor:'pointer'},
-  recentInfo:{flex:1,minWidth:0,overflow:'hidden'},
-  recentTitle:{fontSize:'13px',fontWeight:'600',color:'#1a1a1a',marginBottom:'2px',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',maxWidth:'100%'},
+  recentInfo:{flex:1,minWidth:0,overflow:'hidden',maxWidth:'calc(100% - 200px)'},
+  recentTitle:{fontSize:'13px',fontWeight:'600',color:'#1a1a1a',marginBottom:'2px',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',maxWidth:'100%',wordBreak:'break-all'},
   recentMeta:{fontSize:'11px',color:'#aeaeb8',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'},
   quickBtn:{background:'transparent',border:'1.5px solid '+PALETTE.peach.deep,color:PALETTE.peach.deep,padding:'6px 14px',borderRadius:'10px',fontSize:'12px',fontWeight:'600',cursor:'pointer',flexShrink:0},
   printBtn:{background:'transparent',border:'1.5px solid '+PALETTE.peach.deep,color:PALETTE.peach.deep,width:'32px',height:'32px',borderRadius:'10px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0},
