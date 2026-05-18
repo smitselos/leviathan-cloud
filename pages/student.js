@@ -218,7 +218,7 @@ export default function StudentPage() {
                                 <rect x="14" y="14" width="2" height="2"/><rect x="18" y="14" width="4" height="2"/><rect x="14" y="18" width="2" height="4"/><rect x="18" y="18" width="4" height="4"/>
                               </svg>
                             </button>
-                            {!isMobile&&{!isMobile&&<button style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}}
+                            {!isMobile&&<button style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
                           </div>
                         </div>
                       );
