@@ -694,12 +694,6 @@ if(status==='loading')
                         </div>
                         <div style={S.recentInfo}>
                           <div style={S.recentTitle}>{file.title.slice(0,10)}</div>
-                          <div style={S.recentMeta}>
-                            {file.name}
-                            {hasComment&&<span style={{marginLeft:'6px'}}>💬</span>}
-                            {isDiktya&&metadata[file.id]?.linkedApp&&<span style={{marginLeft:'4px'}}>🔗</span>}
-                          </div>
-                          {!isMobile&&tags.length>0&&(<div style={{display:'flex',flexWrap:'wrap',gap:'3px',marginTop:'4px'}} onClick={e=>e.stopPropagation()}>{tags.map(t=>{ const c=tagColor(t); return <span key={t} className="tag-chip" style={{...S.tagChip,background:c.bg,color:c.text,fontSize:'10px',padding:'1px 7px'}}>#{t}<span className="tag-x" style={S.tagX} onClick={e=>{e.stopPropagation();removeTag(file.id,t);}}>✕</span></span>; })}</div>)}
                         </div>
                         <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
                           <div className="qr-btn"><QrButton resourceType="pdf" resourceId={file.id} resourceName={file.name} title={file.title.slice(0,10)} color={p.deep} onShowQr={setQrPopup}/></div>
@@ -1111,7 +1105,6 @@ if(status==='loading')
                         </div>
                         <div style={S.recentInfo}>
                           <div style={S.recentTitle}>{tool.name}</div>
-                          <div style={S.recentMeta}>{tool.category||''}</div>
                         </div>
                         <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
                           <div className="qr-btn"><QrButton resourceType="tool" resourceId={tool.driveId||tool.file} resourceName={tool.name} title={tool.name} color={p.deep} onShowQr={setQrPopup}/></div>
