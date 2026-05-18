@@ -100,6 +100,9 @@ export default function StudentPage() {
       <style>{`
         @media(max-width:767px){
           .student-sidebar{display:none !important;}
+          .student-main{padding-bottom:70px !important;max-width:100vw !important;overflow-x:hidden !important;}
+          html,body{overflow-x:hidden !important;max-width:100vw !important;}
+          .student-main{padding-bottom:70px !important;}
           .student-main{margin-left:0 !important;}
         }
         .ri-h:hover{background:#f9f6ed !important;}
@@ -147,22 +150,12 @@ export default function StudentPage() {
       )}
 
       {/* ── Main ── */}
-      <div className="student-main" style={{...S.main, marginLeft: !isMobile && sidebarOpen ? '220px' : !isMobile ? '56px' : '0'}}>
+      <div className="student-main" style={{...S.main, marginLeft: !isMobile && sidebarOpen ? '220px' : !isMobile ? '56px' : '0', ...(isMobile?{paddingBottom:'70px'}:{})}}>
 
-        {/* ── Mobile top bar ── */}
+        {/* ── Mobile top bar — minimal ── */}
         {isMobile && !currentItem && (
-          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'14px 16px',borderBottom:'1px solid #eee',background:'#fff'}}>
-            <span style={{fontSize:'16px',fontWeight:'700',color:'#1a1a1a'}}>ΛΕΒΙΑΘΑΝ</span>
-            <div style={{display:'flex',gap:'10px',alignItems:'center'}}>
-              <button onClick={()=>{setShowPinDialog(true);setPinValue('');}} style={{fontSize:'12px',color:'#107a5a',background:'transparent',border:'1px solid #107a5a',borderRadius:'6px',padding:'4px 10px',fontWeight:'600',cursor:'pointer',display:'flex',alignItems:'center',gap:'4px'}}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 010 8.49"/><path d="M19.07 4.93a10 10 0 010 14.14"/></svg>
-                Live
-              </button>
-              <a href="/login" style={{fontSize:'12px',color:PALETTE.peach.deep,textDecoration:'none',fontWeight:'600',display:'flex',alignItems:'center',gap:'4px'}}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-                Σύνδεση
-              </a>
-            </div>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'center',padding:'10px 16px',borderBottom:'1px solid #eee',background:'#fff'}}>
+            <span style={{fontSize:'15px',fontWeight:'700',color:'#1a1a1a'}}>ΛΕΒΙΑΘΑΝ</span>
           </div>
         )}
 
@@ -225,7 +218,7 @@ export default function StudentPage() {
                                 <rect x="14" y="14" width="2" height="2"/><rect x="18" y="14" width="4" height="2"/><rect x="14" y="18" width="2" height="4"/><rect x="18" y="18" width="4" height="4"/>
                               </svg>
                             </button>
-                            <button style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>
+                            {!isMobile&&{!isMobile&&<button style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}}
                           </div>
                         </div>
                       );
@@ -301,6 +294,28 @@ export default function StudentPage() {
 
       </div>
 
+      {/* ── Mobile Bottom Nav ── */}
+      {isMobile && !currentItem && (
+        <nav style={{position:'fixed',bottom:0,left:0,right:0,background:'#1a1a1a',display:'flex',justifyContent:'space-around',alignItems:'center',padding:'8px 0 max(8px, env(safe-area-inset-bottom))',zIndex:300,borderTop:'1px solid rgba(255,255,255,0.06)'}}>
+          <button onClick={()=>setCurrentItem(null)} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:'2px',background:'transparent',border:'none',color:'#ececec',fontSize:'10px',cursor:'pointer',padding:'4px 8px'}}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>
+            <span>Αρχική</span>
+          </button>
+          <button onClick={()=>{setShowPinDialog(true);setPinValue('');}} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:'2px',background:'transparent',border:'none',color:'#8e8ea0',fontSize:'10px',cursor:'pointer',padding:'4px 8px'}}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 010 8.49"/><path d="M19.07 4.93a10 10 0 010 14.14"/><path d="M7.76 16.24a6 6 0 010-8.49"/><path d="M4.93 19.07a10 10 0 010-14.14"/></svg>
+            <span>Live</span>
+          </button>
+          <button onClick={()=>window.location.href='/login'} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:'2px',background:'transparent',border:'none',color:'#8e8ea0',fontSize:'10px',cursor:'pointer',padding:'4px 8px'}}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+            <span>Σύνδεση</span>
+          </button>
+          <button onClick={()=>window.close()} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:'2px',background:'transparent',border:'none',color:'#8e8ea0',fontSize:'10px',cursor:'pointer',padding:'4px 8px'}}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <span>Κλείσιμο</span>
+          </button>
+        </nav>
+      )}
+
       {/* PIN Dialog */}
       {showPinDialog && (
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9998}} onClick={()=>setShowPinDialog(false)}>
@@ -341,7 +356,7 @@ export default function StudentPage() {
 
 // ── Styles — ίδια αισθητική με index (Energy Insights) ──
 const S = {
-  app:{display:'flex',minHeight:'100vh',fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif",background:'#fafafa'},
+  app:{display:'flex',minHeight:'100vh',maxWidth:'100vw',overflowX:'hidden',maxWidth:'100vw',overflowX:'hidden',fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif",background:'#fafafa'},
   sidebar:{position:'fixed',top:0,left:0,height:'100vh',background:'#1a1a1a',display:'flex',flexDirection:'column',zIndex:200,transition:'width 0.2s ease',overflowX:'hidden'},
   sidebarHeader:{padding:'16px 12px',display:'flex',alignItems:'center',justifyContent:'space-between',borderBottom:'1px solid rgba(255,255,255,0.06)'},
   logoText:{fontSize:'15px',fontWeight:'500',color:'#ececec'},
@@ -358,16 +373,16 @@ const S = {
   userName:{fontSize:'12px',color:'#ececec',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'},
 
   main:{flex:1,transition:'margin-left 0.2s ease'},
-  container:{maxWidth:'1280px',margin:'0 auto',padding:'32px 40px'},
+  container:{maxWidth:'1280px',margin:'0 auto',padding:'24px 16px'},
   welcomeSec:{marginBottom:'32px'},
-  welcomeTitle:{fontSize:'26px',fontWeight:'600',color:'#1a1a1a',marginBottom:'6px',letterSpacing:'-0.01em'},
+  welcomeTitle:{fontSize:'22px',fontWeight:'600',color:'#1a1a1a',marginBottom:'6px',letterSpacing:'-0.01em'},
   welcomeSub:{fontSize:'14px',color:'#6b6b80',lineHeight:'1.5'},
 
   statsGrid:{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(240px,1fr))',gap:'14px',marginBottom:'40px'},
-  statCard:{borderRadius:'22px',padding:'22px 24px',border:'none',transition:'transform 0.2s ease, box-shadow 0.2s ease',minHeight:'140px'},
+  statCard:{borderRadius:'18px',padding:'16px 18px',border:'none',transition:'transform 0.2s ease, box-shadow 0.2s ease',minHeight:'140px'},
   statInner:{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:'12px',height:'100%'},
   statLabel:{fontSize:'13px',fontWeight:'500',marginBottom:'12px'},
-  statVal:{fontSize:'42px',fontWeight:'700',lineHeight:'1',marginBottom:'8px',letterSpacing:'-0.02em'},
+  statVal:{fontSize:'32px',fontWeight:'700',lineHeight:'1',marginBottom:'8px',letterSpacing:'-0.02em'},
   statSub:{fontSize:'12px',fontWeight:'400',lineHeight:'1.4'},
   statIcon:{width:'44px',height:'44px',borderRadius:'14px',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0},
 
@@ -375,9 +390,9 @@ const S = {
   secTitle:{fontSize:'17px',fontWeight:'600',color:'#1a1a1a',marginBottom:'18px',letterSpacing:'-0.01em'},
 
   recentList:{background:'#ffffff',borderRadius:'18px',overflow:'hidden',border:'1px solid #f0f0f0'},
-  recentItem:{display:'flex',alignItems:'center',gap:'14px',padding:'14px 18px',transition:'background 0.1s'},
+  recentItem:{display:'flex',alignItems:'center',gap:'10px',padding:'12px 14px',transition:'background 0.1s'},
   recentInfo:{flex:1,minWidth:0},
-  recentTitle:{fontSize:'14px',fontWeight:'600',color:'#1a1a1a',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'},
+  recentTitle:{fontSize:'14px',fontWeight:'600',color:'#1a1a1a',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',maxWidth:'200px'},
   recentMeta:{fontSize:'12px',color:'#aeaeb8',marginTop:'3px'},
   quickBtn:{background:'transparent',border:'1.5px solid',borderRadius:'10px',padding:'6px 14px',fontSize:'12px',fontWeight:'600',cursor:'pointer'},
   empty:{textAlign:'center',color:'#b0b0b0',padding:'32px',fontSize:'14px'},
