@@ -1250,7 +1250,7 @@ if(status==='loading')
                     const w=window.open('','_blank');
                     const appSrc=linkedApp.isUrl?linkedApp.file:'/api/tool/'+(linkedApp.driveId||linkedApp.file);
                     const pdfSrc='/api/files/pdf/'+modalFile.id;
-                    const html='<!DOCTYPE html><html><head><meta charset="utf-8"><style>
+                    const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><style>
 *{margin:0;padding:0;box-sizing:border-box;}
 html,body{width:100%;height:100%;overflow:hidden;font-family:sans-serif;}
 #bar{width:100%;height:46px;background:#1a1a1a;display:flex;align-items:center;justify-content:space-between;padding:0 16px;flex-shrink:0;}
@@ -1295,7 +1295,7 @@ var pz0=100,az0=100;
 function applyZ(el,lbl,z){el.style.transform='scale('+z/100+')';el.style.width=(10000/z)+'%';el.style.height=(10000/z)+'%';lbl.textContent=z+'%';}
 function pz(d){if(d===0)pz0=100;else pz0=Math.min(Math.max(pz0+d,50),200);applyZ(document.getElementById('pi'),document.getElementById('pv'),pz0);}
 function az(d){if(d===0)az0=100;else az0=Math.min(Math.max(az0+d,50),200);applyZ(document.getElementById('ai'),document.getElementById('av'),az0);}
-<\/script>
+</script>
 </body></html>`;
                     w.document.write(html);
                     w.document.close();
