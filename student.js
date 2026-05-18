@@ -100,6 +100,8 @@ export default function StudentPage() {
       <style>{`
         @media(max-width:767px){
           .student-sidebar{display:none !important;}
+          .student-main{padding-bottom:70px !important;max-width:100vw !important;overflow-x:hidden !important;}
+          html,body{overflow-x:hidden !important;max-width:100vw !important;}
           .student-main{padding-bottom:70px !important;}
           .student-main{margin-left:0 !important;}
         }
@@ -354,7 +356,7 @@ export default function StudentPage() {
 
 // ── Styles — ίδια αισθητική με index (Energy Insights) ──
 const S = {
-  app:{display:'flex',minHeight:'100vh',maxWidth:'100vw',overflowX:'hidden',fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif",background:'#fafafa'},
+  app:{display:'flex',minHeight:'100vh',maxWidth:'100vw',overflowX:'hidden',maxWidth:'100vw',overflowX:'hidden',fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif",background:'#fafafa'},
   sidebar:{position:'fixed',top:0,left:0,height:'100vh',background:'#1a1a1a',display:'flex',flexDirection:'column',zIndex:200,transition:'width 0.2s ease',overflowX:'hidden'},
   sidebarHeader:{padding:'16px 12px',display:'flex',alignItems:'center',justifyContent:'space-between',borderBottom:'1px solid rgba(255,255,255,0.06)'},
   logoText:{fontSize:'15px',fontWeight:'500',color:'#ececec'},
@@ -371,16 +373,16 @@ const S = {
   userName:{fontSize:'12px',color:'#ececec',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'},
 
   main:{flex:1,transition:'margin-left 0.2s ease'},
-  container:{maxWidth:'1280px',margin:'0 auto',padding:'32px 40px'},
+  container:{maxWidth:'1280px',margin:'0 auto',padding:'24px 16px'},
   welcomeSec:{marginBottom:'32px'},
-  welcomeTitle:{fontSize:'26px',fontWeight:'600',color:'#1a1a1a',marginBottom:'6px',letterSpacing:'-0.01em'},
+  welcomeTitle:{fontSize:'22px',fontWeight:'600',color:'#1a1a1a',marginBottom:'6px',letterSpacing:'-0.01em'},
   welcomeSub:{fontSize:'14px',color:'#6b6b80',lineHeight:'1.5'},
 
   statsGrid:{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(240px,1fr))',gap:'14px',marginBottom:'40px'},
-  statCard:{borderRadius:'22px',padding:'22px 24px',border:'none',transition:'transform 0.2s ease, box-shadow 0.2s ease',minHeight:'140px'},
+  statCard:{borderRadius:'18px',padding:'16px 18px',border:'none',transition:'transform 0.2s ease, box-shadow 0.2s ease',minHeight:'140px'},
   statInner:{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:'12px',height:'100%'},
   statLabel:{fontSize:'13px',fontWeight:'500',marginBottom:'12px'},
-  statVal:{fontSize:'42px',fontWeight:'700',lineHeight:'1',marginBottom:'8px',letterSpacing:'-0.02em'},
+  statVal:{fontSize:'32px',fontWeight:'700',lineHeight:'1',marginBottom:'8px',letterSpacing:'-0.02em'},
   statSub:{fontSize:'12px',fontWeight:'400',lineHeight:'1.4'},
   statIcon:{width:'44px',height:'44px',borderRadius:'14px',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0},
 
@@ -388,7 +390,7 @@ const S = {
   secTitle:{fontSize:'17px',fontWeight:'600',color:'#1a1a1a',marginBottom:'18px',letterSpacing:'-0.01em'},
 
   recentList:{background:'#ffffff',borderRadius:'18px',overflow:'hidden',border:'1px solid #f0f0f0'},
-  recentItem:{display:'flex',alignItems:'center',gap:'14px',padding:'14px 18px',transition:'background 0.1s'},
+  recentItem:{display:'flex',alignItems:'center',gap:'10px',padding:'12px 14px',transition:'background 0.1s'},
   recentInfo:{flex:1,minWidth:0},
   recentTitle:{fontSize:'14px',fontWeight:'600',color:'#1a1a1a',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',maxWidth:'200px'},
   recentMeta:{fontSize:'12px',color:'#aeaeb8',marginTop:'3px'},
