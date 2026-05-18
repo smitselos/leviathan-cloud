@@ -199,18 +199,18 @@ export default function StudentPage() {
                       const p = item.type === 'tool' ? PALETTE.mustard : item.type === 'pair' ? PALETTE.peach : PALETTE.cream;
                       return (
                         <div key={item.key} className="ri-h"
-                          style={{...S.recentItem, borderBottom: idx < items.length - 1 ? '1px solid #f0f0f0' : 'none', cursor:'pointer'}}
+                          style={{...S.recentItem, padding:isMobile?'10px 12px':'14px 16px', borderBottom: idx < items.length - 1 ? '1px solid #f0f0f0' : 'none', cursor:'pointer'}}
                           onClick={() => openItem(item)}>
                           <div style={{width:'42px',height:'42px',borderRadius:'12px',background:p.bg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:'18px'}}>
                             {typeIcon(item.type)}
                           </div>
                           <div style={S.recentInfo}>
-                            <div style={S.recentTitle}>{item.title}</div>
+                            <div style={{...S.recentTitle, fontSize:isMobile?'12px':'13px'}}>{item.title}</div>
                             <div style={S.recentMeta}>
                               {typeLabel(item.type)} {item.linkedAppTitle ? `· ${item.linkedAppTitle}` : ''} · ⏱ {timeLeft(item.expiresAt)}
                             </div>
                           </div>
-                          <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
+                          <div style={{display:'flex',alignItems:'center',gap:isMobile?'2px':'6px',flexShrink:0}}>
                             <button onClick={e=>{e.stopPropagation();setQrPopup({url:`${BASE_URL}/api/share/content/${item.key}`,title:item.title});}}
                               style={{width:'28px',height:'28px',borderRadius:'8px',background:'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:p.deep||'#888',fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title="QR Code">
                               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -219,6 +219,7 @@ export default function StudentPage() {
                               </svg>
                             </button>
                             {!isMobile&&<button style={{...S.quickBtn, color:p.deep, borderColor:p.deep}}>Άνοιγμα →</button>}
+                            {isMobile&&<button style={{...S.quickBtn, color:p.deep, borderColor:p.deep,fontSize:'11px',padding:'4px 8px'}}>→</button>}
                           </div>
                         </div>
                       );
