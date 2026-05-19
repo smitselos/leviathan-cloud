@@ -1183,6 +1183,11 @@ if(status==='loading')
               style={{width:'44px',height:'44px',borderRadius:'50%',background:showCommentPanel?'rgba(201,123,90,0.85)':'rgba(0,0,0,0.55)',backdropFilter:'blur(8px)',border:'1px solid rgba(255,255,255,0.2)',color:'#fff',fontSize:'18px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
               💬
             </button>
+            {/* Σύνδεση — ανοίγει picker */}
+            <button onClick={e=>{e.stopPropagation();loadAllFiles();setShowAppPicker(true);setPickerSection(null);}}
+              style={{width:'44px',height:'44px',borderRadius:'50%',background:linkedApp?'rgba(201,123,90,0.85)':'rgba(0,0,0,0.55)',backdropFilter:'blur(8px)',border:'1px solid rgba(255,255,255,0.2)',color:'#fff',fontSize:'18px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
+              ⚙️
+            </button>
             {/* Εναλλαγή */}
             {linkedApp&&(
               <button onClick={e=>{e.stopPropagation();setMobileTab(t=>t==='pdf'?'app':'pdf');}}
