@@ -195,7 +195,7 @@ export default function Home() {
 
   const loadTools = async()=>{ try{ const r=await fetch('/api/tools'); const d=await r.json(); setTools(d.tools||[]); }catch(e){} };
   const loadMetadata = async()=>{ try{ const r=await fetch('/api/metadata'); const d=await r.json(); setMetadata(d.metadata||{}); }catch(e){} };
-  const loadAllFiles = async()=>{ try{ const results=await Promise.all(['keimena','biblia','diktya'].map(fid=>fetch('/api/files/'+fid).then(r=>r.json()))); setAllFiles(results.flatMap(r=>r.files||[])); }catch(e){} };
+  const loadAllFiles = async()=>{ try{ const fids=['keimena','biblia','diktya']; const results=await Promise.all(fids.map(fid=>fetch('/api/files/'+fid).then(r=>r.json()))); setAllFiles(results.flatMap((r,i)=>(r.files||[]).map(f=>({...f,folderId:fids[i]})))); }catch(e){} };
   const loadNetworks = async()=>{
     try{
       const r=await fetch('/api/networks');
@@ -1134,7 +1134,7 @@ if(status==='loading')
               title="PDF" allow="fullscreen"/>
           )}
           {mobileTab==='app'&&linkedApp&&(
-            <iframe src={linkedApp.isUrl?linkedApp.file:'/api/tool/'+(linkedApp.driveId||linkedApp.file)}
+            <iframe src={linkedApp.isUrl?linkedApp.file:linkedApp.isPdf?'/api/files/pdf/'+linkedApp.driveId:'/api/tool/'+(linkedApp.driveId||linkedApp.file)}
               style={{position:'absolute',inset:0,width:'100%',height:'100%',border:'none'}}
               title={linkedApp.name} allow="fullscreen"/>
           )}
@@ -1151,13 +1151,13 @@ if(status==='loading')
               // Φορτώνει το HTML της εφαρμογής με session και το στέλνει inline
               let appHtml = null;
               let appName = linkedApp?.name || null;
-              if (linkedApp && !linkedApp.isUrl) {
+              if (linkedApp && !linkedApp.isUrl && !linkedApp.isPdf) {
                 try {
                   const r = await fetch('/api/tool/'+(linkedApp.driveId||linkedApp.file));
                   if (r.ok) appHtml = await r.text();
                 } catch(e) {}
               }
-              const appSrc = linkedApp?.isUrl ? linkedApp.file : null;
+              const appSrc = linkedApp?.isUrl ? linkedApp.file : linkedApp?.isPdf ? 'https://drive.google.com/file/d/'+linkedApp.driveId+'/preview' : null;
 
               await fetch('/api/live',{
                 method:'POST',
@@ -1235,7 +1235,7 @@ if(status==='loading')
                 {!isMobile&&showLinkedApp&&linkedApp&&(
                   <button onClick={()=>{
                     const w=window.open('','_blank');
-                    const appSrc=linkedApp.isUrl?linkedApp.file:'/api/tool/'+(linkedApp.driveId||linkedApp.file);
+                    const appSrc=linkedApp.isUrl?linkedApp.file:linkedApp.isPdf?'/api/files/pdf/'+linkedApp.driveId:'/api/tool/'+(linkedApp.driveId||linkedApp.file);
                     const pdfSrc='/api/files/pdf/'+modalFile.id;
                     const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><style>
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -1321,7 +1321,7 @@ function az(d){if(d===0)az0=100;else az0=Math.min(Math.max(az0+d,50),200);applyZ
                   {/* App tab */}
                   {linkedApp&&mobileTab==='app'&&(
                     <div style={{flex:1,overflow:'auto'}}>
-                      <iframe src={linkedApp.isUrl?linkedApp.file:'/api/tool/'+(linkedApp.driveId||linkedApp.file)} style={{width:'100%',height:'100%',minHeight:'100vh',border:'none'}} title={linkedApp.name}/>
+                      <iframe src={linkedApp.isUrl?linkedApp.file:linkedApp.isPdf?'/api/files/pdf/'+linkedApp.driveId:'/api/tool/'+(linkedApp.driveId||linkedApp.file)} style={{width:'100%',height:'100%',minHeight:'100vh',border:'none'}} title={linkedApp.name}/>
                     </div>
                   )}
                 </div>
@@ -1355,7 +1355,7 @@ function az(d){if(d===0)az0=100;else az0=Math.min(Math.max(az0+d,50),200);applyZ
                   <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'5px 10px',background:PALETTE.mustard.bgSoft,borderBottom:'1px solid '+PALETTE.mustard.accent,flexShrink:0}}>
                     <div style={{display:'flex',alignItems:'center',gap:'6px'}}>
                       <span style={{fontSize:'12px',fontWeight:'600',color:PALETTE.mustard.deep}}>🔗 {linkedApp.name}</span>
-                      <button onClick={()=>window.open(linkedApp.isUrl?linkedApp.file:'/api/tool/'+(linkedApp.driveId||linkedApp.file),'_blank')} style={{...S.iconBtn,width:'22px',height:'22px',fontSize:'11px'}} title="Νέα καρτέλα">↗</button>
+                      <button onClick={()=>window.open(linkedApp.isUrl?linkedApp.file:linkedApp.isPdf?'/api/files/pdf/'+linkedApp.driveId:'/api/tool/'+(linkedApp.driveId||linkedApp.file),'_blank')} style={{...S.iconBtn,width:'22px',height:'22px',fontSize:'11px'}} title="Νέα καρτέλα">↗</button>
                     </div>
                     <div style={{display:'flex',gap:'4px',alignItems:'center'}}>
                       <button onClick={appZoomOut} style={{...S.zoomBtn,width:'24px',height:'24px',fontSize:'13px'}}>−</button>
@@ -1477,6 +1477,28 @@ function az(d){if(d===0)az0=100;else az0=Math.min(Math.max(az0+d,50),200);applyZ
                     </button>
                   ))}
                 </div>
+              </div>
+
+              {/* Κείμενα · Βιβλία · Δίκτυα — σύνδεση με PDF */}
+              <div style={{marginBottom:'20px'}}>
+                <div style={{fontSize:'11px',fontWeight:'700',color:'#888',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:'8px'}}>Κείμενα · Βιβλία · Δίκτυα</div>
+                {['keimena','biblia','diktya'].map(fid=>{
+                  const folderFiles=allFiles.filter(f=>f.parents?.includes(FOLDERS[fid]?.id)||f.folderId===fid).filter(f=>f.id!==currentFile?.id);
+                  if(folderFiles.length===0) return null;
+                  return <div key={fid} style={{marginBottom:'12px'}}>
+                    <div style={{fontSize:'11px',color:'#aeaeb8',fontWeight:'600',marginBottom:'6px',paddingLeft:'4px'}}>{FOLDERS[fid]?.name||fid}</div>
+                    {folderFiles.map(f=>(
+                      <div key={f.id} className="picker-h" style={{display:'flex',alignItems:'center',gap:'12px',padding:'10px 12px',borderRadius:'12px',cursor:'pointer',marginBottom:'4px'}} onClick={()=>linkAppToFile({file:f.id,name:f.title,driveId:f.id,isPdf:true})}>
+                        <div style={{width:'36px',height:'36px',borderRadius:'10px',background:PALETTE.cream.bg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                          <span style={{fontSize:'18px'}}>📄</span>
+                        </div>
+                        <div style={{flex:1}}><div style={{fontSize:'13px',fontWeight:'500',color:'#1a1a1a'}}>{f.title}</div></div>
+                        <span style={{fontSize:'12px',color:PALETTE.mustard.deep}}>+ Σύνδεση</span>
+                      </div>
+                    ))}
+                  </div>;
+                })}
+                {allFiles.filter(f=>f.id!==currentFile?.id).length===0&&<div style={{textAlign:'center',padding:'20px',color:'#aeaeb8',fontSize:'13px'}}>Δεν υπάρχουν κείμενα</div>}
               </div>
 
               {/* Εφαρμογές ΛΕΒΙΑΘΑΝ */}
