@@ -905,7 +905,7 @@ if(status==='loading')
               {/* Πεδίο αναζήτησης */}
               <div style={{padding:'0 16px',marginBottom:'16px'}}>
                 <input type="text" placeholder="Γράψε ετικέτα και πάτα Enter..." value={tagSearchInput} onChange={e=>setTagSearchInput(e.target.value)}
-                  onKeyDown={e=>{if(e.key==='Enter'&&tagSearchInput.trim()){const tag=tagSearchInput.trim().toLowerCase();if(!activeSearchTags.includes(tag)){setActiveSearchTags(prev=>[...prev,tag]);}setTagSearchInput('');}}}
+                  onKeyDown={e=>{if(e.key==='Enter'&&tagSearchInput.trim()){const val=tagSearchInput.trim().toLowerCase();const match=allTagsGlobal().find(t=>t.toLowerCase()===val);if(match&&!activeSearchTags.includes(match)){setActiveSearchTags(prev=>[...prev,match]);setTagSearchInput('');}}}}
                   style={{width:'100%',padding:'14px 18px',border:'2px solid '+PALETTE.mustard.accent,borderRadius:'14px',fontSize:'15px',color:'#1a1a1a',background:'#fff',outline:'none'}}
                   onFocus={e=>e.target.style.borderColor=PALETTE.mustard.deep}
                   onBlur={e=>e.target.style.borderColor=PALETTE.mustard.accent}/>
@@ -959,7 +959,7 @@ if(status==='loading')
                             </div>
                             <div style={S.recentInfo}>
                               <div style={S.recentTitle}>{file.title.length>13?file.title.slice(0,13)+'…':file.title}</div>
-
+                              {!isMobile&&tags.length>0&&<div style={{display:'flex',flexWrap:'wrap',gap:'3px',marginTop:'3px'}}>{tags.map(t=>{const c=tagColor(t);return <span key={t} style={{...S.tagChip,background:activeSearchTags.includes(t)?c.text:c.bg,color:activeSearchTags.includes(t)?'#fff':c.text,fontSize:'10px',padding:'1px 7px'}}>#{t}</span>;})}</div>}
                             </div>
                             <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
                               <div className="qr-btn"><QrButton resourceType="pdf" resourceId={file.id} resourceName={file.name} title={file.title.length>13?file.title.slice(0,13)+'…':file.title} color={p.deep} onShowQr={setQrPopup}/></div>
