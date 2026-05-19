@@ -615,7 +615,7 @@ if(status==='loading')
                       <div key={file.id} className="ri-h" style={S.recentItem} onClick={()=>openFile(file)}>
                         <span style={{fontSize:"16px",flexShrink:0}}>📄</span>
                         <div style={S.recentInfo}>
-                          <div style={S.recentTitle}>{file.title.slice(0,13)}</div>
+                          <div style={S.recentTitle}>{file.title.length>13?file.title.slice(0,13)+'…':file.title}</div>
                         </div>
                         <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
                           <button onClick={e=>{e.stopPropagation();window.open('/api/files/pdf/'+file.id,'_blank');}} style={S.printBtn} title="Εκτύπωση"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
@@ -692,10 +692,11 @@ if(status==='loading')
                         onClick={()=>openFile(file)}>
                         <span style={{fontSize:'16px',flexShrink:0}}>📄</span>
                         <div style={S.recentInfo}>
-                          <div style={S.recentTitle}>{file.title.slice(0,13)}</div>
+                          <div style={S.recentTitle}>{file.title.length>13?file.title.slice(0,13)+'…':file.title}</div>
                         </div>
                         <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
-                          <div className="qr-btn"><QrButton resourceType="pdf" resourceId={file.id} resourceName={file.name} title={file.title.slice(0,13)} color={p.deep} onShowQr={setQrPopup}/></div>
+                          <div className="qr-btn"><QrButton resourceType="pdf" resourceId={file.id} resourceName={file.name} title={file.title.length>13?file.title.slice(0,13)+'…':file.title} color={p.deep} onShowQr={setQrPopup}/></div>
+                          <button onClick={e=>{e.stopPropagation();toggleFavorite(file);}} style={{width:'28px',height:'28px',borderRadius:'8px',background:'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:favorites.some(f=>f.id===file.id)?'#e8c96a':'#888',fontSize:'16px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title="Αγαπημένα">{favorites.some(f=>f.id===file.id)?'★':'☆'}</button>
                           <button onClick={e=>{e.stopPropagation();publishItem(isDiktya&&metadata[file.id]?.linkedApp?'pair':'pdf',file.id,file.title,metadata[file.id]?.linkedApp||null,metadata[file.id]?.linkedAppTitle||null);}} className="action-btn" style={{width:'28px',height:'28px',borderRadius:'8px',background:'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:p.deep||'#888',fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title="Δημοσίευση στους μαθητές">📤</button>
                           <button onClick={e=>{e.stopPropagation();window.open('/api/files/pdf/'+file.id,'_blank');}} className="action-btn" style={{width:'28px',height:'28px',borderRadius:'8px',background:'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:p.deep||'#888',fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title="Εκτύπωση"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
                         </div>
@@ -763,7 +764,7 @@ if(status==='loading')
                         return (
                           <div key={file.id} style={{display:'flex',alignItems:'center',gap:'6px',padding:'8px 10px',borderRadius:'10px',background:already?PALETTE.mustard.bgSoft:'#fff',border:'1px solid '+(already?PALETTE.mustard.accent:'#ebebeb')}}>
                             <div style={{flex:1,minWidth:0}}>
-                              <div style={{fontSize:'12px',fontWeight:'600',color:'#1a1a1a',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',maxWidth:'55vw'}}>{file.title.slice(0,13)}</div>
+                              <div style={{fontSize:'12px',fontWeight:'600',color:'#1a1a1a',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',maxWidth:'55vw'}}>{file.title.length>13?file.title.slice(0,13)+'…':file.title}</div>
                             </div>
                             <button onClick={()=>openFile(file)} style={{background:'#f4f4f4',border:'1px solid #e0e0e0',width:'24px',height:'24px',borderRadius:'6px',fontSize:'12px',cursor:'pointer',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center'}}>👁</button>
                             {already
@@ -854,10 +855,10 @@ if(status==='loading')
                       <div key={file.id} className="ri-h" style={S.recentItem} onClick={()=>openFile(file)}>
                         <span style={{fontSize:'16px',flexShrink:0}}>📄</span>
                         <div style={S.recentInfo}>
-                          <div style={S.recentTitle}>{file.title.slice(0,13)}</div>
+                          <div style={S.recentTitle}>{file.title.length>13?file.title.slice(0,13)+'…':file.title}</div>
                         </div>
                         <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
-                          <div className="qr-btn"><QrButton resourceType="pdf" resourceId={file.id} resourceName={file.name} title={file.title.slice(0,13)} color={p.deep} onShowQr={setQrPopup}/></div>
+                          <div className="qr-btn"><QrButton resourceType="pdf" resourceId={file.id} resourceName={file.name} title={file.title.length>13?file.title.slice(0,13)+'…':file.title} color={p.deep} onShowQr={setQrPopup}/></div>
                           <button onClick={e=>{e.stopPropagation();publishItem('pdf',file.id,file.title,null,null);}} className="action-btn" style={{width:'28px',height:'28px',borderRadius:'8px',background:'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:p.deep||'#888',fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title="Δημοσίευση στους μαθητές">📤</button>
                           <button onClick={e=>{e.stopPropagation();window.open('/api/files/pdf/'+file.id,'_blank');}} className="action-btn" style={{width:'28px',height:'28px',borderRadius:'8px',background:'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:p.deep||'#888',fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title="Εκτύπωση"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
                         </div>
@@ -882,10 +883,10 @@ if(status==='loading')
                           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={p.deep} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                         </div>
                         <div style={S.recentInfo}>
-                          <div style={S.recentTitle}>{file.title.slice(0,13)}</div>
+                          <div style={S.recentTitle}>{file.title.length>13?file.title.slice(0,13)+'…':file.title}</div>
                         </div>
                         <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
-                          <div className="qr-btn"><QrButton resourceType="pdf" resourceId={file.id} resourceName={file.name} title={file.title.slice(0,13)} color={p.deep} onShowQr={setQrPopup}/></div>
+                          <div className="qr-btn"><QrButton resourceType="pdf" resourceId={file.id} resourceName={file.name} title={file.title.length>13?file.title.slice(0,13)+'…':file.title} color={p.deep} onShowQr={setQrPopup}/></div>
                           <button onClick={e=>{e.stopPropagation();window.open('/api/files/pdf/'+file.id,'_blank');}} className="action-btn" style={{width:'28px',height:'28px',borderRadius:'8px',background:'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:p.deep||'#888',fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title="Εκτύπωση"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
                           <button onClick={e=>{e.stopPropagation();publishItem('pdf',file.id,file.title,null,null);}} className="action-btn" style={{width:'28px',height:'28px',borderRadius:'8px',background:'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:p.deep||'#888',fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title="Δημοσίευση στους μαθητές">📤</button>
                         </div>
@@ -903,7 +904,8 @@ if(status==='loading')
               
               {/* Πεδίο αναζήτησης */}
               <div style={{padding:'0 16px',marginBottom:'16px'}}>
-                <input type="search" placeholder="Αναζήτηση τίτλου ή ετικέτας..." value={tagSearchInput} onChange={e=>setTagSearchInput(e.target.value)}
+                <input type="text" placeholder="Γράψε ετικέτα και πάτα Enter..." value={tagSearchInput} onChange={e=>setTagSearchInput(e.target.value)}
+                  onKeyDown={e=>{if(e.key==='Enter'&&tagSearchInput.trim()){const tag=tagSearchInput.trim().toLowerCase();if(!activeSearchTags.includes(tag)){setActiveSearchTags(prev=>[...prev,tag]);}setTagSearchInput('');}}}
                   style={{width:'100%',padding:'14px 18px',border:'2px solid '+PALETTE.mustard.accent,borderRadius:'14px',fontSize:'15px',color:'#1a1a1a',background:'#fff',outline:'none'}}
                   onFocus={e=>e.target.style.borderColor=PALETTE.mustard.deep}
                   onBlur={e=>e.target.style.borderColor=PALETTE.mustard.accent}/>
@@ -956,13 +958,11 @@ if(status==='loading')
                               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={p.deep} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                             </div>
                             <div style={S.recentInfo}>
-                              <div style={S.recentTitle}>{file.title.slice(0,13)}</div>
-                              <div style={{display:'flex',flexWrap:'wrap',gap:'3px',marginTop:'3px'}}>
-                                {tags.map(t=>{const c=tagColor(t);return <span key={t} style={{...S.tagChip,background:activeSearchTags.includes(t)?c.text:c.bg,color:activeSearchTags.includes(t)?'#fff':c.text,fontSize:'10px',padding:'1px 7px'}}>#{t}</span>;})}
-                              </div>
+                              <div style={S.recentTitle}>{file.title.length>13?file.title.slice(0,13)+'…':file.title}</div>
+
                             </div>
                             <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
-                              <div className="qr-btn"><QrButton resourceType="pdf" resourceId={file.id} resourceName={file.name} title={file.title.slice(0,13)} color={p.deep} onShowQr={setQrPopup}/></div>
+                              <div className="qr-btn"><QrButton resourceType="pdf" resourceId={file.id} resourceName={file.name} title={file.title.length>13?file.title.slice(0,13)+'…':file.title} color={p.deep} onShowQr={setQrPopup}/></div>
                               <button onClick={e=>{e.stopPropagation();window.open('/api/files/pdf/'+file.id,'_blank');}} className="action-btn" style={{width:'28px',height:'28px',borderRadius:'8px',background:'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:p.deep||'#888',fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title="Εκτύπωση"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
                               <button onClick={e=>{e.stopPropagation();publishItem('pdf',file.id,file.title,null,null);}} className="action-btn" style={{width:'28px',height:'28px',borderRadius:'8px',background:'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:p.deep||'#888',fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title="Δημοσίευση στους μαθητές">📤</button>
                             </div>
@@ -1014,7 +1014,7 @@ if(status==='loading')
                           <div style={{width:'24px',height:'24px',borderRadius:'7px',background:already?PALETTE.mustard.deep:'#e0e0e0',color:already?'#fff':'#aaa',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'14px',fontWeight:'700',flexShrink:0}}>
                             {already?'✓':'+'}
                           </div>
-                          <div style={{flex:1,fontSize:'13px',fontWeight:already?'600':'400',color:'#1a1a1a',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{file.title.slice(0,13)}</div>
+                          <div style={{flex:1,fontSize:'13px',fontWeight:already?'600':'400',color:'#1a1a1a',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{file.title.length>13?file.title.slice(0,13)+'…':file.title}</div>
                         </div>
                       );
                     })}
@@ -1511,7 +1511,7 @@ function az(d){if(d===0)az0=100;else az0=Math.min(Math.max(az0+d,50),200);applyZ
               {allFiles.filter(f=>!pickerSearch||f.title.toLowerCase().includes(pickerSearch.toLowerCase())).map(file=>{ const already=currentNetwork?.items?.some(i=>i.fileId===file.id); return (
                 <div key={file.id} className="picker-h" style={{display:'flex',alignItems:'center',gap:'10px',padding:'10px 12px',borderRadius:'12px',marginBottom:'2px',opacity:already?0.45:1,cursor:already?'default':'pointer'}} onClick={()=>!already&&addFileToNetwork(file)}>
                   <div style={{fontSize:'20px',flexShrink:0}}>📄</div>
-                  <div style={{flex:1,minWidth:0}}><div style={{fontSize:'13px',fontWeight:'500',color:'#1a1a1a',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{file.title.slice(0,13)}</div><div style={{fontSize:'11px',color:'#aeaeb8'}}>{file.name}</div></div>
+                  <div style={{flex:1,minWidth:0}}><div style={{fontSize:'13px',fontWeight:'500',color:'#1a1a1a',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{file.title.length>13?file.title.slice(0,13)+'…':file.title}</div><div style={{fontSize:'11px',color:'#aeaeb8'}}>{file.name}</div></div>
                   {already?<span style={{fontSize:'11px',color:PALETTE.mustard.deep,fontWeight:500,flexShrink:0}}>✓ Έχει προστεθεί</span>:<span style={{fontSize:'12px',color:PALETTE.mustard.deep,flexShrink:0}}>+ Προσθήκη</span>}
                 </div>
               );})}
