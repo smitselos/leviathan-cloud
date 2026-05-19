@@ -1203,7 +1203,7 @@ if(status==='loading')
           </div>
 
           {/* Bottom sheet σχολίων */}
-          {showCommentPanel&&((){
+          {showCommentPanel&&(()=>{
             const viewingId = mobileTab==='app'&&linkedApp?.isPdf ? linkedApp.driveId : currentFile.id;
             const viewingTitle = mobileTab==='app'&&linkedApp?.isPdf ? linkedApp.name : currentFile.title;
             return (
