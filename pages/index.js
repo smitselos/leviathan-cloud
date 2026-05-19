@@ -143,6 +143,7 @@ export default function Home() {
   const [linkedApp, setLinkedApp]         = useState(null);
   const [showLinkedApp, setShowLinkedApp] = useState(false);
   const [showAppPicker, setShowAppPicker] = useState(false);
+  const [pickerSection, setPickerSection] = useState(null);
 
   // Network builder state
   const [netBuilderActive, setNetBuilderActive]   = useState(false);
@@ -1447,10 +1448,10 @@ function az(d){if(d===0)az0=100;else az0=Math.min(Math.max(az0+d,50),200);applyZ
       {showAppPicker&&(
         <div style={S.modal} onClick={()=>setShowAppPicker(false)}>
           <div style={{...S.modalBox,maxWidth:'560px',width:'90vw',height:'70vh',borderRadius:'16px'}} onClick={e=>e.stopPropagation()}>
-            <div style={S.modalHead}><h2 style={S.modalTitle}>Σύνδεση με εφαρμογή ή σελίδα</h2><button onClick={()=>setShowAppPicker(false)} style={S.closeBtn}>✕</button></div>
+            <div style={S.modalHead}><h2 style={S.modalTitle}>Σύνδεση</h2><button onClick={()=>{setShowAppPicker(false);setPickerSection(null);}} style={S.closeBtn}>✕</button></div>
             <div style={{flex:1,overflowY:'auto',padding:'14px'}}>
 
-              {/* Custom URL */}
+              {/* Custom URL — πάντα ορατό */}
               <div style={{marginBottom:'20px'}}>
                 <div style={{fontSize:'11px',fontWeight:'700',color:'#888',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:'8px'}}>Διεύθυνση URL</div>
                 <div style={{display:'flex',gap:'8px'}}>
@@ -1459,65 +1460,102 @@ function az(d){if(d===0)az0=100;else az0=Math.min(Math.max(az0+d,50),200);applyZ
                 </div>
               </div>
 
-              {/* Γρήγορες επιλογές */}
-              <div style={{marginBottom:'20px'}}>
-                <div style={{fontSize:'11px',fontWeight:'700',color:'#888',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:'10px'}}>Γρήγορες επιλογές</div>
-                <div style={{display:'flex',flexWrap:'wrap',gap:'8px'}}>
-                  {[
-                    {name:'YouTube',icon:'🎬',url:'https://www.youtube.com'},
-                    {name:'Wikipedia',icon:'📖',url:'https://el.wikipedia.org'},
-                    {name:'ΕΡΤ',icon:'📺',url:'https://www.ert.gr'},
-                    {name:'Ψηφ. Σχολή',icon:'🏫',url:'https://www.digitalschool.gr'},
-                    {name:'Καθημερινή',icon:'🗞️',url:'https://www.kathimerini.gr'},
-                    {name:'ΒΗΜΑ',icon:'📰',url:'https://www.tovima.gr'},
-                  ].map(q=>(
-                    <button key={q.name} onClick={()=>linkAppToFile({file:q.url,name:q.name,driveId:null,isUrl:true})}
-                      style={{display:'flex',alignItems:'center',gap:'6px',padding:'8px 14px',borderRadius:'10px',border:'1px solid #e0e0e0',background:'#fafafa',cursor:'pointer',fontSize:'13px',fontWeight:'500'}}>
-                      <span>{q.icon}</span>{q.name}
-                    </button>
-                  ))}
-                </div>
+              {/* Γρήγορες επιλογές — πάντα ορατές */}
+              <div style={{display:'flex',flexWrap:'wrap',gap:'8px',marginBottom:'20px'}}>
+                {[
+                  {name:'YouTube',icon:'🎬',url:'https://www.youtube.com'},
+                  {name:'Wikipedia',icon:'📖',url:'https://el.wikipedia.org'},
+                  {name:'ΕΡΤ',icon:'📺',url:'https://www.ert.gr'},
+                  {name:'Ψηφ. Σχολή',icon:'🏫',url:'https://www.digitalschool.gr'},
+                  {name:'Καθημερινή',icon:'🗞️',url:'https://www.kathimerini.gr'},
+                  {name:'ΒΗΜΑ',icon:'📰',url:'https://www.tovima.gr'},
+                ].map(q=>(
+                  <button key={q.name} onClick={()=>linkAppToFile({file:q.url,name:q.name,driveId:null,isUrl:true})}
+                    style={{display:'flex',alignItems:'center',gap:'6px',padding:'8px 14px',borderRadius:'10px',border:'1px solid #e0e0e0',background:'#fafafa',cursor:'pointer',fontSize:'13px',fontWeight:'500'}}>
+                    <span>{q.icon}</span>{q.name}
+                  </button>
+                ))}
               </div>
 
-              {/* Κείμενα · Βιβλία · Δίκτυα — σύνδεση με PDF */}
-              <div style={{marginBottom:'20px'}}>
-                <div style={{fontSize:'11px',fontWeight:'700',color:'#888',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:'8px'}}>Κείμενα · Βιβλία · Δίκτυα</div>
-                {['keimena','biblia','diktya'].map(fid=>{
-                  const folderFiles=allFiles.filter(f=>f.parents?.includes(FOLDERS[fid]?.id)||f.folderId===fid).filter(f=>f.id!==currentFile?.id);
-                  if(folderFiles.length===0) return null;
-                  return <div key={fid} style={{marginBottom:'12px'}}>
-                    <div style={{fontSize:'11px',color:'#aeaeb8',fontWeight:'600',marginBottom:'6px',paddingLeft:'4px'}}>{FOLDERS[fid]?.name||fid}</div>
-                    {folderFiles.map(f=>(
-                      <div key={f.id} className="picker-h" style={{display:'flex',alignItems:'center',gap:'12px',padding:'10px 12px',borderRadius:'12px',cursor:'pointer',marginBottom:'4px'}} onClick={()=>linkAppToFile({file:f.id,name:f.title,driveId:f.id,isPdf:true})}>
-                        <div style={{width:'36px',height:'36px',borderRadius:'10px',background:PALETTE.cream.bg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                          <span style={{fontSize:'18px'}}>📄</span>
-                        </div>
-                        <div style={{flex:1}}><div style={{fontSize:'13px',fontWeight:'500',color:'#1a1a1a'}}>{f.title}</div></div>
-                        <span style={{fontSize:'12px',color:PALETTE.mustard.deep}}>+ Σύνδεση</span>
-                      </div>
-                    ))}
-                  </div>;
-                })}
-                {allFiles.filter(f=>f.id!==currentFile?.id).length===0&&<div style={{textAlign:'center',padding:'20px',color:'#aeaeb8',fontSize:'13px'}}>Δεν υπάρχουν κείμενα</div>}
+              {/* Accordion κουμπιά */}
+              <div style={{display:'flex',flexWrap:'wrap',gap:'8px',marginBottom:'16px'}}>
+                {[
+                  {key:'keimena',label:'Κείμενα',icon:'📝',color:PALETTE.cream},
+                  {key:'biblia',label:'Βιβλία',icon:'📚',color:PALETTE.peach},
+                  {key:'diktya',label:'Δίκτυα',icon:'🔗',color:PALETTE.mustard},
+                  {key:'tools',label:'Εφαρμογές',icon:'🔧',color:PALETTE.ochre||PALETTE.peach},
+                ].map(s=>(
+                  <button key={s.key} onClick={()=>setPickerSection(pickerSection===s.key?null:s.key)}
+                    style={{display:'flex',alignItems:'center',gap:'8px',padding:'12px 18px',borderRadius:'12px',
+                      border:'2px solid '+(pickerSection===s.key?s.color.deep:'#e0e0e0'),
+                      background:pickerSection===s.key?s.color.bg:'#fafafa',
+                      cursor:'pointer',fontSize:'14px',fontWeight:'600',
+                      color:pickerSection===s.key?s.color.deep:'#555',transition:'all 0.15s'}}>
+                    <span style={{fontSize:'18px'}}>{s.icon}</span>{s.label}
+                    <span style={{fontSize:'11px',marginLeft:'2px'}}>{pickerSection===s.key?'▾':'▸'}</span>
+                  </button>
+                ))}
               </div>
 
-              {/* Εφαρμογές ΛΕΒΙΑΘΑΝ */}
-              <div>
-                <div style={{fontSize:'11px',fontWeight:'700',color:'#888',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:'8px'}}>Εφαρμογές ΛΕΒΙΑΘΑΝ</div>
-                {tools.length===0
-                  ?<div style={{textAlign:'center',padding:'20px',color:'#aeaeb8',fontSize:'13px'}}>Δεν υπάρχουν εφαρμογές</div>
-                  :tools.map(tool=>(
-                    <div key={tool.file} className="picker-h" style={{display:'flex',alignItems:'center',gap:'12px',padding:'10px 12px',borderRadius:'12px',cursor:'pointer',marginBottom:'4px'}} onClick={()=>linkAppToFile(tool)}>
-                      <div style={{width:'36px',height:'36px',borderRadius:'10px',background:PALETTE.peach.bg,overflow:'hidden',flexShrink:0}}>
-                        <img src={'/api/thumbnail/'+(tool.driveId||tool.file)} alt={tool.name} style={{width:'100%',height:'100%',objectFit:'cover'}} onError={e=>{e.target.style.display='none';e.target.parentNode.innerHTML='<span style="font-size:18px;display:flex;align-items:center;justify-content:center;width:100%;height:100%">'+(tool.icon||'🔧')+'</span>';}}/>
-
-                      </div>
-                      <div style={{flex:1}}><div style={{fontSize:'13px',fontWeight:'500',color:'#1a1a1a'}}>{tool.name}</div>{tool.category&&<div style={{fontSize:'11px',color:'#aeaeb8'}}>{tool.category}</div>}</div>
+              {/* Κείμενα */}
+              {pickerSection==='keimena'&&(
+                <div style={{marginBottom:'12px'}}>
+                  {allFiles.filter(f=>f.folderId==='keimena'&&f.id!==currentFile?.id).map(f=>(
+                    <div key={f.id} className="picker-h" style={{display:'flex',alignItems:'center',gap:'12px',padding:'10px 12px',borderRadius:'12px',cursor:'pointer',marginBottom:'4px'}} onClick={()=>linkAppToFile({file:f.id,name:f.title,driveId:f.id,isPdf:true})}>
+                      <span style={{fontSize:'18px'}}>📄</span>
+                      <div style={{flex:1,fontSize:'13px',fontWeight:'500',color:'#1a1a1a'}}>{f.title}</div>
                       <span style={{fontSize:'12px',color:PALETTE.mustard.deep}}>+ Σύνδεση</span>
                     </div>
-                  ))
-                }
-              </div>
+                  ))}
+                  {allFiles.filter(f=>f.folderId==='keimena'&&f.id!==currentFile?.id).length===0&&<div style={{padding:'16px',color:'#aeaeb8',fontSize:'13px',textAlign:'center'}}>Κανένα κείμενο</div>}
+                </div>
+              )}
+
+              {/* Βιβλία */}
+              {pickerSection==='biblia'&&(
+                <div style={{marginBottom:'12px'}}>
+                  {allFiles.filter(f=>f.folderId==='biblia'&&f.id!==currentFile?.id).map(f=>(
+                    <div key={f.id} className="picker-h" style={{display:'flex',alignItems:'center',gap:'12px',padding:'10px 12px',borderRadius:'12px',cursor:'pointer',marginBottom:'4px'}} onClick={()=>linkAppToFile({file:f.id,name:f.title,driveId:f.id,isPdf:true})}>
+                      <span style={{fontSize:'18px'}}>📄</span>
+                      <div style={{flex:1,fontSize:'13px',fontWeight:'500',color:'#1a1a1a'}}>{f.title}</div>
+                      <span style={{fontSize:'12px',color:PALETTE.mustard.deep}}>+ Σύνδεση</span>
+                    </div>
+                  ))}
+                  {allFiles.filter(f=>f.folderId==='biblia'&&f.id!==currentFile?.id).length===0&&<div style={{padding:'16px',color:'#aeaeb8',fontSize:'13px',textAlign:'center'}}>Κανένα βιβλίο</div>}
+                </div>
+              )}
+
+              {/* Δίκτυα */}
+              {pickerSection==='diktya'&&(
+                <div style={{marginBottom:'12px'}}>
+                  {allFiles.filter(f=>f.folderId==='diktya'&&f.id!==currentFile?.id).map(f=>(
+                    <div key={f.id} className="picker-h" style={{display:'flex',alignItems:'center',gap:'12px',padding:'10px 12px',borderRadius:'12px',cursor:'pointer',marginBottom:'4px'}} onClick={()=>linkAppToFile({file:f.id,name:f.title,driveId:f.id,isPdf:true})}>
+                      <span style={{fontSize:'18px'}}>📄</span>
+                      <div style={{flex:1,fontSize:'13px',fontWeight:'500',color:'#1a1a1a'}}>{f.title}</div>
+                      <span style={{fontSize:'12px',color:PALETTE.mustard.deep}}>+ Σύνδεση</span>
+                    </div>
+                  ))}
+                  {allFiles.filter(f=>f.folderId==='diktya'&&f.id!==currentFile?.id).length===0&&<div style={{padding:'16px',color:'#aeaeb8',fontSize:'13px',textAlign:'center'}}>Κανένα δίκτυο</div>}
+                </div>
+              )}
+
+              {/* Εφαρμογές */}
+              {pickerSection==='tools'&&(
+                <div style={{marginBottom:'12px'}}>
+                  {tools.length===0
+                    ?<div style={{textAlign:'center',padding:'20px',color:'#aeaeb8',fontSize:'13px'}}>Δεν υπάρχουν εφαρμογές</div>
+                    :tools.map(tool=>(
+                      <div key={tool.file} className="picker-h" style={{display:'flex',alignItems:'center',gap:'12px',padding:'10px 12px',borderRadius:'12px',cursor:'pointer',marginBottom:'4px'}} onClick={()=>linkAppToFile(tool)}>
+                        <div style={{width:'36px',height:'36px',borderRadius:'10px',background:PALETTE.peach.bg,overflow:'hidden',flexShrink:0}}>
+                          <img src={'/api/thumbnail/'+(tool.driveId||tool.file)} alt={tool.name} style={{width:'100%',height:'100%',objectFit:'cover'}} onError={e=>{e.target.style.display='none';e.target.parentNode.innerHTML='<span style="font-size:18px;display:flex;align-items:center;justify-content:center;width:100%;height:100%">'+(tool.icon||'🔧')+'</span>';}}/>
+                        </div>
+                        <div style={{flex:1}}><div style={{fontSize:'13px',fontWeight:'500',color:'#1a1a1a'}}>{tool.name}</div>{tool.category&&<div style={{fontSize:'11px',color:'#aeaeb8'}}>{tool.category}</div>}</div>
+                        <span style={{fontSize:'12px',color:PALETTE.mustard.deep}}>+ Σύνδεση</span>
+                      </div>
+                    ))
+                  }
+                </div>
+              )}
 
             </div>
           </div>
