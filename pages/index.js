@@ -1203,13 +1203,18 @@ if(status==='loading')
           </div>
 
           {/* Bottom sheet σχολίων */}
-          {showCommentPanel&&(
+          {showCommentPanel&&((){
+            const viewingId = mobileTab==='app'&&linkedApp?.isPdf ? linkedApp.driveId : currentFile.id;
+            const viewingTitle = mobileTab==='app'&&linkedApp?.isPdf ? linkedApp.name : currentFile.title;
+            return (
             <div onClick={e=>e.stopPropagation()} style={{position:'absolute',bottom:0,left:0,right:0,background:'rgba(255,255,255,0.97)',backdropFilter:'blur(12px)',borderRadius:'20px 20px 0 0',padding:'20px',zIndex:11,maxHeight:'50vh',overflowY:'auto',boxShadow:'0 -4px 24px rgba(0,0,0,0.2)'}}>
               <div style={{width:'36px',height:'4px',background:'#e0e0e0',borderRadius:'2px',margin:'0 auto 16px'}}/>
-              <div style={{fontSize:'12px',fontWeight:'700',color:'#888',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:'10px'}}>Σημειώσεις</div>
-              <div style={{fontSize:'14px',color:'#1a1a1a',lineHeight:'1.65',whiteSpace:'pre-wrap'}}>{fileComment(currentFile.id)||<span style={{color:'#aaa',fontStyle:'italic'}}>Δεν υπάρχουν σημειώσεις για αυτό το αρχείο.</span>}</div>
+              <div style={{fontSize:'12px',fontWeight:'700',color:'#888',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:'4px'}}>Σημειώσεις</div>
+              <div style={{fontSize:'11px',color:'#aeaeb8',marginBottom:'10px'}}>{viewingTitle}</div>
+              <div style={{fontSize:'14px',color:'#1a1a1a',lineHeight:'1.65',whiteSpace:'pre-wrap'}}>{fileComment(viewingId)||<span style={{color:'#aaa',fontStyle:'italic'}}>Δεν υπάρχουν σημειώσεις για αυτό το αρχείο.</span>}</div>
             </div>
-          )}
+            );
+          })()}
 
         </div>
       )}
@@ -1451,8 +1456,8 @@ function az(d){if(d===0)az0=100;else az0=Math.min(Math.max(az0+d,50),200);applyZ
       {qrPopup&&<QrOverlay url={qrPopup.url} title={qrPopup.title} expiresAt={qrPopup.expiresAt} onClose={()=>setQrPopup(null)}/>}
 
       {showAppPicker&&(
-        <div style={S.modal} onClick={()=>setShowAppPicker(false)}>
-          <div style={{...S.modalBox,maxWidth:'560px',width:'90vw',height:'70vh',borderRadius:'16px'}} onClick={e=>e.stopPropagation()}>
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',display:'flex',alignItems:isMobile?'flex-end':'center',justifyContent:'center',zIndex:250,padding:isMobile?'0':'40px'}} onClick={()=>{setShowAppPicker(false);setPickerSection(null);}}>
+          <div style={{...S.modalBox,maxWidth:isMobile?'100%':'560px',width:isMobile?'100%':'90vw',height:isMobile?'85vh':'70vh',borderRadius:isMobile?'20px 20px 0 0':'16px'}} onClick={e=>e.stopPropagation()}>
             <div style={S.modalHead}><h2 style={S.modalTitle}>Σύνδεση</h2><button onClick={()=>{setShowAppPicker(false);setPickerSection(null);}} style={S.closeBtn}>✕</button></div>
             <div style={{flex:1,overflowY:'auto',padding:'14px'}}>
 
