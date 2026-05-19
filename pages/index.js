@@ -1372,7 +1372,7 @@ function az(d){if(d===0)az0=100;else az0=Math.min(Math.max(az0+d,50),200);applyZ
                       height:`${10000/appZoom}%`,
                       minHeight:'100%',
                     }}>
-                      <iframe src={linkedApp.isUrl ? linkedApp.file : '/api/tool/'+(linkedApp.driveId||linkedApp.file)} style={{width:'100%',height:'100%',minHeight:'80vh',border:'none'}} title={linkedApp.name}/>
+                      <iframe src={linkedApp.isUrl ? linkedApp.file : linkedApp.isPdf ? 'https://drive.google.com/file/d/'+linkedApp.driveId+'/preview' : '/api/tool/'+(linkedApp.driveId||linkedApp.file)} style={{width:'100%',height:'100%',minHeight:'80vh',border:'none'}} title={linkedApp.name}/>
                     </div>
                   </div>
                 </div>
