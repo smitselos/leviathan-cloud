@@ -237,6 +237,7 @@ export default function StudentPage() {
               <div style={S.modalHeader}>
                 <h2 style={S.modalTitle}>{modalFile.title}</h2>
                 <div style={{display:'flex',gap:'6px',alignItems:'center'}}>
+                  <button onClick={()=>{const w=window.open(contentUrl(modalFile,'main'),'_blank');w.onload=()=>setTimeout(()=>w.print(),500);}} style={S.iconBtn} title="Εκτύπωση">🖨️</button>
                   <button onClick={()=>window.open(contentUrl(modalFile,showApp?'app':'main'),'_blank')} style={S.iconBtn} title="Πλήρης οθόνη">↗</button>
                   {modalFile.linkedAppTitle && (
                     <button onClick={() => setShowApp(p => !p)}
@@ -272,6 +273,8 @@ export default function StudentPage() {
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 14px',background:'#fff',borderBottom:'1px solid #eee'}}>
               <div style={{fontSize:'14px',fontWeight:'600',color:'#1a1a1a',flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{modalFile.title}</div>
               <div style={{display:'flex',gap:'8px'}}>
+                <button onClick={()=>{const w=window.open(contentUrl(modalFile,'main'),'_blank');w.onload=()=>setTimeout(()=>w.print(),500);}}
+                  style={{width:'32px',height:'32px',borderRadius:'8px',background:'#f4f4f4',border:'none',fontSize:'16px',cursor:'pointer'}} title="Εκτύπωση">🖨️</button>
                 {modalFile.linkedAppTitle && (
                   <button onClick={() => setShowApp(p => !p)}
                     style={{padding:'6px 12px',borderRadius:'8px',border:'1px solid #ddd',background:showApp?PALETTE.mustard.bgSoft:'#f9f9f9',fontSize:'12px',fontWeight:'600',cursor:'pointer'}}>
