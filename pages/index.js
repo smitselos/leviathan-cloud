@@ -1135,7 +1135,7 @@ if(status==='loading')
               title="PDF" allow="fullscreen"/>
           )}
           {mobileTab==='app'&&linkedApp&&(
-            <iframe src={linkedApp.isUrl?linkedApp.file:linkedApp.isPdf?'/api/files/pdf/'+linkedApp.driveId:'/api/tool/'+(linkedApp.driveId||linkedApp.file)}
+            <iframe src={linkedApp.isUrl?linkedApp.file:linkedApp.isPdf?'https://drive.google.com/file/d/'+linkedApp.driveId+'/preview':'/api/tool/'+(linkedApp.driveId||linkedApp.file)}
               style={{position:'absolute',inset:0,width:'100%',height:'100%',border:'none'}}
               title={linkedApp.name} allow="fullscreen"/>
           )}
@@ -1236,7 +1236,7 @@ if(status==='loading')
                 {!isMobile&&showLinkedApp&&linkedApp&&(
                   <button onClick={()=>{
                     const w=window.open('','_blank');
-                    const appSrc=linkedApp.isUrl?linkedApp.file:linkedApp.isPdf?'/api/files/pdf/'+linkedApp.driveId:'/api/tool/'+(linkedApp.driveId||linkedApp.file);
+                    const appSrc=linkedApp.isUrl?linkedApp.file:linkedApp.isPdf?'https://drive.google.com/file/d/'+linkedApp.driveId+'/preview':'/api/tool/'+(linkedApp.driveId||linkedApp.file);
                     const pdfSrc='/api/files/pdf/'+modalFile.id;
                     const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><style>
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -1322,7 +1322,7 @@ function az(d){if(d===0)az0=100;else az0=Math.min(Math.max(az0+d,50),200);applyZ
                   {/* App tab */}
                   {linkedApp&&mobileTab==='app'&&(
                     <div style={{flex:1,overflow:'auto'}}>
-                      <iframe src={linkedApp.isUrl?linkedApp.file:linkedApp.isPdf?'/api/files/pdf/'+linkedApp.driveId:'/api/tool/'+(linkedApp.driveId||linkedApp.file)} style={{width:'100%',height:'100%',minHeight:'100vh',border:'none'}} title={linkedApp.name}/>
+                      <iframe src={linkedApp.isUrl?linkedApp.file:linkedApp.isPdf?'https://drive.google.com/file/d/'+linkedApp.driveId+'/preview':'/api/tool/'+(linkedApp.driveId||linkedApp.file)} style={{width:'100%',height:'100%',minHeight:'100vh',border:'none'}} title={linkedApp.name}/>
                     </div>
                   )}
                 </div>
@@ -1356,7 +1356,7 @@ function az(d){if(d===0)az0=100;else az0=Math.min(Math.max(az0+d,50),200);applyZ
                   <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'5px 10px',background:PALETTE.mustard.bgSoft,borderBottom:'1px solid '+PALETTE.mustard.accent,flexShrink:0}}>
                     <div style={{display:'flex',alignItems:'center',gap:'6px'}}>
                       <span style={{fontSize:'12px',fontWeight:'600',color:PALETTE.mustard.deep}}>🔗 {linkedApp.name}</span>
-                      <button onClick={()=>window.open(linkedApp.isUrl?linkedApp.file:linkedApp.isPdf?'/api/files/pdf/'+linkedApp.driveId:'/api/tool/'+(linkedApp.driveId||linkedApp.file),'_blank')} style={{...S.iconBtn,width:'22px',height:'22px',fontSize:'11px'}} title="Νέα καρτέλα">↗</button>
+                      <button onClick={()=>window.open(linkedApp.isUrl?linkedApp.file:linkedApp.isPdf?'https://drive.google.com/file/d/'+linkedApp.driveId+'/preview':'/api/tool/'+(linkedApp.driveId||linkedApp.file),'_blank')} style={{...S.iconBtn,width:'22px',height:'22px',fontSize:'11px'}} title="Νέα καρτέλα">↗</button>
                     </div>
                     <div style={{display:'flex',gap:'4px',alignItems:'center'}}>
                       <button onClick={appZoomOut} style={{...S.zoomBtn,width:'24px',height:'24px',fontSize:'13px'}}>−</button>
