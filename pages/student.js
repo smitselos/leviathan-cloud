@@ -237,7 +237,7 @@ export default function StudentPage() {
               <div style={S.modalHeader}>
                 <h2 style={S.modalTitle}>{modalFile.title}</h2>
                 <div style={{display:'flex',gap:'6px',alignItems:'center'}}>
-                  <button onClick={()=>{const w=window.open(contentUrl(modalFile,'main'),'_blank');w.onload=()=>setTimeout(()=>w.print(),500);}} style={S.iconBtn} title="Εκτύπωση">🖨️</button>
+                  <button onClick={()=>window.open(contentUrl(modalFile,'main'),'_blank')} style={S.iconBtn} title="Εκτύπωση">🖨️</button>
                   <button onClick={()=>window.open(contentUrl(modalFile,showApp?'app':'main'),'_blank')} style={S.iconBtn} title="Πλήρης οθόνη">↗</button>
                   {modalFile.linkedAppTitle && (
                     <button onClick={() => setShowApp(p => !p)}
