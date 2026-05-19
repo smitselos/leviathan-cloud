@@ -1207,7 +1207,7 @@ if(status==='loading')
             const viewingId = mobileTab==='app'&&linkedApp?.isPdf ? linkedApp.driveId : currentFile.id;
             const viewingTitle = mobileTab==='app'&&linkedApp?.isPdf ? linkedApp.name : currentFile.title;
             return (
-            <div onClick={e=>e.stopPropagation()} style={{position:'absolute',bottom:0,left:0,right:0,background:'rgba(255,255,255,0.97)',backdropFilter:'blur(12px)',borderRadius:'20px 20px 0 0',padding:'20px',zIndex:11,maxHeight:'50vh',overflowY:'auto',boxShadow:'0 -4px 24px rgba(0,0,0,0.2)'}}>
+            <div onClick={e=>e.stopPropagation()} style={{position:'absolute',bottom:0,left:0,right:0,background:'rgba(255,255,255,0.97)',backdropFilter:'blur(12px)',borderRadius:'20px 20px 0 0',padding:'20px',zIndex:11,maxHeight:'calc(100% - 70px)',overflowY:'auto',boxShadow:'0 -4px 24px rgba(0,0,0,0.2)'}}>
               <div style={{width:'36px',height:'4px',background:'#e0e0e0',borderRadius:'2px',margin:'0 auto 16px'}}/>
               <div style={{fontSize:'12px',fontWeight:'700',color:'#888',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:'4px'}}>Σημειώσεις</div>
               <div style={{fontSize:'11px',color:'#aeaeb8',marginBottom:'10px'}}>{viewingTitle}</div>
