@@ -250,7 +250,7 @@ export default function Home() {
       setCurrentTool(t); 
     } 
   };
-  const openAllTools=async()=>{ setActiveView('allTools'); setCurrentFolder(null); setCurrentFile(null); setCurrentToolCategory(null); setNetBuilderActive(false); await loadTools(); };
+  const openAllTools=async()=>{ setActiveView('allTools'); setCurrentFolder(null); setCurrentFile(null); setCurrentToolCategory(null); setNetBuilderActive(false); setExpandedCard(null); await loadTools(); };
   const openToolCategory=(c)=>{ setCurrentToolCategory(c); setActiveView('toolCategory'); setCurrentFolder(null); setCurrentFile(null); setToolsSearchQuery(''); };
 
   const goHome=()=>{
@@ -1231,6 +1231,74 @@ if(status==='loading')
           {activeView==='allTools'&&(
             <>
               <div style={S.pageHeader}><button onClick={goHome} style={S.backBtn}>← Πίσω</button><div><h1 style={S.pageTitle}>Εφαρμογές</h1><p style={S.pageSub}>{tools.length} εφαρμογές σε {Object.keys(toolCategories).length} κατηγορίες</p></div></div>
+
+              {/* ═══ MOBILE: Wallet stack for tool categories ═══ */}
+              {isMobile&&Object.keys(toolCategories).length>0?(
+                <div style={{position:'relative',marginBottom:'32px',paddingBottom:'8px'}}>
+                  {(()=>{
+                    const catItems=Object.entries(toolCategories).map(([cat,catTools],idx)=>{
+                      const tones=['peach','cream','mustard'];
+                      return {type:'toolCat',view:'tc_'+cat,cat,catTools,tone:tones[idx%tones.length]};
+                    });
+                    const expandedIdx=catItems.findIndex(i=>i.view===expandedCard);
+                    const hasExpanded=expandedIdx>=0;
+
+                    return catItems.map((item,idx)=>{
+                      const p=PALETTE[item.tone];
+                      const isExpanded=expandedCard===item.view;
+                      const isBefore=hasExpanded&&idx<expandedIdx;
+                      const isAfter=hasExpanded&&idx>expandedIdx;
+
+                      let mt=idx===0?0:-36;
+                      let ty=0;
+                      if(isExpanded){ mt=idx===0?0:16; ty=-8; }
+                      else if(isBefore){ mt=idx===0?0:-48; ty=-4; }
+                      else if(isAfter){ mt=-48; ty=40; }
+
+                      const cardClick=()=>{
+                        if(isExpanded){ setExpandedCard(null); openToolCategory(item.cat); }
+                        else { setExpandedCard(item.view); }
+                      };
+
+                      return (
+                        <div key={item.view} onClick={cardClick}
+                          style={{
+                            position:'relative',
+                            zIndex:isExpanded?50:(isBefore?idx:hasExpanded?idx:idx+1),
+                            marginTop:mt,
+                            borderRadius:'22px',
+                            padding:'22px 24px',
+                            minHeight:'120px',
+                            background:`linear-gradient(135deg, rgba(255,255,255,0.40) 0%, rgba(255,255,255,0.12) 45%, transparent 65%), ${p.bg}`,
+                            boxShadow:isExpanded
+                              ?'0 14px 44px rgba(0,0,0,0.20), 0 4px 12px rgba(0,0,0,0.12)'
+                              :hasExpanded&&!isExpanded
+                                ?'0 1px 4px rgba(0,0,0,0.06)'
+                                :'0 2px 8px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04)',
+                            cursor:'pointer',
+                            transition:'all 0.4s cubic-bezier(0.34,1.4,0.64,1)',
+                            transform:`translateY(${ty}px) scale(${isExpanded?1.03:hasExpanded?0.96:1})`,
+                            opacity:hasExpanded&&!isExpanded?0.65:1,
+                            display:'flex',flexDirection:'column',
+                          }}>
+                          <div style={{display:'flex',alignItems:'center',gap:'14px'}}>
+                            <div style={{...S.folderIcon,background:p.accent,color:p.deep,width:'42px',height:'42px',borderRadius:'12px'}}>
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                            </div>
+                            <div style={{flex:1}}>
+                              <h3 style={{...S.folderTitle,color:p.text,fontSize:'16px',marginBottom:'2px'}}>{item.cat}</h3>
+                              <p style={{fontSize:'12px',color:p.text,opacity:0.6,margin:0}}>{item.catTools.length} {item.catTools.length===1?'εφαρμογή':'εφαρμογές'}</p>
+                            </div>
+                            {isExpanded&&<span style={{fontSize:'13px',fontWeight:'600',color:p.deep,flexShrink:0}}>Άνοιγμα →</span>}
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+              ):(
+                /* ═══ DESKTOP: Grid for tool categories ═══ */
+                <>
               <div style={S.cardsGrid}>
                 {Object.entries(toolCategories).map(([cat,catTools],idx)=>{
                   const tones=['peach','cream','mustard'];
@@ -1251,6 +1319,8 @@ if(status==='loading')
                   );
                 })}
               </div>
+                </>
+              )}
               {Object.keys(toolCategories).length===0&&<div style={S.empty}>Δεν υπάρχουν εφαρμογές</div>}
             </>
           )}
