@@ -128,6 +128,7 @@ export default function Home() {
   const [isLandscape, setIsLandscape]           = useState(false);
   const [mobileTab, setMobileTab]               = useState('pdf');
   const [mobileFullscreen, setMobileFullscreen] = useState(false);
+  const [expandedCard, setExpandedCard]         = useState(null); // wallet-style expand
 
   // Tags + comments
   const [metadata, setMetadata]               = useState({});
@@ -161,6 +162,7 @@ export default function Home() {
   const [qrPopup, setQrPopup]                     = useState(null); // {url, title}
   const [activeSearchTags, setActiveSearchTags]     = useState([]);   // πολλαπλή επιλογή ετικετών
   const [tagSearchInput, setTagSearchInput]         = useState('');
+  const [openCounts, setOpenCounts]                 = useState({});   // {fileId: count} — δημοφιλή
 
   const zoomIn    = () => setModalZoom(z=>Math.min(z+10,200));
   const zoomOut   = () => setModalZoom(z=>Math.max(z-10,50));
@@ -173,6 +175,17 @@ export default function Home() {
 
   // Νέα αρχεία — ταξινόμηση κατά ημ. δημιουργίας (πιο πρόσφατα πρώτα)
   const newFiles = [...allFiles].sort((a,b)=>new Date(b.createdTime||0)-new Date(a.createdTime||0)).slice(0,10);
+
+  // Δημοφιλή αρχεία — ταξινόμηση κατά αριθμό ανοιγμάτων
+  const popularFiles = Object.entries(openCounts)
+    .filter(([,c])=>c>0)
+    .sort(([,a],[,b])=>b-a)
+    .slice(0,8)
+    .map(([id,count])=>{
+      const f=allFiles.find(af=>af.id===id)||recentFiles.find(rf=>rf.id===id);
+      return f?{...f,_count:count}:null;
+    })
+    .filter(Boolean);
 
   useEffect(()=>{ if(status==='unauthenticated') router.push('/login'); },[status,router]);
 
@@ -190,9 +203,11 @@ export default function Home() {
     const sf=localStorage.getItem('leviathan-favorites');
     const sr=localStorage.getItem('leviathan-recent');
     const sft=localStorage.getItem('leviathan-favorite-tools');
+    const soc=localStorage.getItem('leviathan-open-counts');
     if(sf) setFavorites(JSON.parse(sf));
     if(sr) setRecentFiles(JSON.parse(sr));
     if(sft) setFavoriteTools(JSON.parse(sft));
+    if(soc) setOpenCounts(JSON.parse(soc));
   },[]);
 
   useEffect(()=>{ if(session){ loadTools(); loadMetadata(); loadAllFiles(); loadNetworks(); } },[session]);
@@ -241,6 +256,7 @@ export default function Home() {
   const goHome=()=>{
     setActiveView('home'); setCurrentFolder(null); setCurrentFile(null); setCurrentTool(null);
     setCurrentToolCategory(null); setActiveTagFilter(null); setNetBuilderActive(false); setCurrentNetwork(null);
+    setExpandedCard(null);
   };
 
   const openFile=(file)=>{
@@ -253,8 +269,11 @@ export default function Home() {
       const saved=localStorage.getItem(`linked-app-${file.id}`);
       if(saved){ try{ setLinkedApp(JSON.parse(saved)); }catch(e){} }
     }
-    const updated=[file,...recentFiles.filter(f=>f.id!==file.id)].slice(0,5);
+    const updated=[file,...recentFiles.filter(f=>f.id!==file.id)].slice(0,8);
     setRecentFiles(updated); localStorage.setItem('leviathan-recent',JSON.stringify(updated));
+    // Δημοφιλή — αύξηση μετρητή ανοίγματος
+    const updatedCounts={...openCounts,[file.id]:(openCounts[file.id]||0)+1};
+    setOpenCounts(updatedCounts); localStorage.setItem('leviathan-open-counts',JSON.stringify(updatedCounts));
     // Σε mobile ανοίγει ως fullscreen view αντί για modal
     if(isMobile) { setActiveView('mobileViewer'); setMobileTab('pdf'); }
   };
@@ -453,6 +472,7 @@ if(status==='loading')
           .ri-h{display:flex;align-items:center;gap:6px;padding:12px 14px;overflow:hidden;}
           .recentTitle{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
           .qr-btn{display:none !important;}
+          .ch:hover{transform:none!important;box-shadow:none!important;}
         }
       `}</style>
 
@@ -562,73 +582,197 @@ if(status==='loading')
           {/* Home */}
           {activeView==='home'&&(
             <>
-              <div style={S.welcomeSec}><h1 style={S.welcomeTitle}>Γεια σου, {session.user?.email?.split('@')[0]}! 👋</h1><p style={S.welcomeSub}>Ας συνεχίσουμε από εκεί που σταματήσαμε</p></div>
+              <div style={S.welcomeSec}><h1 style={{...S.welcomeTitle,fontSize:isMobile?'22px':undefined}}>Γεια σου, {session.user?.email?.split('@')[0]}! 👋</h1><p style={S.welcomeSub}>Ας συνεχίσουμε από εκεί που σταματήσαμε</p></div>
 
-              {/* ── STATS CARDS — Energy Insights aesthetic ── */}
-              <div style={S.statsGrid}>
-                {statConfig.map(s=>{
-                  const p=PALETTE[s.tone];
-                  return (
-                    <div key={s.view} className="ch"
-                      style={{...S.statCard, background:p.bg, cursor:'pointer'}}
-                      onClick={()=>{setActiveView(s.view);if(s.view==='tagSearch'){loadAllFiles();setActiveSearchTags([]);setTagSearchInput('');}if(s.view==='newFiles'){loadAllFiles();}}}>                      <div style={S.statInner}>
-                        <div style={{flex:1}}>
-                          <div style={{...S.statLabel, color:p.text, opacity:0.75}}>{s.label}</div>
-                          <div style={{...S.statVal, color:p.text}}>
-                            {s.value}
-                            <span style={{...S.statUnit, color:p.text, opacity:0.6}}>{s.value===1?'αρχείο':'αρχεία'}</span>
-                          </div>
-                          <div style={{...S.statSub, color:p.text, opacity:0.55}}>{s.sub}</div>
+              {/* ═══ MOBILE: Wallet-style stacked cards ═══ */}
+              {isMobile?(
+                <div style={{position:'relative',marginBottom:'32px'}}>
+                  {/* Wallet stack — stats + folders */}
+                  {(()=>{
+                    const walletItems=[
+                      ...statConfig.map(s=>({type:'stat',...s})),
+                      ...Object.entries(FOLDERS).map(([id,f])=>({type:'folder',id,view:'folder_'+id,...f})),
+                    ];
+                    return walletItems.map((item,idx)=>{
+                      const p=PALETTE[item.tone];
+                      const isExpanded=expandedCard===item.view;
+                      const isOther=expandedCard&&expandedCard!==item.view;
+                      const cardClick=()=>{
+                        if(isExpanded){
+                          // second tap → navigate
+                          setExpandedCard(null);
+                          if(item.type==='stat'){
+                            setActiveView(item.view);
+                            if(item.view==='tagSearch'){loadAllFiles();setActiveSearchTags([]);setTagSearchInput('');}
+                            if(item.view==='newFiles'){loadAllFiles();}
+                          } else {
+                            openFolder(item.id);
+                          }
+                        } else {
+                          setExpandedCard(item.view);
+                        }
+                      };
+                      return (
+                        <div key={item.view}
+                          onClick={cardClick}
+                          style={{
+                            position:'relative',
+                            zIndex:isExpanded?50:idx+1,
+                            marginTop:idx===0?0:isExpanded?'12px':'-38px',
+                            marginBottom:isExpanded?'12px':'0',
+                            borderRadius:'22px',
+                            padding:item.type==='stat'?'20px 22px':'22px 24px',
+                            minHeight:item.type==='stat'?'120px':'140px',
+                            background:`linear-gradient(135deg, rgba(255,255,255,0.40) 0%, rgba(255,255,255,0.12) 45%, transparent 65%), ${p.bg}`,
+                            boxShadow:isExpanded
+                              ?'0 12px 40px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.10)'
+                              :'0 2px 8px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04)',
+                            cursor:'pointer',
+                            transition:'all 0.35s cubic-bezier(0.34,1.56,0.64,1)',
+                            transform:isExpanded?'scale(1.02)':isOther?'scale(0.97)':'scale(1)',
+                            opacity:isOther?0.7:1,
+                            display:'flex',
+                            flexDirection:'column',
+                          }}>
+                          {item.type==='stat'?(
+                            <div style={S.statInner}>
+                              <div style={{flex:1}}>
+                                <div style={{...S.statLabel,color:p.text,opacity:0.75}}>{item.label}</div>
+                                <div style={{...S.statVal,color:p.text,fontSize:'36px'}}>
+                                  {item.value}
+                                  <span style={{...S.statUnit,color:p.text,opacity:0.6}}>{item.value===1?'αρχείο':'αρχεία'}</span>
+                                </div>
+                                <div style={{...S.statSub,color:p.text,opacity:0.55}}>{item.sub}</div>
+                              </div>
+                              <div style={{...S.statIcon,background:p.accent,color:p.deep}}>{item.icon}</div>
+                            </div>
+                          ):(
+                            <>
+                              <div style={{display:'flex',alignItems:'center',gap:'14px',marginBottom:'10px'}}>
+                                <div style={{...S.folderIcon,background:p.accent,color:p.deep,width:'42px',height:'42px',borderRadius:'12px'}}>
+                                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                </div>
+                                <div style={{flex:1}}>
+                                  <h3 style={{...S.folderTitle,color:p.text,fontSize:'16px',marginBottom:'2px'}}>{item.name}</h3>
+                                  <p style={{fontSize:'12px',color:p.text,opacity:0.6,margin:0}}>{item.desc}</p>
+                                </div>
+                              </div>
+                              {isExpanded&&(
+                                <div style={{display:'flex',justifyContent:'flex-end',paddingTop:'8px',borderTop:`1px solid ${p.accent}`}}>
+                                  <span style={{fontSize:'13px',fontWeight:'600',color:p.deep}}>Άνοιγμα →</span>
+                                </div>
+                              )}
+                            </>
+                          )}
+                          {item.type==='stat'&&isExpanded&&(
+                            <div style={{textAlign:'right',marginTop:'8px'}}>
+                              <span style={{fontSize:'12px',fontWeight:'600',color:p.deep}}>Προβολή →</span>
+                            </div>
+                          )}
                         </div>
-                        <div style={{...S.statIcon, background:p.accent, color:p.deep}}>{s.icon}</div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              <section style={S.section}>
-                <h2 style={S.secTitle}>Φάκελοι</h2>
-                <div style={S.cardsGrid}>
-                  {Object.entries(FOLDERS).map(([id,f])=>{
-                    const p=PALETTE[f.tone];
-                    return (
-                      <div key={id} className="ch" style={{...S.folderCard, background:p.bg}} onClick={()=>openFolder(id)}>
-                        <div style={S.folderTop}>
-                          <div style={{...S.folderIcon, background:p.accent, color:p.deep}}>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                          </div>
-                        </div>
-                        <h3 style={{...S.folderTitle, color:p.text}}>{f.name}</h3>
-                        <p style={{...S.folderDesc, color:p.text, opacity:0.65}}>{f.desc}</p>
-                        <div style={{...S.folderFoot, borderTopColor:p.accent}}>
-                          <button style={{...S.linkBtn, color:p.deep}}>Προβολή →</button>
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    });
+                  })()}
                 </div>
-              </section>
-
-              {newFiles.length>0&&(
-                <section style={S.section}>
-                  <h2 style={S.secTitle}>Νέα Αρχεία</h2>
-                  <div style={S.recentList}>
-                    {newFiles.map(file=>(
-                      <div key={file.id} className="ri-h" style={S.recentItem} onClick={()=>openFile(file)}>
-                        <span style={{fontSize:"16px",flexShrink:0}}>📄</span>
-                        <div style={S.recentInfo}>
-                          <div style={S.recentTitle}>{file.title.length>13?file.title.slice(0,13)+'…':file.title}</div>
-                          {file.createdTime&&<div style={S.recentMeta}>{new Date(file.createdTime).toLocaleDateString('el-GR')}</div>}
+              ):(
+                /* ═══ DESKTOP: Original grid layout ═══ */
+                <>
+                  {/* ── STATS CARDS — Energy Insights aesthetic ── */}
+                  <div style={S.statsGrid}>
+                    {statConfig.map(s=>{
+                      const p=PALETTE[s.tone];
+                      return (
+                        <div key={s.view} className="ch"
+                          style={{...S.statCard, background:`linear-gradient(135deg, rgba(255,255,255,0.38) 0%, rgba(255,255,255,0.10) 45%, transparent 65%), ${p.bg}`, cursor:'pointer'}}
+                          onClick={()=>{setActiveView(s.view);if(s.view==='tagSearch'){loadAllFiles();setActiveSearchTags([]);setTagSearchInput('');}if(s.view==='newFiles'){loadAllFiles();}}}>                      <div style={S.statInner}>
+                            <div style={{flex:1}}>
+                              <div style={{...S.statLabel, color:p.text, opacity:0.75}}>{s.label}</div>
+                              <div style={{...S.statVal, color:p.text}}>
+                                {s.value}
+                                <span style={{...S.statUnit, color:p.text, opacity:0.6}}>{s.value===1?'αρχείο':'αρχεία'}</span>
+                              </div>
+                              <div style={{...S.statSub, color:p.text, opacity:0.55}}>{s.sub}</div>
+                            </div>
+                            <div style={{...S.statIcon, background:p.accent, color:p.deep}}>{s.icon}</div>
+                          </div>
                         </div>
-                        <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
-                          <button onClick={e=>{e.stopPropagation();window.open('/api/files/pdf/'+file.id,'_blank');}} style={S.printBtn} title="Εκτύπωση"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
-                          <button className="quick-btn" style={S.quickBtn}>Άνοιγμα →</button>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
-                </section>
+
+                  <section style={S.section}>
+                    <h2 style={S.secTitle}>Φάκελοι</h2>
+                    <div style={S.cardsGrid}>
+                      {Object.entries(FOLDERS).map(([id,f])=>{
+                        const p=PALETTE[f.tone];
+                        return (
+                          <div key={id} className="ch" style={{...S.folderCard, background:`linear-gradient(135deg, rgba(255,255,255,0.38) 0%, rgba(255,255,255,0.10) 45%, transparent 65%), ${p.bg}`}} onClick={()=>openFolder(id)}>
+                            <div style={S.folderTop}>
+                              <div style={{...S.folderIcon, background:p.accent, color:p.deep}}>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                              </div>
+                            </div>
+                            <h3 style={{...S.folderTitle, color:p.text}}>{f.name}</h3>
+                            <p style={{...S.folderDesc, color:p.text, opacity:0.65}}>{f.desc}</p>
+                            <div style={{...S.folderFoot, borderTopColor:p.accent}}>
+                              <button style={{...S.linkBtn, color:p.deep}}>Προβολή →</button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </section>
+                </>
+              )}
+
+              {/* ── Δύο στήλες: Πρόσφατα + Δημοφιλή ── */}
+              {(recentFiles.length>0||popularFiles.length>0)&&(
+                <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr':'1fr 1fr',gap:'20px',marginBottom:'44px'}}>
+
+                  {/* Αριστερή στήλη — Πρόσφατα (ανοιγμένα) */}
+                  <section>
+                    <h2 style={{...S.secTitle,display:'flex',alignItems:'center',gap:'8px'}}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={PALETTE.peach.deep} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                      Πρόσφατα
+                    </h2>
+                    <div style={S.recentList}>
+                      {recentFiles.length===0
+                        ?<div style={S.empty}>Δεν έχεις ανοίξει αρχεία ακόμα</div>
+                        :recentFiles.map((file,idx)=>(
+                          <div key={file.id} className="ri-h" style={{...S.recentItem,borderBottom:idx<recentFiles.length-1?'1px solid #f0f0f0':'none'}} onClick={()=>openFile(file)}>
+                            <span style={{fontSize:'16px',flexShrink:0}}>📄</span>
+                            <div style={S.recentInfo}>
+                              <div style={S.recentTitle}>{file.title.length>13?file.title.slice(0,13)+'…':file.title}</div>
+                            </div>
+                            <button onClick={e=>{e.stopPropagation();window.open('/api/files/pdf/'+file.id,'_blank');}} style={S.printBtn} title="Εκτύπωση"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
+                          </div>
+                        ))
+                      }
+                    </div>
+                  </section>
+
+                  {/* Δεξιά στήλη — Δημοφιλή */}
+                  <section>
+                    <h2 style={{...S.secTitle,display:'flex',alignItems:'center',gap:'8px'}}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={PALETTE.mustard.deep} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                      Δημοφιλή
+                    </h2>
+                    <div style={S.recentList}>
+                      {popularFiles.length===0
+                        ?<div style={S.empty}>Άνοιξε μερικά αρχεία για να εμφανιστούν εδώ</div>
+                        :popularFiles.map((file,idx)=>(
+                          <div key={file.id} className="ri-h" style={{...S.recentItem,borderBottom:idx<popularFiles.length-1?'1px solid #f0f0f0':'none'}} onClick={()=>openFile(file)}>
+                            <div style={{width:'24px',height:'24px',borderRadius:'8px',background:PALETTE.mustard.bg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:'11px',fontWeight:'700',color:PALETTE.mustard.deep}}>{file._count}</div>
+                            <div style={S.recentInfo}>
+                              <div style={S.recentTitle}>{file.title.length>13?file.title.slice(0,13)+'…':file.title}</div>
+                            </div>
+                            <button onClick={e=>{e.stopPropagation();window.open('/api/files/pdf/'+file.id,'_blank');}} style={S.printBtn} title="Εκτύπωση"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
+                          </div>
+                        ))
+                      }
+                    </div>
+                  </section>
+                </div>
               )}
             </>
           )}
@@ -641,7 +785,7 @@ if(status==='loading')
                 {[['keimena',FOLDERS.keimena],['biblia',FOLDERS.biblia]].map(([id,f])=>{
                   const p=PALETTE[f.tone];
                   return (
-                    <div key={id} className="ch" style={{...S.folderCard, background:p.bg}} onClick={()=>openFolder(id)}>
+                    <div key={id} className="ch" style={{...S.folderCard, background:`linear-gradient(135deg, rgba(255,255,255,0.38) 0%, rgba(255,255,255,0.10) 45%, transparent 65%), ${p.bg}`}} onClick={()=>openFolder(id)}>
                       <div style={S.folderTop}>
                         <div style={{...S.folderIcon, background:p.accent, color:p.deep}}>
                           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
@@ -1072,7 +1216,7 @@ if(status==='loading')
                   const tones=['peach','cream','mustard'];
                   const p=PALETTE[tones[idx%tones.length]];
                   return (
-                    <div key={cat} className="ch" style={{...S.folderCard, background:p.bg}} onClick={()=>openToolCategory(cat)}>
+                    <div key={cat} className="ch" style={{...S.folderCard, background:`linear-gradient(135deg, rgba(255,255,255,0.38) 0%, rgba(255,255,255,0.10) 45%, transparent 65%), ${p.bg}`}} onClick={()=>openToolCategory(cat)}>
                       <div style={S.folderTop}>
                         <div style={{...S.folderIcon, background:p.accent, color:p.deep}}>
                           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
