@@ -5,9 +5,9 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 // ── Energy Insights palette ───────────────────────────────────────────────
 // Πιστή μεταφορά της παλέτας από το mockup: κρεμ, ροδακινί, ώχρα
 const PALETTE = {
-  cream:   { bg:'#f5f0e1', bgSoft:'#faf6ea', accent:'#e8dfc4', text:'#3d3a2e', deep:'#8a7d4a' },
-  peach:   { bg:'#f9e4d4', bgSoft:'#fcf0e5', accent:'#f0c9a8', text:'#5c3826', deep:'#c97b5a' },
-  mustard: { bg:'#efe5b8', bgSoft:'#f7f0d0', accent:'#d4b348', text:'#4a3f1a', deep:'#a68a2e' },
+  cream:   { bg:'#f7f3e8', bgSoft:'#fcf9f0', accent:'#e9e0c8', text:'#3d3a2e', deep:'#8a7d4a' },
+  peach:   { bg:'#fae0cc', bgSoft:'#fdf0e4', accent:'#f0c4a0', text:'#5c3826', deep:'#c97b5a' },
+  mustard: { bg:'#f0e4a8', bgSoft:'#f8f0c8', accent:'#d9be52', text:'#4a3f1a', deep:'#a68a2e' },
 };
 
 const FOLDERS = {
@@ -170,6 +170,9 @@ export default function Home() {
   const appZoomReset = () => setAppZoom(100);
 
   const recentTools = [...tools].filter(t=>t.addedAt).sort((a,b)=>new Date(b.addedAt)-new Date(a.addedAt)).slice(0,5);
+
+  // Νέα αρχεία — ταξινόμηση κατά ημ. δημιουργίας (πιο πρόσφατα πρώτα)
+  const newFiles = [...allFiles].sort((a,b)=>new Date(b.createdTime||0)-new Date(a.createdTime||0)).slice(0,10);
 
   useEffect(()=>{ if(status==='unauthenticated') router.push('/login'); },[status,router]);
 
@@ -424,8 +427,8 @@ if(status==='loading')
   const statConfig = [
     { label:'Αγαπημένα', value:favorites.length, sub:'Επιλεγμένα αρχεία', view:'favorites', tone:'cream',
       icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> },
-    { label:'Πρόσφατα', value:recentFiles.length, sub:'Τελευταία αρχεία', view:'recent', tone:'peach',
-      icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> },
+    { label:'Νέα', value:allFiles.length>0?Math.min(allFiles.length,10):0, sub:'Πιο πρόσφατα δημιουργημένα', view:'newFiles', tone:'peach',
+      icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg> },
     { label:'Αναζήτηση', value:Object.values(metadata).flatMap(m=>m.tags||[]).filter((v,i,a)=>a.indexOf(v)===i).length, sub:'Αναζήτηση με ετικέτες', view:'tagSearch', tone:'mustard',
       icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg> },
   ];
@@ -568,8 +571,7 @@ if(status==='loading')
                   return (
                     <div key={s.view} className="ch"
                       style={{...S.statCard, background:p.bg, cursor:'pointer'}}
-                      onClick={()=>{setActiveView(s.view);if(s.view==='tagSearch'){loadAllFiles();setActiveSearchTags([]);setTagSearchInput('');}}}>
-                      <div style={S.statInner}>
+                      onClick={()=>{setActiveView(s.view);if(s.view==='tagSearch'){loadAllFiles();setActiveSearchTags([]);setTagSearchInput('');}if(s.view==='newFiles'){loadAllFiles();}}}>                      <div style={S.statInner}>
                         <div style={{flex:1}}>
                           <div style={{...S.statLabel, color:p.text, opacity:0.75}}>{s.label}</div>
                           <div style={{...S.statVal, color:p.text}}>
@@ -608,15 +610,16 @@ if(status==='loading')
                 </div>
               </section>
 
-              {recentFiles.length>0&&(
+              {newFiles.length>0&&(
                 <section style={S.section}>
-                  <h2 style={S.secTitle}>Πρόσφατα Αρχεία</h2>
+                  <h2 style={S.secTitle}>Νέα Αρχεία</h2>
                   <div style={S.recentList}>
-                    {recentFiles.map(file=>(
+                    {newFiles.map(file=>(
                       <div key={file.id} className="ri-h" style={S.recentItem} onClick={()=>openFile(file)}>
                         <span style={{fontSize:"16px",flexShrink:0}}>📄</span>
                         <div style={S.recentInfo}>
                           <div style={S.recentTitle}>{file.title.length>13?file.title.slice(0,13)+'…':file.title}</div>
+                          {file.createdTime&&<div style={S.recentMeta}>{new Date(file.createdTime).toLocaleDateString('el-GR')}</div>}
                         </div>
                         <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
                           <button onClick={e=>{e.stopPropagation();window.open('/api/files/pdf/'+file.id,'_blank');}} style={S.printBtn} title="Εκτύπωση"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
@@ -672,7 +675,7 @@ if(status==='loading')
                   </button>
                 )}
               </div>
-              {allTagsInFolder().length>0&&(
+              {currentFolder!=='keimena'&&allTagsInFolder().length>0&&(
                 <div style={S.tagFilterBar}>
                   <span style={S.tagFilterLabel}>Φίλτρο:</span>
                   {allTagsInFolder().map(t=>{ const c=tagColor(t); const active=activeTagFilter===t; return <button key={t} className="tag-filter" onClick={()=>setActiveTagFilter(active?null:t)} style={{...S.tagFilterChip,background:active?c.text:c.bg,color:active?'#fff':c.text,fontWeight:active?600:400}}>#{t}</button>; })}
@@ -870,21 +873,22 @@ if(status==='loading')
             </>
           )}
 
-          {/* Recent — compact list */}
-          {activeView==='recent'&&(
+          {/* Νέα — πιο πρόσφατα δημιουργημένα */}
+          {activeView==='newFiles'&&(
             <>
-              <div style={S.pageHeader}><button onClick={goHome} style={S.backBtn}>← Πίσω</button><div><h1 style={S.pageTitle}>Πρόσφατα</h1><p style={S.pageSub}>{recentFiles.length} αρχεία</p></div></div>
+              <div style={S.pageHeader}><button onClick={goHome} style={S.backBtn}>← Πίσω</button><div><h1 style={S.pageTitle}>Νέα</h1><p style={S.pageSub}>{newFiles.length} πιο πρόσφατα δημιουργημένα αρχεία</p></div></div>
               <div style={S.recentList}>
-                {recentFiles.length===0?<div style={S.empty}>Δεν έχεις ανοίξει αρχεία ακόμα</div>
-                  :recentFiles.map((file,idx)=>{
+                {newFiles.length===0?<div style={S.empty}>Δεν βρέθηκαν αρχεία</div>
+                  :newFiles.map((file,idx)=>{
                     const p=PALETTE.peach;
                     return (
-                      <div key={file.id} className="ri-h" style={{...S.recentItem, borderBottom:idx<recentFiles.length-1?'1px solid #f0f0f0':'none'}} onClick={()=>openFile(file)}>
+                      <div key={file.id} className="ri-h" style={{...S.recentItem, borderBottom:idx<newFiles.length-1?'1px solid #f0f0f0':'none'}} onClick={()=>openFile(file)}>
                         <div style={{width:'36px',height:'36px',borderRadius:'10px',background:p.bg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
                           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={p.deep} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                         </div>
                         <div style={S.recentInfo}>
                           <div style={S.recentTitle}>{file.title.length>13?file.title.slice(0,13)+'…':file.title}</div>
+                          {file.createdTime&&<div style={S.recentMeta}>{new Date(file.createdTime).toLocaleDateString('el-GR')}</div>}
                         </div>
                         <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
                           <div className="qr-btn"><QrButton resourceType="pdf" resourceId={file.id} resourceName={file.name} title={file.title.length>13?file.title.slice(0,13)+'…':file.title} color={p.deep} onShowQr={setQrPopup}/></div>
