@@ -584,96 +584,93 @@ if(status==='loading')
             <>
               <div style={S.welcomeSec}><h1 style={{...S.welcomeTitle,fontSize:isMobile?'22px':undefined}}>Γεια σου, {session.user?.email?.split('@')[0]}! 👋</h1><p style={S.welcomeSub}>Ας συνεχίσουμε από εκεί που σταματήσαμε</p></div>
 
-              {/* ═══ MOBILE: Wallet-style stacked cards ═══ */}
+              {/* ═══ MOBILE: Two wallet stacks ═══ */}
               {isMobile?(
-                <div style={{position:'relative',marginBottom:'32px'}}>
-                  {/* Wallet stack — stats + folders */}
-                  {(()=>{
-                    const walletItems=[
-                      ...statConfig.map(s=>({type:'stat',...s})),
-                      ...Object.entries(FOLDERS).map(([id,f])=>({type:'folder',id,view:'folder_'+id,...f})),
-                    ];
-                    return walletItems.map((item,idx)=>{
-                      const p=PALETTE[item.tone];
-                      const isExpanded=expandedCard===item.view;
-                      const isOther=expandedCard&&expandedCard!==item.view;
-                      const cardClick=()=>{
-                        if(isExpanded){
-                          // second tap → navigate
-                          setExpandedCard(null);
-                          if(item.type==='stat'){
-                            setActiveView(item.view);
-                            if(item.view==='tagSearch'){loadAllFiles();setActiveSearchTags([]);setTagSearchInput('');}
-                            if(item.view==='newFiles'){loadAllFiles();}
-                          } else {
-                            openFolder(item.id);
-                          }
-                        } else {
-                          setExpandedCard(item.view);
-                        }
-                      };
-                      return (
-                        <div key={item.view}
-                          onClick={cardClick}
-                          style={{
-                            position:'relative',
-                            zIndex:isExpanded?50:idx+1,
-                            marginTop:idx===0?0:isExpanded?'12px':'-38px',
-                            marginBottom:isExpanded?'12px':'0',
-                            borderRadius:'22px',
-                            padding:item.type==='stat'?'20px 22px':'22px 24px',
-                            minHeight:item.type==='stat'?'120px':'140px',
-                            background:`linear-gradient(135deg, rgba(255,255,255,0.40) 0%, rgba(255,255,255,0.12) 45%, transparent 65%), ${p.bg}`,
-                            boxShadow:isExpanded
-                              ?'0 12px 40px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.10)'
-                              :'0 2px 8px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04)',
-                            cursor:'pointer',
-                            transition:'all 0.35s cubic-bezier(0.34,1.56,0.64,1)',
-                            transform:isExpanded?'scale(1.02)':isOther?'scale(0.97)':'scale(1)',
-                            opacity:isOther?0.7:1,
-                            display:'flex',
-                            flexDirection:'column',
-                          }}>
-                          {item.type==='stat'?(
-                            <div style={S.statInner}>
-                              <div style={{flex:1}}>
-                                <div style={{...S.statLabel,color:p.text,opacity:0.75}}>{item.label}</div>
-                                <div style={{...S.statVal,color:p.text,fontSize:'36px'}}>
-                                  {item.value}
-                                  <span style={{...S.statUnit,color:p.text,opacity:0.6}}>{item.value===1?'αρχείο':'αρχεία'}</span>
-                                </div>
-                                <div style={{...S.statSub,color:p.text,opacity:0.55}}>{item.sub}</div>
+                <>
+                {/* ── Wallet helper ── */}
+                {(()=>{
+                  const renderWallet=(items,groupLabel)=>items.map((item,idx)=>{
+                    const p=PALETTE[item.tone];
+                    const isExpanded=expandedCard===item.view;
+                    const isOtherInGroup=expandedCard&&items.some(i=>i.view===expandedCard)&&!isExpanded;
+                    const cardClick=()=>{
+                      if(isExpanded){
+                        setExpandedCard(null);
+                        if(item.type==='stat'){
+                          setActiveView(item.view);
+                          if(item.view==='tagSearch'){loadAllFiles();setActiveSearchTags([]);setTagSearchInput('');}
+                          if(item.view==='newFiles'){loadAllFiles();}
+                        } else { openFolder(item.id); }
+                      } else { setExpandedCard(item.view); }
+                    };
+                    return (
+                      <div key={item.view} onClick={cardClick}
+                        style={{
+                          position:'relative',
+                          zIndex:isExpanded?50:idx+1,
+                          marginTop:idx===0?0:isExpanded?'12px':'-36px',
+                          marginBottom:isExpanded?'12px':'0',
+                          borderRadius:'22px',
+                          padding:item.type==='stat'?'20px 22px':'22px 24px',
+                          minHeight:item.type==='stat'?'115px':'120px',
+                          background:`linear-gradient(135deg, rgba(255,255,255,0.40) 0%, rgba(255,255,255,0.12) 45%, transparent 65%), ${p.bg}`,
+                          boxShadow:isExpanded
+                            ?'0 12px 40px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.10)'
+                            :'0 2px 8px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04)',
+                          cursor:'pointer',
+                          transition:'all 0.35s cubic-bezier(0.34,1.56,0.64,1)',
+                          transform:isExpanded?'scale(1.02)':isOtherInGroup?'scale(0.97)':'scale(1)',
+                          opacity:isOtherInGroup?0.7:1,
+                          display:'flex',flexDirection:'column',
+                        }}>
+                        {item.type==='stat'?(
+                          <div style={S.statInner}>
+                            <div style={{flex:1}}>
+                              <div style={{...S.statLabel,color:p.text,opacity:0.75}}>{item.label}</div>
+                              <div style={{...S.statVal,color:p.text,fontSize:'36px'}}>
+                                {item.value}
+                                <span style={{...S.statUnit,color:p.text,opacity:0.6}}>{item.value===1?'αρχείο':'αρχεία'}</span>
                               </div>
-                              <div style={{...S.statIcon,background:p.accent,color:p.deep}}>{item.icon}</div>
+                              <div style={{...S.statSub,color:p.text,opacity:0.55}}>{item.sub}</div>
                             </div>
-                          ):(
-                            <>
-                              <div style={{display:'flex',alignItems:'center',gap:'14px',marginBottom:'10px'}}>
-                                <div style={{...S.folderIcon,background:p.accent,color:p.deep,width:'42px',height:'42px',borderRadius:'12px'}}>
-                                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                                </div>
-                                <div style={{flex:1}}>
-                                  <h3 style={{...S.folderTitle,color:p.text,fontSize:'16px',marginBottom:'2px'}}>{item.name}</h3>
-                                  <p style={{fontSize:'12px',color:p.text,opacity:0.6,margin:0}}>{item.desc}</p>
-                                </div>
-                              </div>
-                              {isExpanded&&(
-                                <div style={{display:'flex',justifyContent:'flex-end',paddingTop:'8px',borderTop:`1px solid ${p.accent}`}}>
-                                  <span style={{fontSize:'13px',fontWeight:'600',color:p.deep}}>Άνοιγμα →</span>
-                                </div>
-                              )}
-                            </>
-                          )}
-                          {item.type==='stat'&&isExpanded&&(
-                            <div style={{textAlign:'right',marginTop:'8px'}}>
-                              <span style={{fontSize:'12px',fontWeight:'600',color:p.deep}}>Προβολή →</span>
+                            <div style={{...S.statIcon,background:p.accent,color:p.deep}}>{item.icon}</div>
+                          </div>
+                        ):(
+                          <div style={{display:'flex',alignItems:'center',gap:'14px'}}>
+                            <div style={{...S.folderIcon,background:p.accent,color:p.deep,width:'42px',height:'42px',borderRadius:'12px'}}>
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                             </div>
-                          )}
-                        </div>
-                      );
-                    });
-                  })()}
-                </div>
+                            <div style={{flex:1}}>
+                              <h3 style={{...S.folderTitle,color:p.text,fontSize:'16px',marginBottom:'2px'}}>{item.name}</h3>
+                              <p style={{fontSize:'12px',color:p.text,opacity:0.6,margin:0}}>{item.desc}</p>
+                            </div>
+                            {isExpanded&&<span style={{fontSize:'13px',fontWeight:'600',color:p.deep,flexShrink:0}}>Άνοιγμα →</span>}
+                          </div>
+                        )}
+                        {item.type==='stat'&&isExpanded&&(
+                          <div style={{textAlign:'right',marginTop:'6px'}}>
+                            <span style={{fontSize:'12px',fontWeight:'600',color:p.deep}}>Προβολή →</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  });
+
+                  const statsItems=statConfig.map(s=>({type:'stat',...s}));
+                  const folderItems=Object.entries(FOLDERS).map(([id,f])=>({type:'folder',id,view:'folder_'+id,...f}));
+
+                  return (
+                    <>
+                      <div style={{position:'relative',marginBottom:'24px'}}>
+                        {renderWallet(statsItems,'stats')}
+                      </div>
+                      <div style={{position:'relative',marginBottom:'32px'}}>
+                        {renderWallet(folderItems,'folders')}
+                      </div>
+                    </>
+                  );
+                })()}
+                </>
               ):(
                 /* ═══ DESKTOP: Original grid layout ═══ */
                 <>
