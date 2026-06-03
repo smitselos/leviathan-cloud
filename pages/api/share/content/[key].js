@@ -11,6 +11,24 @@ const FILENAME = 'leviathan-metadata.json';
 let metaCache = { data: null, accessToken: null, timestamp: 0 };
 const CACHE_TTL = 30 * 1000;
 
+// Native Google formats → export απευθείας σε PDF
+const GOOGLE_EXPORT_TYPES = [
+  'application/vnd.google-apps.document',
+  'application/vnd.google-apps.presentation',
+  'application/vnd.google-apps.spreadsheet',
+  'application/vnd.google-apps.drawing',
+];
+
+// Office formats → Google native (για copy+convert→export PDF)
+const OFFICE_TO_GOOGLE = {
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'application/vnd.google-apps.document',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'application/vnd.google-apps.presentation',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'application/vnd.google-apps.spreadsheet',
+  'application/msword': 'application/vnd.google-apps.document',
+  'application/vnd.ms-powerpoint': 'application/vnd.google-apps.presentation',
+  'application/vnd.ms-excel': 'application/vnd.google-apps.spreadsheet',
+};
+
 async function loadPublishedFromDrive() {
   // Αν υπάρχει fresh cache, χρήσε τον
   if (metaCache.data && Date.now() - metaCache.timestamp < CACHE_TTL) {
@@ -103,24 +121,57 @@ export default async function handler(req, res) {
     const mimeType = meta.data.mimeType;
     const fileName = meta.data.name || 'document';
 
-    if (mimeType === 'application/vnd.google-apps.document') {
+    // 1. Native Google format (Docs, Slides, Sheets) → export σε PDF
+    if (GOOGLE_EXPORT_TYPES.includes(mimeType)) {
       const exp = await drive.files.export({ fileId, mimeType: 'application/pdf' }, { responseType: 'arraybuffer' });
       res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(fileName)}"`);
+      res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(fileName.replace(/\.[^.]+$/, ''))}.pdf"`);
       res.setHeader('Cache-Control', 'no-store');
-      res.send(Buffer.from(exp.data));
-    } else if (mimeType === 'text/html' || fileName.endsWith('.html')) {
+      return res.send(Buffer.from(exp.data));
+    }
+
+    // 2. Office format (DOCX, PPTX, XLSX) → copy+convert σε Google → export PDF → delete temp
+    const googleMime = OFFICE_TO_GOOGLE[mimeType];
+    if (googleMime) {
+      const copy = await drive.files.copy({
+        fileId,
+        requestBody: {
+          name: '_temp_student_' + Date.now(),
+          mimeType: googleMime,
+        },
+      });
+      try {
+        const exp = await drive.files.export({
+          fileId: copy.data.id,
+          mimeType: 'application/pdf',
+        }, {
+          responseType: 'arraybuffer',
+        });
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(fileName.replace(/\.[^.]+$/, ''))}.pdf"`);
+        res.setHeader('Cache-Control', 'no-store');
+        return res.send(Buffer.from(exp.data));
+      } finally {
+        // Πάντα διαγράφουμε το προσωρινό αντίγραφο
+        drive.files.delete({ fileId: copy.data.id }).catch(() => {});
+      }
+    }
+
+    // 3. HTML αρχεία → σερβίρισμα ως text/html
+    if (mimeType === 'text/html' || fileName.endsWith('.html')) {
       const dl = await drive.files.get({ fileId, alt: 'media' }, { responseType: 'text' });
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
       res.setHeader('Cache-Control', 'no-store');
-      res.send(dl.data);
-    } else {
-      const dl = await drive.files.get({ fileId, alt: 'media' }, { responseType: 'arraybuffer' });
-      res.setHeader('Content-Type', mimeType);
-      res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(fileName)}"`);
-      res.setHeader('Cache-Control', 'no-store');
-      res.send(Buffer.from(dl.data));
+      return res.send(dl.data);
     }
+
+    // 4. Όλα τα υπόλοιπα (PDF, εικόνες κ.λπ.) → download ως έχει
+    const dl = await drive.files.get({ fileId, alt: 'media' }, { responseType: 'arraybuffer' });
+    res.setHeader('Content-Type', mimeType);
+    res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(fileName)}"`);
+    res.setHeader('Cache-Control', 'no-store');
+    return res.send(Buffer.from(dl.data));
+
   } catch (err) {
     console.error('[content] Error:', err.message);
     if (err.code === 401 || err.message?.includes('invalid_grant')) {
