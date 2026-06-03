@@ -62,6 +62,11 @@ export default function StudentPage() {
   useEffect(() => { loadItems(); const iv = setInterval(loadItems, 30000); return () => clearInterval(iv); }, [loadItems]);
 
   const openItem = (item) => {
+    if (isMobile) {
+      // Στο κινητό ανοίγει κατευθείαν σε νέα καρτέλα (καλύτερη εμπειρία από iframe)
+      window.open(contentUrl(item, 'main'), '_blank');
+      return;
+    }
     setCurrentItem(item);
     setShowApp(false);
   };
