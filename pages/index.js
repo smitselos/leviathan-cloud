@@ -76,6 +76,8 @@ const getFileViewUrl = (file) => {
     case 'docx':
     case 'pptx':
     case 'xlsx':
+      // Google Docs Viewer — εμφανίζει ολόκληρο το αρχείο, όχι μόνο 1η σελίδα
+      return `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent('https://drive.google.com/uc?id='+file.id+'&export=download')}`;
     case 'image':
       return `https://drive.google.com/file/d/${file.id}/preview`;
     default:
@@ -90,6 +92,12 @@ const getFileExternalUrl = (file) => {
     case 'gdoc':    return `https://docs.google.com/document/d/${file.id}/edit`;
     case 'gslides': return `https://docs.google.com/presentation/d/${file.id}/edit`;
     case 'gsheets': return `https://docs.google.com/spreadsheets/d/${file.id}/edit`;
+    case 'docx':
+    case 'pptx':
+    case 'xlsx':
+    case 'image':
+      // Χρήση webViewLink αν υπάρχει, αλλιώς Drive view
+      return file.webViewLink || `https://drive.google.com/file/d/${file.id}/view`;
     default:
       return '/api/files/pdf/' + file.id;
   }
