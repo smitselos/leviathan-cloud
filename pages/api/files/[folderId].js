@@ -3,6 +3,10 @@ import { authOptions } from '../auth/[...nextauth]';
 import { FOLDERS } from '../../../lib/config';
 import { listFilesInFolder } from '../../../lib/drive';
 
+// Αφαίρεση κατάληξης αρχείου από τον τίτλο (όλοι οι τύποι)
+const stripExtension = (name) =>
+  name.replace(/\.(pdf|docx?|pptx?|xlsx?|odt|odp|ods|txt|rtf|csv)$/i, '');
+
 export default async function handler(req, res) {
   const session = await getServerSession(req, res, authOptions);
   
@@ -21,14 +25,16 @@ export default async function handler(req, res) {
   try {
     const files = await listFilesInFolder(session.accessToken, folder.driveId);
     
-    // Transform files for frontend
+    // Transform files for frontend — περιλαμβάνει πλέον mimeType
     const transformedFiles = files.map(file => ({
       id: file.id,
       name: file.name,
-      title: file.name.replace('.pdf', ''),
+      title: stripExtension(file.name),
+      mimeType: file.mimeType || '',
       path: `${folderId}/${file.id}`,
       size: parseInt(file.size) || 0,
       modified: file.modifiedTime,
+      createdTime: file.createdTime || file.modifiedTime,
       webViewLink: file.webViewLink,
       webContentLink: file.webContentLink,
       categories: [],
