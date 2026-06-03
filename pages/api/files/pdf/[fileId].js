@@ -16,11 +16,12 @@ export default async function handler(req, res) {
   }
   
   try {
-    const content = await getFileContent(session.accessToken, fileId);
+    const result = await getFileContent(session.accessToken, fileId);
     
-    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Type', result.mimeType || 'application/pdf');
     res.setHeader('Content-Disposition', 'inline');
-    res.send(Buffer.from(content));
+    res.setHeader('Cache-Control', 'private, max-age=300');
+    res.send(Buffer.from(result.data));
   } catch (error) {
     console.error('Error fetching file:', error);
     return res.status(500).json({ error: 'Failed to fetch file' });
