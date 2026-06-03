@@ -76,8 +76,8 @@ const getFileViewUrl = (file) => {
     case 'docx':
     case 'pptx':
     case 'xlsx':
-      // Google Docs Viewer — εμφανίζει ολόκληρο το αρχείο, όχι μόνο 1η σελίδα
-      return `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent('https://drive.google.com/uc?id='+file.id+'&export=download')}`;
+      // Μετατροπή σε PDF server-side μέσω Google Drive API (copy→convert→export)
+      return '/api/files/pdf/' + file.id;
     case 'image':
       return `https://drive.google.com/file/d/${file.id}/preview`;
     default:
