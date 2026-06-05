@@ -186,6 +186,211 @@ function QrButton({resourceType,resourceId,resourceName,title,color,onShowQr}){
   );
 }
 
+// ── WhiteboardCanvas — Πίνακας σημειώσεων με γραφίδα ──────────────────
+function WhiteboardCanvas({ height = '100%' }) {
+  const canvasRef = useRef(null);
+  const ctxRef = useRef(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [penColor, setPenColor] = useState('#1a1a1a');
+  const [penSize, setPenSize] = useState(3);
+  const [tool, setTool] = useState('pen'); // pen | eraser
+  const [history, setHistory] = useState([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  const lastPos = useRef(null);
+
+  const WB_COLORS = ['#1a1a1a','#dc2626','#2563eb','#16a34a','#d97706','#7c3aed','#fff'];
+  const WB_SIZES = [2,3,5,8,14];
+
+  // Init canvas
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const resize = () => {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      // Save current drawing
+      let imgData = null;
+      if (canvas.width > 0 && canvas.height > 0) {
+        try { imgData = ctxRef.current?.getImageData(0, 0, canvas.width, canvas.height); } catch(e) {}
+      }
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      canvas.style.width = rect.width + 'px';
+      canvas.style.height = rect.height + 'px';
+      const ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, rect.width, rect.height);
+      // Restore drawing
+      if (imgData) {
+        try { ctx.putImageData(imgData, 0, 0); } catch(e) {}
+      }
+      ctxRef.current = ctx;
+    };
+    resize();
+    window.addEventListener('resize', resize);
+    // Save initial blank state
+    const ctx = canvas.getContext('2d');
+    ctxRef.current = ctx;
+    saveHistory();
+    return () => window.removeEventListener('resize', resize);
+  }, []);
+
+  const saveHistory = () => {
+    const canvas = canvasRef.current;
+    if (!canvas || !ctxRef.current) return;
+    try {
+      const data = canvas.toDataURL();
+      setHistory(prev => {
+        const next = prev.slice(0, historyIndex + 1);
+        next.push(data);
+        if (next.length > 50) next.shift();
+        return next;
+      });
+      setHistoryIndex(prev => Math.min(prev + 1, 49));
+    } catch(e) {}
+  };
+
+  const undo = () => {
+    if (historyIndex <= 0) return;
+    const newIdx = historyIndex - 1;
+    const img = new Image();
+    img.onload = () => {
+      const canvas = canvasRef.current;
+      const ctx = ctxRef.current;
+      const dpr = window.devicePixelRatio || 1;
+      ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
+      ctx.drawImage(img, 0, 0, canvas.width / dpr, canvas.height / dpr);
+    };
+    img.src = history[newIdx];
+    setHistoryIndex(newIdx);
+  };
+
+  const redo = () => {
+    if (historyIndex >= history.length - 1) return;
+    const newIdx = historyIndex + 1;
+    const img = new Image();
+    img.onload = () => {
+      const canvas = canvasRef.current;
+      const ctx = ctxRef.current;
+      const dpr = window.devicePixelRatio || 1;
+      ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
+      ctx.drawImage(img, 0, 0, canvas.width / dpr, canvas.height / dpr);
+    };
+    img.src = history[newIdx];
+    setHistoryIndex(newIdx);
+  };
+
+  const clearCanvas = () => {
+    const canvas = canvasRef.current;
+    const ctx = ctxRef.current;
+    if (!canvas || !ctx) return;
+    const dpr = window.devicePixelRatio || 1;
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
+    saveHistory();
+  };
+
+  const getPos = (e) => {
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    if (e.touches && e.touches.length > 0) {
+      return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
+    }
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  };
+
+  const startDraw = (e) => {
+    e.preventDefault();
+    const pos = getPos(e);
+    const ctx = ctxRef.current;
+    if (!ctx) return;
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y);
+    ctx.strokeStyle = tool === 'eraser' ? '#ffffff' : penColor;
+    ctx.lineWidth = tool === 'eraser' ? penSize * 4 : penSize;
+    lastPos.current = pos;
+    setIsDrawing(true);
+  };
+
+  const draw = (e) => {
+    if (!isDrawing) return;
+    e.preventDefault();
+    const pos = getPos(e);
+    const ctx = ctxRef.current;
+    if (!ctx) return;
+    ctx.strokeStyle = tool === 'eraser' ? '#ffffff' : penColor;
+    ctx.lineWidth = tool === 'eraser' ? penSize * 4 : penSize;
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y);
+    lastPos.current = pos;
+  };
+
+  const endDraw = (e) => {
+    if (!isDrawing) return;
+    e?.preventDefault?.();
+    setIsDrawing(false);
+    ctxRef.current?.beginPath();
+    saveHistory();
+  };
+
+  const tbBtn = (active) => ({
+    width:'32px',height:'32px',borderRadius:'8px',border: active ? '2px solid #1a1a1a' : '1px solid #d0d0d0',
+    background: active ? '#f0eee6' : '#fff', cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',
+    fontSize:'15px', flexShrink:0,
+  });
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',width:'100%',height:height,background:'#fff',overflow:'hidden'}}>
+      {/* Toolbar */}
+      <div style={{display:'flex',alignItems:'center',gap:'6px',padding:'6px 10px',background:'#f7f5ef',borderBottom:'1px solid #e8e4d8',flexWrap:'wrap',flexShrink:0}}>
+        {/* Tool buttons */}
+        <button onClick={()=>setTool('pen')} style={tbBtn(tool==='pen')} title="Στυλό">✏️</button>
+        <button onClick={()=>setTool('eraser')} style={tbBtn(tool==='eraser')} title="Σβήστρα">🧹</button>
+        <div style={{width:'1px',height:'22px',background:'#d0d0d0',margin:'0 2px'}}/>
+        {/* Colors */}
+        {WB_COLORS.map(c=>(
+          <button key={c} onClick={()=>{setPenColor(c);setTool('pen');}}
+            style={{width:'24px',height:'24px',borderRadius:'50%',background:c,border:penColor===c&&tool==='pen'?'2.5px solid #1a1a1a':'1.5px solid #ccc',cursor:'pointer',flexShrink:0,boxShadow:penColor===c?'0 0 0 2px #fff, 0 0 0 3.5px #1a1a1a':'none'}}
+            title={c}/>
+        ))}
+        <div style={{width:'1px',height:'22px',background:'#d0d0d0',margin:'0 2px'}}/>
+        {/* Pen sizes */}
+        {WB_SIZES.map(s=>(
+          <button key={s} onClick={()=>setPenSize(s)}
+            style={{...tbBtn(penSize===s&&tool==='pen'),width:'28px',height:'28px',padding:0}}
+            title={s+'px'}>
+            <div style={{width:Math.min(s*1.5,16),height:Math.min(s*1.5,16),borderRadius:'50%',background:'#1a1a1a'}}/>
+          </button>
+        ))}
+        <div style={{width:'1px',height:'22px',background:'#d0d0d0',margin:'0 2px'}}/>
+        <button onClick={undo} style={{...tbBtn(false),fontSize:'13px'}} title="Αναίρεση">↩</button>
+        <button onClick={redo} style={{...tbBtn(false),fontSize:'13px'}} title="Επανάληψη">↪</button>
+        <button onClick={clearCanvas} style={{...tbBtn(false),fontSize:'12px',color:'#dc2626',borderColor:'#fca5a5'}} title="Καθαρισμός">🗑</button>
+      </div>
+      {/* Canvas */}
+      <div style={{flex:1,position:'relative',overflow:'hidden',cursor:tool==='eraser'?'crosshair':'default'}}>
+        <canvas
+          ref={canvasRef}
+          onMouseDown={startDraw}
+          onMouseMove={draw}
+          onMouseUp={endDraw}
+          onMouseLeave={endDraw}
+          onTouchStart={startDraw}
+          onTouchMove={draw}
+          onTouchEnd={endDraw}
+          onTouchCancel={endDraw}
+          style={{position:'absolute',inset:0,touchAction:'none'}}
+        />
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -408,6 +613,7 @@ export default function Home() {
 
   const linkAppToFile=(tool)=>{
     setLinkedApp(tool);
+    setShowLinkedApp(true);
     if(currentFile){
       const updated={...metadata,[currentFile.id]:{...fileMeta(currentFile.id),linkedApp:tool}};
       persistMetadata(updated);
@@ -1456,7 +1662,9 @@ if(status==='loading')
               title={getFileTypeLabel(currentFile)} allow="fullscreen"/>
           )}
           {mobileTab==='app'&&linkedApp&&(
-            <iframe src={linkedApp.isUrl?linkedApp.file:linkedApp.isPdf?'https://drive.google.com/file/d/'+linkedApp.driveId+'/preview':'/api/tool/'+(linkedApp.driveId||linkedApp.file)}
+            linkedApp.isWhiteboard
+              ? <div style={{position:'absolute',inset:0,width:'100%',height:'100%'}}><WhiteboardCanvas height="100%"/></div>
+              : <iframe src={linkedApp.isUrl?linkedApp.file:linkedApp.isPdf?'https://drive.google.com/file/d/'+linkedApp.driveId+'/preview':'/api/tool/'+(linkedApp.driveId||linkedApp.file)}
               style={{position:'absolute',inset:0,width:'100%',height:'100%',border:'none'}}
               title={linkedApp.name} allow="fullscreen"/>
           )}
@@ -1473,7 +1681,38 @@ if(status==='loading')
               // Φορτώνει το HTML της εφαρμογής με session και το στέλνει inline
               let appHtml = null;
               let appName = linkedApp?.name || null;
-              if (linkedApp && !linkedApp.isUrl && !linkedApp.isPdf) {
+              if (linkedApp && linkedApp.isWhiteboard) {
+                // Whiteboard HTML — πλήρες standalone canvas
+                appHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Πίνακας</title><style>*{margin:0;padding:0;box-sizing:border-box}body{overflow:hidden;font-family:system-ui,sans-serif;background:#fff}.tb{display:flex;align-items:center;gap:6px;padding:6px 10px;background:#f7f5ef;border-bottom:1px solid #e8e4d8;flex-wrap:wrap}.tb button{width:32px;height:32px;border-radius:8px;border:1px solid #d0d0d0;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}.tb button.active{border:2px solid #1a1a1a;background:#f0eee6}.clr{width:24px;height:24px;border-radius:50%;border:1.5px solid #ccc;cursor:pointer;flex-shrink:0}.clr.active{border:2.5px solid #1a1a1a;box-shadow:0 0 0 2px #fff,0 0 0 3.5px #1a1a1a}.sep{width:1px;height:22px;background:#d0d0d0;margin:0 2px}.sz{width:28px;height:28px;border-radius:8px;border:1px solid #d0d0d0;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}.sz.active{border:2px solid #1a1a1a;background:#f0eee6}canvas{display:block;touch-action:none}</style></head><body><div class="tb" id="toolbar"></div><canvas id="c"></canvas><script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');let drawing=false,tool='pen',color='#1a1a1a',size=3,hist=[],hIdx=-1;
+const colors=['#1a1a1a','#dc2626','#2563eb','#16a34a','#d97706','#7c3aed','#fff'];
+const sizes=[2,3,5,8,14];
+function resize(){const dpr=devicePixelRatio||1;c.width=innerWidth*dpr;c.height=(innerHeight-44)*dpr;c.style.width=innerWidth+'px';c.style.height=(innerHeight-44)+'px';ctx.scale(dpr,dpr);ctx.lineCap='round';ctx.lineJoin='round';if(hist.length>0){const img=new Image();img.onload=()=>{ctx.drawImage(img,0,0,innerWidth,innerHeight-44)};img.src=hist[hIdx]}else{ctx.fillStyle='#fff';ctx.fillRect(0,0,innerWidth,innerHeight-44);saveH()}}
+function saveH(){try{const d=c.toDataURL();hist=hist.slice(0,hIdx+1);hist.push(d);if(hist.length>50)hist.shift();hIdx=Math.min(hIdx+1,49)}catch(e){}}
+function undo(){if(hIdx<=0)return;hIdx--;const img=new Image();img.onload=()=>{ctx.clearRect(0,0,c.width,c.height);ctx.fillStyle='#fff';ctx.fillRect(0,0,innerWidth,innerHeight-44);ctx.drawImage(img,0,0,innerWidth,innerHeight-44)};img.src=hist[hIdx]}
+function redo(){if(hIdx>=hist.length-1)return;hIdx++;const img=new Image();img.onload=()=>{ctx.clearRect(0,0,c.width,c.height);ctx.drawImage(img,0,0,innerWidth,innerHeight-44)};img.src=hist[hIdx]}
+function clearAll(){ctx.fillStyle='#fff';ctx.fillRect(0,0,innerWidth,innerHeight-44);saveH()}
+function getP(e){const r=c.getBoundingClientRect();const t=e.touches?e.touches[0]:e;return{x:t.clientX-r.left,y:t.clientY-r.top}}
+function start(e){e.preventDefault();drawing=true;const p=getP(e);ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.strokeStyle=tool==='eraser'?'#fff':color;ctx.lineWidth=tool==='eraser'?size*4:size}
+function move(e){if(!drawing)return;e.preventDefault();const p=getP(e);ctx.lineTo(p.x,p.y);ctx.stroke();ctx.beginPath();ctx.moveTo(p.x,p.y)}
+function end(e){if(!drawing)return;e&&e.preventDefault&&e.preventDefault();drawing=false;ctx.beginPath();saveH()}
+c.addEventListener('mousedown',start);c.addEventListener('mousemove',move);c.addEventListener('mouseup',end);c.addEventListener('mouseleave',end);
+c.addEventListener('touchstart',start,{passive:false});c.addEventListener('touchmove',move,{passive:false});c.addEventListener('touchend',end);
+window.addEventListener('resize',resize);
+function buildTB(){const tb=document.getElementById('toolbar');tb.innerHTML='';
+const penBtn=document.createElement('button');penBtn.textContent='✏️';penBtn.title='Στυλό';penBtn.className=tool==='pen'?'active':'';penBtn.onclick=()=>{tool='pen';buildTB()};tb.appendChild(penBtn);
+const erBtn=document.createElement('button');erBtn.textContent='🧹';erBtn.title='Σβήστρα';erBtn.className=tool==='eraser'?'active':'';erBtn.onclick=()=>{tool='eraser';buildTB()};tb.appendChild(erBtn);
+tb.appendChild(Object.assign(document.createElement('div'),{className:'sep'}));
+colors.forEach(cl=>{const d=document.createElement('div');d.className='clr'+(color===cl&&tool==='pen'?' active':'');d.style.background=cl;d.onclick=()=>{color=cl;tool='pen';buildTB()};tb.appendChild(d)});
+tb.appendChild(Object.assign(document.createElement('div'),{className:'sep'}));
+sizes.forEach(s=>{const b=document.createElement('div');b.className='sz'+(size===s&&tool==='pen'?' active':'');const dot=document.createElement('div');dot.style.cssText='width:'+Math.min(s*1.5,16)+'px;height:'+Math.min(s*1.5,16)+'px;border-radius:50%;background:#1a1a1a';b.appendChild(dot);b.onclick=()=>{size=s;buildTB()};tb.appendChild(b)});
+tb.appendChild(Object.assign(document.createElement('div'),{className:'sep'}));
+const uBtn=document.createElement('button');uBtn.textContent='↩';uBtn.title='Αναίρεση';uBtn.onclick=undo;tb.appendChild(uBtn);
+const rBtn=document.createElement('button');rBtn.textContent='↪';rBtn.title='Επανάληψη';rBtn.onclick=redo;tb.appendChild(rBtn);
+const clBtn=document.createElement('button');clBtn.textContent='🗑';clBtn.title='Καθαρισμός';clBtn.style.color='#dc2626';clBtn.style.borderColor='#fca5a5';clBtn.onclick=clearAll;tb.appendChild(clBtn)}
+buildTB();resize();<\/script></body></html>`;
+                appName = 'Πίνακας Σημειώσεων';
+              } else if (linkedApp && !linkedApp.isUrl && !linkedApp.isPdf) {
                 try {
                   const r = await fetch('/api/tool/'+(linkedApp.driveId||linkedApp.file));
                   if (r.ok) appHtml = await r.text();
@@ -1622,7 +1861,7 @@ function az(d){if(d===0)az0=100;else az0=Math.min(Math.max(az0+d,50),200);applyZ
                 )}
                 {!isMobile&&(linkedApp
                   ?<>
-                    <button onClick={()=>setShowLinkedApp(p=>!p)} style={{...S.iconBtn,background:showLinkedApp?PALETTE.mustard.bgSoft:'#f4f4f4',borderColor:showLinkedApp?PALETTE.mustard.deep:'#e0e0e0',color:showLinkedApp?PALETTE.mustard.deep:'#444'}} title={linkedApp.name}>🔗</button>
+                    <button onClick={()=>setShowLinkedApp(p=>!p)} style={{...S.iconBtn,background:showLinkedApp?(linkedApp.isWhiteboard?'#dcfce7':PALETTE.mustard.bgSoft):'#f4f4f4',borderColor:showLinkedApp?(linkedApp.isWhiteboard?'#16a34a':PALETTE.mustard.deep):'#e0e0e0',color:showLinkedApp?(linkedApp.isWhiteboard?'#15803d':PALETTE.mustard.deep):'#444'}} title={linkedApp.name}>{linkedApp.isWhiteboard?'🖊️':'🔗'}</button>
                     <button onClick={unlinkApp} style={{...S.iconBtn,fontSize:'10px',color:'#dc2626',borderColor:'#fca5a5'}} title="Αποσύνδεση">✕🔗</button>
                   </>
                   :<button onClick={()=>setShowAppPicker(true)} style={{...S.iconBtn,fontSize:'11px'}} title="Σύνδεση εφαρμογής">+🔗</button>
@@ -1653,7 +1892,10 @@ function az(d){if(d===0)az0=100;else az0=Math.min(Math.max(az0+d,50),200);applyZ
                   {/* App tab */}
                   {linkedApp&&mobileTab==='app'&&(
                     <div style={{flex:1,overflow:'auto'}}>
-                      <iframe src={linkedApp.isUrl?linkedApp.file:linkedApp.isPdf?'https://drive.google.com/file/d/'+linkedApp.driveId+'/preview':'/api/tool/'+(linkedApp.driveId||linkedApp.file)} style={{width:'100%',height:'100%',minHeight:'100vh',border:'none'}} title={linkedApp.name}/>
+                      {linkedApp.isWhiteboard
+                        ? <WhiteboardCanvas height="100vh"/>
+                        : <iframe src={linkedApp.isUrl?linkedApp.file:linkedApp.isPdf?'https://drive.google.com/file/d/'+linkedApp.driveId+'/preview':'/api/tool/'+(linkedApp.driveId||linkedApp.file)} style={{width:'100%',height:'100%',minHeight:'100vh',border:'none'}} title={linkedApp.name}/>
+                      }
                     </div>
                   )}
                 </div>
@@ -1683,6 +1925,16 @@ function az(d){if(d===0)az0=100;else az0=Math.min(Math.max(az0+d,50),200);applyZ
               {/* Εφαρμογή panel */}
               {showLinkedApp&&linkedApp&&(
                 <div style={{flex:1,flexShrink:0,borderLeft:'2px solid #333',display:'flex',flexDirection:'column',background:'#fff',overflow:'hidden'}}>
+                  {linkedApp.isWhiteboard ? (
+                    <>
+                      {/* Header πίνακα */}
+                      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'5px 10px',background:'#dcfce7',borderBottom:'1px solid #bbf7d0',flexShrink:0}}>
+                        <span style={{fontSize:'12px',fontWeight:'600',color:'#15803d'}}>🖊️ {linkedApp.name}</span>
+                      </div>
+                      <WhiteboardCanvas height="100%"/>
+                    </>
+                  ) : (
+                    <>
                   {/* Zoom bar εφαρμογής */}
                   <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'5px 10px',background:PALETTE.mustard.bgSoft,borderBottom:'1px solid '+PALETTE.mustard.accent,flexShrink:0}}>
                     <div style={{display:'flex',alignItems:'center',gap:'6px'}}>
@@ -1706,6 +1958,8 @@ function az(d){if(d===0)az0=100;else az0=Math.min(Math.max(az0+d,50),200);applyZ
                       <iframe src={linkedApp.isUrl ? linkedApp.file : linkedApp.isPdf ? 'https://drive.google.com/file/d/'+linkedApp.driveId+'/preview' : '/api/tool/'+(linkedApp.driveId||linkedApp.file)} style={{width:'100%',height:'100%',minHeight:'80vh',border:'none'}} title={linkedApp.name}/>
                     </div>
                   </div>
+                    </>
+                  )}
                 </div>
               )}
 
@@ -1793,6 +2047,11 @@ function az(d){if(d===0)az0=100;else az0=Math.min(Math.max(az0+d,50),200);applyZ
 
               {/* Γρήγορες επιλογές — πάντα ορατές */}
               <div style={{display:'flex',flexWrap:'wrap',gap:'8px',marginBottom:'20px'}}>
+                {/* Πίνακας σημειώσεων — ειδική επιλογή */}
+                <button onClick={()=>linkAppToFile({file:'__whiteboard__',name:'Πίνακας Σημειώσεων',driveId:null,isWhiteboard:true})}
+                  style={{display:'flex',alignItems:'center',gap:'6px',padding:'8px 14px',borderRadius:'10px',border:'2px solid #16a34a',background:'#dcfce7',cursor:'pointer',fontSize:'13px',fontWeight:'600',color:'#15803d'}}>
+                  <span>🖊️</span>Πίνακας Σημειώσεων
+                </button>
                 {[
                   {name:'YouTube',icon:'🎬',url:'https://www.youtube.com'},
                   {name:'Wikipedia',icon:'📖',url:'https://el.wikipedia.org'},
