@@ -8,7 +8,8 @@ import { authOptions } from '../auth/[...nextauth]';
 import { google } from 'googleapis';
 
 const FILENAME = 'leviathan-metadata.json';
-const TTL_MS = 2 * 60 * 60 * 1000; // 2 ώρες
+// ❌ Αφαίρεση TTL — τα items παραμένουν μόνιμα μέχρι χειροκίνητη αποδημοσίευση
+// const TTL_MS = 2 * 60 * 60 * 1000;
 
 async function getDrive(accessToken) {
   const auth = new google.auth.OAuth2();
@@ -52,46 +53,33 @@ async function saveMetadata(drive, data) {
   }
 }
 
-// Καθαρισμός ληγμένων
-function cleanExpired(published) {
-  const now = Date.now();
-  const cleaned = {};
-  for (const [key, item] of Object.entries(published)) {
-    if (item.expiresAt > now) cleaned[key] = item;
-  }
-  return cleaned;
-}
+// ❌ Αφαίρεση cleanExpired — δεν υπάρχει πλέον λήξη
+// function cleanExpired(published) { ... }
 
 export default async function handler(req, res) {
 
   // GET — δημόσιο, αλλά χρειάζεται accessToken για Drive
-  // Αποθηκεύουμε το accessToken στα published items
   if (req.method === 'GET') {
-    // Δοκιμή: πρώτα με session (αν είναι authenticated)
-    // Αν δεν υπάρχει session, χρησιμοποιεί cached accessToken από τα published
     const session = await getServerSession(req, res, authOptions);
     
     if (!session) {
       // Δημόσιο GET — χρησιμοποιεί in-memory cache
       const cached = global.__publishCache || { items: [], updatedAt: 0 };
-      // Φιλτράρισμα ληγμένων
-      const now = Date.now();
-      const items = cached.items.filter(i => i.expiresAt > now);
-      return res.status(200).json({ items });
+      return res.status(200).json({ items: cached.items });
     }
 
     // Authenticated GET — διαβάζει από Drive
     try {
       const drive = await getDrive(session.accessToken);
       const meta = await loadMetadata(drive);
-      const published = cleanExpired(meta._published || {});
+      const published = meta._published || {};
       
       const items = Object.entries(published).map(([key, item]) => ({
         key,
         type: item.type,
+        id: item.id,
         title: item.title,
         linkedAppTitle: item.linkedAppTitle || null,
-        expiresAt: item.expiresAt,
         publishedAt: item.publishedAt,
       }));
 
@@ -129,9 +117,6 @@ export default async function handler(req, res) {
     try {
       const meta = await loadMetadata(drive);
       if (!meta._published) meta._published = {};
-      
-      // Καθαρισμός ληγμένων
-      meta._published = cleanExpired(meta._published);
 
       const key = `${type}_${id}`;
       const now = Date.now();
@@ -143,7 +128,7 @@ export default async function handler(req, res) {
         linkedApp: linkedApp || null,
         linkedAppTitle: linkedAppTitle || null,
         accessToken: session.accessToken,
-        expiresAt: now + TTL_MS,
+        // ❌ Χωρίς expiresAt — μόνιμη δημοσίευση
         publishedAt: now,
       };
 
@@ -153,9 +138,9 @@ export default async function handler(req, res) {
       const items = Object.entries(meta._published).map(([k, item]) => ({
         key: k,
         type: item.type,
+        id: item.id,
         title: item.title,
         linkedAppTitle: item.linkedAppTitle || null,
-        expiresAt: item.expiresAt,
         publishedAt: item.publishedAt,
       }));
       global.__publishCache = { items, updatedAt: Date.now() };
@@ -166,10 +151,9 @@ export default async function handler(req, res) {
         global.__publishDataCache[k] = item;
       }
 
-      // Αποθήκευση accessToken για fallback σε content/[key].js
       global.__lastPublishAccessToken = session.accessToken;
 
-      return res.status(200).json({ key, expiresAt: now + TTL_MS });
+      return res.status(200).json({ key });
     } catch (e) {
       console.error('[publish POST]', e.message);
       return res.status(500).json({ error: 'Failed to publish' });
@@ -177,26 +161,30 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'DELETE') {
-    const { key } = req.body;
+    const key = req.body?.key || req.query?.key;
     if (!key) return res.status(400).json({ error: 'Missing key' });
 
     try {
       const meta = await loadMetadata(drive);
       if (meta._published) {
         delete meta._published[key];
-        meta._published = cleanExpired(meta._published);
         await saveMetadata(drive, meta);
       }
 
       // Update cache
       const items = Object.entries(meta._published || {}).map(([k, item]) => ({
-        key: k, type: item.type, title: item.title,
+        key: k, type: item.type, id: item.id, title: item.title,
         linkedAppTitle: item.linkedAppTitle || null,
-        expiresAt: item.expiresAt, publishedAt: item.publishedAt,
+        publishedAt: item.publishedAt,
       }));
       global.__publishCache = { items, updatedAt: Date.now() };
 
-      return res.status(200).json({ message: 'Unpublished' });
+      // Cleanup data cache
+      if (global.__publishDataCache) {
+        delete global.__publishDataCache[key];
+      }
+
+      return res.status(200).json({ ok: true });
     } catch (e) {
       console.error('[publish DELETE]', e.message);
       return res.status(500).json({ error: 'Failed to unpublish' });
