@@ -447,7 +447,7 @@ export default function Home() {
   const [activeSearchTags, setActiveSearchTags]     = useState([]);   // πολλαπλή επιλογή ετικετών
   const [tagSearchInput, setTagSearchInput]         = useState('');
   const [openCounts, setOpenCounts]                 = useState({});   // {fileId: count} — δημοφιλή
-  const [publishedIds, setPublishedIds]             = useState(new Set()); // IDs δημοσιευμένων
+  const [publishedMap, setPublishedMap]             = useState(new Map()); // id -> key δημοσιευμένων
 
   const zoomIn    = () => setModalZoom(z=>Math.min(z+10,200));
   const zoomOut   = () => setModalZoom(z=>Math.max(z-10,50));
@@ -497,13 +497,14 @@ export default function Home() {
 
   useEffect(()=>{ if(session){ loadTools(); loadMetadata(); loadAllFiles(); loadNetworks(); loadPublished(); } },[session]);
 
-  // Φόρτωση δημοσιευμένων IDs
+  // Φόρτωση δημοσιευμένων (id -> key)
   const loadPublished = async()=>{
     try{
       const r = await fetch('/api/share/publish');
       const d = await r.json();
-      const ids = new Set((d.items||[]).map(i=>i.id));
-      setPublishedIds(ids);
+      const m = new Map();
+      (d.items||[]).forEach(i=>{ if(i.id) m.set(i.id, i.key); });
+      setPublishedMap(m);
     }catch(e){}
   };
 
@@ -595,21 +596,22 @@ export default function Home() {
 
   // ── Toggle δημοσίευσης στη σελίδα μαθητών ──
   const togglePublish = async(type, id, title, linkedApp, linkedAppTitle)=>{
-    const isPublished = publishedIds.has(id);
+    const existingKey = publishedMap.get(id);
     try{
-      if(isPublished){
-        // Αποδημοσίευση (DELETE)
-        const key = `${type}_${id}`;
-        const r = await fetch('/api/share/publish',{
+      if(existingKey){
+        // Αποδημοσίευση (DELETE) — key και στο query (αντοχή σε DELETE body stripping)
+        const r = await fetch('/api/share/publish?key='+encodeURIComponent(existingKey),{
           method:'DELETE',
           headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({key}),
+          body:JSON.stringify({key:existingKey}),
         });
-        const d = await r.json();
-        if(d.ok){
-          setPublishedIds(prev=>{ const s=new Set(prev); s.delete(id); return s; });
+        if(r.ok){
+          setPublishedMap(prev=>{ const m=new Map(prev); m.delete(id); return m; });
           alert('❌ Αποδημοσιεύτηκε.\nΔεν είναι πλέον ορατό στους μαθητές.');
-        } else alert('Σφάλμα αποδημοσίευσης');
+        } else {
+          const d = await r.json().catch(()=>({}));
+          alert('Σφάλμα αποδημοσίευσης'+(d.error?': '+d.error:''));
+        }
       } else {
         // Δημοσίευση (POST — χωρίς TTL, μόνιμη)
         const r = await fetch('/api/share/publish',{
@@ -618,10 +620,10 @@ export default function Home() {
           body:JSON.stringify({type, id, title, linkedApp, linkedAppTitle}),
         });
         const d = await r.json();
-        if(d.key){
-          setPublishedIds(prev=>new Set(prev).add(id));
+        if(r.ok && d.key){
+          setPublishedMap(prev=>new Map(prev).set(id, d.key));
           alert('✅ Δημοσιεύτηκε!\n\nΟι μαθητές μπορούν να το δουν στο:\nleviathan-cloud.vercel.app/student\n\nΓια αποδημοσίευση, πάτησε ξανά 📌');
-        } else alert('Σφάλμα δημοσίευσης');
+        } else alert('Σφάλμα δημοσίευσης'+(d.error?': '+d.error:''));
       }
     }catch(e){ alert('Σφάλμα: '+e.message); }
   };
@@ -1181,7 +1183,7 @@ if(status==='loading')
                         <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
                           <div className="qr-btn"><QrButton resourceType="pdf" resourceId={file.id} resourceName={file.name} title={file.title.length>13?file.title.slice(0,13)+'…':file.title} color={p.deep} onShowQr={setQrPopup}/></div>
                           <button onClick={e=>{e.stopPropagation();toggleFavorite(file);}} style={{width:'28px',height:'28px',borderRadius:'8px',background:'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:favorites.some(f=>f.id===file.id)?'#e8c96a':'#888',fontSize:'16px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title="Αγαπημένα">{favorites.some(f=>f.id===file.id)?'★':'☆'}</button>
-                          <button onClick={e=>{e.stopPropagation();togglePublish(isDiktya&&metadata[file.id]?.linkedApp?'pair':'pdf',file.id,file.title,metadata[file.id]?.linkedApp||null,metadata[file.id]?.linkedAppTitle||null);}} className="action-btn" style={{width:'28px',height:'28px',borderRadius:'8px',background:publishedIds.has(file.id)?(p.deep||'#16a34a'):'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:publishedIds.has(file.id)?'#fff':(p.deep||'#888'),fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title={publishedIds.has(file.id)?'Αποδημοσίευση':'Δημοσίευση στους μαθητές'}>{publishedIds.has(file.id)?'📌':'📤'}</button>
+                          <button onClick={e=>{e.stopPropagation();togglePublish(isDiktya&&metadata[file.id]?.linkedApp?'pair':'pdf',file.id,file.title,metadata[file.id]?.linkedApp||null,metadata[file.id]?.linkedAppTitle||null);}} className="action-btn" style={{width:'28px',height:'28px',borderRadius:'8px',background:publishedMap.has(file.id)?(p.deep||'#16a34a'):'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:publishedMap.has(file.id)?'#fff':(p.deep||'#888'),fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title={publishedMap.has(file.id)?'Αποδημοσίευση':'Δημοσίευση στους μαθητές'}>{publishedMap.has(file.id)?'📌':'📤'}</button>
                           <button onClick={e=>{e.stopPropagation();window.open(getFileExternalUrl(file),'_blank');}} className="action-btn" style={{width:'28px',height:'28px',borderRadius:'8px',background:'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:p.deep||'#888',fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title="Εκτύπωση"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
                         </div>
                       </div>
@@ -1343,7 +1345,7 @@ if(status==='loading')
                         </div>
                         <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
                           <div className="qr-btn"><QrButton resourceType="pdf" resourceId={file.id} resourceName={file.name} title={file.title.length>13?file.title.slice(0,13)+'…':file.title} color={p.deep} onShowQr={setQrPopup}/></div>
-                          <button onClick={e=>{e.stopPropagation();togglePublish('pdf',file.id,file.title,null,null);}} className="action-btn" style={{width:'28px',height:'28px',borderRadius:'8px',background:publishedIds.has(file.id)?(p.deep||'#16a34a'):'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:publishedIds.has(file.id)?'#fff':(p.deep||'#888'),fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title={publishedIds.has(file.id)?'Αποδημοσίευση':'Δημοσίευση στους μαθητές'}>{publishedIds.has(file.id)?'📌':'📤'}</button>
+                          <button onClick={e=>{e.stopPropagation();togglePublish('pdf',file.id,file.title,null,null);}} className="action-btn" style={{width:'28px',height:'28px',borderRadius:'8px',background:publishedMap.has(file.id)?(p.deep||'#16a34a'):'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:publishedMap.has(file.id)?'#fff':(p.deep||'#888'),fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title={publishedMap.has(file.id)?'Αποδημοσίευση':'Δημοσίευση στους μαθητές'}>{publishedMap.has(file.id)?'📌':'📤'}</button>
                           <button onClick={e=>{e.stopPropagation();window.open(getFileExternalUrl(file),'_blank');}} className="action-btn" style={{width:'28px',height:'28px',borderRadius:'8px',background:'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:p.deep||'#888',fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title="Εκτύπωση"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
                         </div>
                       </div>
@@ -1373,7 +1375,7 @@ if(status==='loading')
                         <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
                           <div className="qr-btn"><QrButton resourceType="pdf" resourceId={file.id} resourceName={file.name} title={file.title.length>13?file.title.slice(0,13)+'…':file.title} color={p.deep} onShowQr={setQrPopup}/></div>
                           <button onClick={e=>{e.stopPropagation();window.open(getFileExternalUrl(file),'_blank');}} className="action-btn" style={{width:'28px',height:'28px',borderRadius:'8px',background:'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:p.deep||'#888',fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title="Εκτύπωση"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
-                          <button onClick={e=>{e.stopPropagation();togglePublish('pdf',file.id,file.title,null,null);}} className="action-btn" style={{width:'28px',height:'28px',borderRadius:'8px',background:publishedIds.has(file.id)?(p.deep||'#16a34a'):'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:publishedIds.has(file.id)?'#fff':(p.deep||'#888'),fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title={publishedIds.has(file.id)?'Αποδημοσίευση':'Δημοσίευση στους μαθητές'}>{publishedIds.has(file.id)?'📌':'📤'}</button>
+                          <button onClick={e=>{e.stopPropagation();togglePublish('pdf',file.id,file.title,null,null);}} className="action-btn" style={{width:'28px',height:'28px',borderRadius:'8px',background:publishedMap.has(file.id)?(p.deep||'#16a34a'):'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:publishedMap.has(file.id)?'#fff':(p.deep||'#888'),fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title={publishedMap.has(file.id)?'Αποδημοσίευση':'Δημοσίευση στους μαθητές'}>{publishedMap.has(file.id)?'📌':'📤'}</button>
                         </div>
                       </div>
                     );
@@ -1449,7 +1451,7 @@ if(status==='loading')
                             <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
                               <div className="qr-btn"><QrButton resourceType="pdf" resourceId={file.id} resourceName={file.name} title={file.title.length>13?file.title.slice(0,13)+'…':file.title} color={p.deep} onShowQr={setQrPopup}/></div>
                               <button onClick={e=>{e.stopPropagation();window.open(getFileExternalUrl(file),'_blank');}} className="action-btn" style={{width:'28px',height:'28px',borderRadius:'8px',background:'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:p.deep||'#888',fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title="Εκτύπωση"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
-                              <button onClick={e=>{e.stopPropagation();togglePublish('pdf',file.id,file.title,null,null);}} className="action-btn" style={{width:'28px',height:'28px',borderRadius:'8px',background:publishedIds.has(file.id)?(p.deep||'#16a34a'):'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:publishedIds.has(file.id)?'#fff':(p.deep||'#888'),fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title={publishedIds.has(file.id)?'Αποδημοσίευση':'Δημοσίευση στους μαθητές'}>{publishedIds.has(file.id)?'📌':'📤'}</button>
+                              <button onClick={e=>{e.stopPropagation();togglePublish('pdf',file.id,file.title,null,null);}} className="action-btn" style={{width:'28px',height:'28px',borderRadius:'8px',background:publishedMap.has(file.id)?(p.deep||'#16a34a'):'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:publishedMap.has(file.id)?'#fff':(p.deep||'#888'),fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title={publishedMap.has(file.id)?'Αποδημοσίευση':'Δημοσίευση στους μαθητές'}>{publishedMap.has(file.id)?'📌':'📤'}</button>
                             </div>
                           </div>
                         );
@@ -1660,7 +1662,7 @@ if(status==='loading')
                         </div>
                         <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
                           <div className="qr-btn"><QrButton resourceType="tool" resourceId={tool.driveId||tool.file} resourceName={tool.name} title={tool.name} color={p.deep} onShowQr={setQrPopup}/></div>
-                          <button onClick={e=>{e.stopPropagation();togglePublish('tool',tool.driveId||tool.file,tool.name);}} className="action-btn" style={{width:'28px',height:'28px',borderRadius:'8px',background:publishedIds.has(tool.driveId||tool.file)?(p.deep||'#16a34a'):'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:publishedIds.has(tool.driveId||tool.file)?'#fff':(p.deep||'#888'),fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title={publishedIds.has(tool.driveId||tool.file)?'Αποδημοσίευση':'Δημοσίευση στους μαθητές'}>{publishedIds.has(tool.driveId||tool.file)?'📌':'📤'}</button>
+                          <button onClick={e=>{e.stopPropagation();togglePublish('tool',tool.driveId||tool.file,tool.name);}} className="action-btn" style={{width:'28px',height:'28px',borderRadius:'8px',background:publishedMap.has(tool.driveId||tool.file)?(p.deep||'#16a34a'):'transparent',border:'1.5px solid '+(p.deep||'#ccc'),color:publishedMap.has(tool.driveId||tool.file)?'#fff':(p.deep||'#888'),fontSize:'13px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,padding:0}} title={publishedMap.has(tool.driveId||tool.file)?'Αποδημοσίευση':'Δημοσίευση στους μαθητές'}>{publishedMap.has(tool.driveId||tool.file)?'📌':'📤'}</button>
                           <button onClick={e=>{e.stopPropagation();toggleFavoriteTool(tool);}} style={{background:'transparent',border:'none',fontSize:'16px',cursor:'pointer',color:favoriteTools.some(t=>t.file===tool.file)?'#e8c96a':'#ccc',padding:'4px'}}>{favoriteTools.some(t=>t.file===tool.file)?'★':'☆'}</button>
                         </div>
                       </div>
