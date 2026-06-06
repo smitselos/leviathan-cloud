@@ -76,16 +76,6 @@ export default function StudentPage() {
   const typeIcon = (type) => type === 'tool' ? '🎮' : type === 'pair' ? '📄🎮' : '📄';
   const typeLabel = (type) => type === 'tool' ? 'Εφαρμογή' : type === 'pair' ? 'Κείμενο + Εφαρμογή' : 'Κείμενο';
 
-  const timeLeft = (expiresAt) => {
-    const diff = expiresAt - Date.now();
-    if (diff <= 0) return 'Έληξε';
-    const mins = Math.floor(diff / 60000);
-    if (mins < 60) return `${mins} λεπτά`;
-    const hrs = Math.floor(mins / 60);
-    const rm = mins % 60;
-    return `${hrs}ω ${rm}λ`;
-  };
-
   // ── Zoom ──
   const [zoom, setZoom] = useState(100);
   const zoomIn = () => setZoom(z => Math.min(z + 15, 200));
@@ -212,7 +202,7 @@ export default function StudentPage() {
                           <div style={S.recentInfo}>
                             <div style={S.recentTitle}>{item.title}</div>
                             <div style={S.recentMeta}>
-                              {typeLabel(item.type)} {item.linkedAppTitle ? `· ${item.linkedAppTitle}` : ''} · ⏱ {timeLeft(item.expiresAt)}
+                              {typeLabel(item.type)} {item.linkedAppTitle ? `· ${item.linkedAppTitle}` : ''}
                             </div>
                           </div>
                           <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0}}>
