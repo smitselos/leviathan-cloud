@@ -627,6 +627,71 @@ export default function Home() {
       }
     }catch(e){ alert('Σφάλμα: '+e.message); }
   };
+
+  // ── Στείλε στο διαδραστικό (live) — κοινό για mobile & desktop ──
+  const sendToLive = async()=>{
+    if(!currentFile) return;
+              const code = Math.floor(1000+Math.random()*9000).toString();
+              const fileId = currentFile.id;
+              const pdfSrc = getFileViewUrl(currentFile);
+              
+              // Φορτώνει το HTML της εφαρμογής με session και το στέλνει inline
+              let appHtml = null;
+              let appName = linkedApp?.name || null;
+              if (linkedApp && linkedApp.isWhiteboard) {
+                // Whiteboard HTML — πλήρες standalone canvas
+                appHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Πίνακας</title><style>*{margin:0;padding:0;box-sizing:border-box}body{overflow:hidden;font-family:system-ui,sans-serif;background:#fff}.tb{display:flex;align-items:center;gap:6px;padding:6px 10px;background:#f7f5ef;border-bottom:1px solid #e8e4d8;flex-wrap:wrap}.tb button{width:32px;height:32px;border-radius:8px;border:1px solid #d0d0d0;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}.tb button.active{border:2px solid #1a1a1a;background:#f0eee6}.clr{width:24px;height:24px;border-radius:50%;border:1.5px solid #ccc;cursor:pointer;flex-shrink:0}.clr.active{border:2.5px solid #1a1a1a;box-shadow:0 0 0 2px #fff,0 0 0 3.5px #1a1a1a}.sep{width:1px;height:22px;background:#d0d0d0;margin:0 2px}.sz{width:28px;height:28px;border-radius:8px;border:1px solid #d0d0d0;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}.sz.active{border:2px solid #1a1a1a;background:#f0eee6}canvas{display:block;touch-action:none}</style></head><body><div class="tb" id="toolbar"></div><canvas id="c"></canvas><script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');let drawing=false,tool='pen',color='#1a1a1a',size=3,hist=[],hIdx=-1;
+const colors=['#1a1a1a','#dc2626','#2563eb','#16a34a','#d97706','#7c3aed','#fff'];
+const sizes=[2,3,5,8,14];
+function resize(){const dpr=devicePixelRatio||1;c.width=innerWidth*dpr;c.height=(innerHeight-44)*dpr;c.style.width=innerWidth+'px';c.style.height=(innerHeight-44)+'px';ctx.scale(dpr,dpr);ctx.lineCap='round';ctx.lineJoin='round';if(hist.length>0){const img=new Image();img.onload=()=>{ctx.drawImage(img,0,0,innerWidth,innerHeight-44)};img.src=hist[hIdx]}else{ctx.fillStyle='#fff';ctx.fillRect(0,0,innerWidth,innerHeight-44);saveH()}}
+function saveH(){try{const d=c.toDataURL();hist=hist.slice(0,hIdx+1);hist.push(d);if(hist.length>50)hist.shift();hIdx=Math.min(hIdx+1,49)}catch(e){}}
+function undo(){if(hIdx<=0)return;hIdx--;const img=new Image();img.onload=()=>{ctx.clearRect(0,0,c.width,c.height);ctx.fillStyle='#fff';ctx.fillRect(0,0,innerWidth,innerHeight-44);ctx.drawImage(img,0,0,innerWidth,innerHeight-44)};img.src=hist[hIdx]}
+function redo(){if(hIdx>=hist.length-1)return;hIdx++;const img=new Image();img.onload=()=>{ctx.clearRect(0,0,c.width,c.height);ctx.drawImage(img,0,0,innerWidth,innerHeight-44)};img.src=hist[hIdx]}
+function clearAll(){ctx.fillStyle='#fff';ctx.fillRect(0,0,innerWidth,innerHeight-44);saveH()}
+function getP(e){const r=c.getBoundingClientRect();const t=e.touches?e.touches[0]:e;return{x:t.clientX-r.left,y:t.clientY-r.top}}
+function start(e){e.preventDefault();drawing=true;const p=getP(e);ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.strokeStyle=tool==='eraser'?'#fff':color;ctx.lineWidth=tool==='eraser'?size*4:size}
+function move(e){if(!drawing)return;e.preventDefault();const p=getP(e);ctx.lineTo(p.x,p.y);ctx.stroke();ctx.beginPath();ctx.moveTo(p.x,p.y)}
+function end(e){if(!drawing)return;e&&e.preventDefault&&e.preventDefault();drawing=false;ctx.beginPath();saveH()}
+c.addEventListener('mousedown',start);c.addEventListener('mousemove',move);c.addEventListener('mouseup',end);c.addEventListener('mouseleave',end);
+c.addEventListener('touchstart',start,{passive:false});c.addEventListener('touchmove',move,{passive:false});c.addEventListener('touchend',end);
+window.addEventListener('resize',resize);
+function buildTB(){const tb=document.getElementById('toolbar');tb.innerHTML='';
+const penBtn=document.createElement('button');penBtn.textContent='✏️';penBtn.title='Στυλό';penBtn.className=tool==='pen'?'active':'';penBtn.onclick=()=>{tool='pen';buildTB()};tb.appendChild(penBtn);
+const erBtn=document.createElement('button');erBtn.textContent='🧹';erBtn.title='Σβήστρα';erBtn.className=tool==='eraser'?'active':'';erBtn.onclick=()=>{tool='eraser';buildTB()};tb.appendChild(erBtn);
+tb.appendChild(Object.assign(document.createElement('div'),{className:'sep'}));
+colors.forEach(cl=>{const d=document.createElement('div');d.className='clr'+(color===cl&&tool==='pen'?' active':'');d.style.background=cl;d.onclick=()=>{color=cl;tool='pen';buildTB()};tb.appendChild(d)});
+tb.appendChild(Object.assign(document.createElement('div'),{className:'sep'}));
+sizes.forEach(s=>{const b=document.createElement('div');b.className='sz'+(size===s&&tool==='pen'?' active':'');const dot=document.createElement('div');dot.style.cssText='width:'+Math.min(s*1.5,16)+'px;height:'+Math.min(s*1.5,16)+'px;border-radius:50%;background:#1a1a1a';b.appendChild(dot);b.onclick=()=>{size=s;buildTB()};tb.appendChild(b)});
+tb.appendChild(Object.assign(document.createElement('div'),{className:'sep'}));
+const uBtn=document.createElement('button');uBtn.textContent='↩';uBtn.title='Αναίρεση';uBtn.onclick=undo;tb.appendChild(uBtn);
+const rBtn=document.createElement('button');rBtn.textContent='↪';rBtn.title='Επανάληψη';rBtn.onclick=redo;tb.appendChild(rBtn);
+const clBtn=document.createElement('button');clBtn.textContent='🗑';clBtn.title='Καθαρισμός';clBtn.style.color='#dc2626';clBtn.style.borderColor='#fca5a5';clBtn.onclick=clearAll;tb.appendChild(clBtn)}
+buildTB();resize();<\/script></body></html>`;
+                appName = 'Πίνακας Σημειώσεων';
+              } else if (linkedApp && !linkedApp.isUrl && !linkedApp.isPdf) {
+                try {
+                  const r = await fetch('/api/tool/'+(linkedApp.driveId||linkedApp.file));
+                  if (r.ok) appHtml = await r.text();
+                } catch(e) {}
+              }
+              const appSrc = linkedApp?.isUrl ? linkedApp.file : linkedApp?.isPdf ? 'https://drive.google.com/file/d/'+linkedApp.driveId+'/preview' : null;
+
+              await fetch('/api/live',{
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({
+                  code,
+                  type: (appHtml||appSrc) ? 'split' : 'pdf',
+                  src: pdfSrc,
+                  title: currentFile.title,
+                  appSrc,
+                  appHtml,
+                  appName,
+                }),
+              });
+              alert(`Άνοιξε στο διαδραστικό:\nleviathan-cloud.vercel.app/live/${code}`);
+  };
   const tagSearchResults=allFiles.filter(f=>{
     if(activeSearchTags.length===0&&!tagSearchInput) return false;
     const tags=fileTags(f.id);
@@ -1701,69 +1766,7 @@ if(status==='loading')
           {/* Floating κουμπιά */}
           <div style={{position:'absolute',top:'env(safe-area-inset-top, 12px)',right:'12px',display:'flex',gap:'8px',zIndex:10}}>
             {/* Στείλε στο διαδραστικό 📡 */}
-            <button onClick={async e=>{
-              e.stopPropagation();
-              const code = Math.floor(1000+Math.random()*9000).toString();
-              const fileId = currentFile.id;
-              const pdfSrc = getFileViewUrl(currentFile);
-              
-              // Φορτώνει το HTML της εφαρμογής με session και το στέλνει inline
-              let appHtml = null;
-              let appName = linkedApp?.name || null;
-              if (linkedApp && linkedApp.isWhiteboard) {
-                // Whiteboard HTML — πλήρες standalone canvas
-                appHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Πίνακας</title><style>*{margin:0;padding:0;box-sizing:border-box}body{overflow:hidden;font-family:system-ui,sans-serif;background:#fff}.tb{display:flex;align-items:center;gap:6px;padding:6px 10px;background:#f7f5ef;border-bottom:1px solid #e8e4d8;flex-wrap:wrap}.tb button{width:32px;height:32px;border-radius:8px;border:1px solid #d0d0d0;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}.tb button.active{border:2px solid #1a1a1a;background:#f0eee6}.clr{width:24px;height:24px;border-radius:50%;border:1.5px solid #ccc;cursor:pointer;flex-shrink:0}.clr.active{border:2.5px solid #1a1a1a;box-shadow:0 0 0 2px #fff,0 0 0 3.5px #1a1a1a}.sep{width:1px;height:22px;background:#d0d0d0;margin:0 2px}.sz{width:28px;height:28px;border-radius:8px;border:1px solid #d0d0d0;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}.sz.active{border:2px solid #1a1a1a;background:#f0eee6}canvas{display:block;touch-action:none}</style></head><body><div class="tb" id="toolbar"></div><canvas id="c"></canvas><script>
-const c=document.getElementById('c'),ctx=c.getContext('2d');let drawing=false,tool='pen',color='#1a1a1a',size=3,hist=[],hIdx=-1;
-const colors=['#1a1a1a','#dc2626','#2563eb','#16a34a','#d97706','#7c3aed','#fff'];
-const sizes=[2,3,5,8,14];
-function resize(){const dpr=devicePixelRatio||1;c.width=innerWidth*dpr;c.height=(innerHeight-44)*dpr;c.style.width=innerWidth+'px';c.style.height=(innerHeight-44)+'px';ctx.scale(dpr,dpr);ctx.lineCap='round';ctx.lineJoin='round';if(hist.length>0){const img=new Image();img.onload=()=>{ctx.drawImage(img,0,0,innerWidth,innerHeight-44)};img.src=hist[hIdx]}else{ctx.fillStyle='#fff';ctx.fillRect(0,0,innerWidth,innerHeight-44);saveH()}}
-function saveH(){try{const d=c.toDataURL();hist=hist.slice(0,hIdx+1);hist.push(d);if(hist.length>50)hist.shift();hIdx=Math.min(hIdx+1,49)}catch(e){}}
-function undo(){if(hIdx<=0)return;hIdx--;const img=new Image();img.onload=()=>{ctx.clearRect(0,0,c.width,c.height);ctx.fillStyle='#fff';ctx.fillRect(0,0,innerWidth,innerHeight-44);ctx.drawImage(img,0,0,innerWidth,innerHeight-44)};img.src=hist[hIdx]}
-function redo(){if(hIdx>=hist.length-1)return;hIdx++;const img=new Image();img.onload=()=>{ctx.clearRect(0,0,c.width,c.height);ctx.drawImage(img,0,0,innerWidth,innerHeight-44)};img.src=hist[hIdx]}
-function clearAll(){ctx.fillStyle='#fff';ctx.fillRect(0,0,innerWidth,innerHeight-44);saveH()}
-function getP(e){const r=c.getBoundingClientRect();const t=e.touches?e.touches[0]:e;return{x:t.clientX-r.left,y:t.clientY-r.top}}
-function start(e){e.preventDefault();drawing=true;const p=getP(e);ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.strokeStyle=tool==='eraser'?'#fff':color;ctx.lineWidth=tool==='eraser'?size*4:size}
-function move(e){if(!drawing)return;e.preventDefault();const p=getP(e);ctx.lineTo(p.x,p.y);ctx.stroke();ctx.beginPath();ctx.moveTo(p.x,p.y)}
-function end(e){if(!drawing)return;e&&e.preventDefault&&e.preventDefault();drawing=false;ctx.beginPath();saveH()}
-c.addEventListener('mousedown',start);c.addEventListener('mousemove',move);c.addEventListener('mouseup',end);c.addEventListener('mouseleave',end);
-c.addEventListener('touchstart',start,{passive:false});c.addEventListener('touchmove',move,{passive:false});c.addEventListener('touchend',end);
-window.addEventListener('resize',resize);
-function buildTB(){const tb=document.getElementById('toolbar');tb.innerHTML='';
-const penBtn=document.createElement('button');penBtn.textContent='✏️';penBtn.title='Στυλό';penBtn.className=tool==='pen'?'active':'';penBtn.onclick=()=>{tool='pen';buildTB()};tb.appendChild(penBtn);
-const erBtn=document.createElement('button');erBtn.textContent='🧹';erBtn.title='Σβήστρα';erBtn.className=tool==='eraser'?'active':'';erBtn.onclick=()=>{tool='eraser';buildTB()};tb.appendChild(erBtn);
-tb.appendChild(Object.assign(document.createElement('div'),{className:'sep'}));
-colors.forEach(cl=>{const d=document.createElement('div');d.className='clr'+(color===cl&&tool==='pen'?' active':'');d.style.background=cl;d.onclick=()=>{color=cl;tool='pen';buildTB()};tb.appendChild(d)});
-tb.appendChild(Object.assign(document.createElement('div'),{className:'sep'}));
-sizes.forEach(s=>{const b=document.createElement('div');b.className='sz'+(size===s&&tool==='pen'?' active':'');const dot=document.createElement('div');dot.style.cssText='width:'+Math.min(s*1.5,16)+'px;height:'+Math.min(s*1.5,16)+'px;border-radius:50%;background:#1a1a1a';b.appendChild(dot);b.onclick=()=>{size=s;buildTB()};tb.appendChild(b)});
-tb.appendChild(Object.assign(document.createElement('div'),{className:'sep'}));
-const uBtn=document.createElement('button');uBtn.textContent='↩';uBtn.title='Αναίρεση';uBtn.onclick=undo;tb.appendChild(uBtn);
-const rBtn=document.createElement('button');rBtn.textContent='↪';rBtn.title='Επανάληψη';rBtn.onclick=redo;tb.appendChild(rBtn);
-const clBtn=document.createElement('button');clBtn.textContent='🗑';clBtn.title='Καθαρισμός';clBtn.style.color='#dc2626';clBtn.style.borderColor='#fca5a5';clBtn.onclick=clearAll;tb.appendChild(clBtn)}
-buildTB();resize();<\/script></body></html>`;
-                appName = 'Πίνακας Σημειώσεων';
-              } else if (linkedApp && !linkedApp.isUrl && !linkedApp.isPdf) {
-                try {
-                  const r = await fetch('/api/tool/'+(linkedApp.driveId||linkedApp.file));
-                  if (r.ok) appHtml = await r.text();
-                } catch(e) {}
-              }
-              const appSrc = linkedApp?.isUrl ? linkedApp.file : linkedApp?.isPdf ? 'https://drive.google.com/file/d/'+linkedApp.driveId+'/preview' : null;
-
-              await fetch('/api/live',{
-                method:'POST',
-                headers:{'Content-Type':'application/json'},
-                body:JSON.stringify({
-                  code,
-                  type: (appHtml||appSrc) ? 'split' : 'pdf',
-                  src: pdfSrc,
-                  title: currentFile.title,
-                  appSrc,
-                  appHtml,
-                  appName,
-                }),
-              });
-              alert(`Άνοιξε στο διαδραστικό:\nleviathan-cloud.vercel.app/live/${code}`);
-            }}
+            <button onClick={e=>{e.stopPropagation();sendToLive();}}
               style={{width:'44px',height:'44px',borderRadius:'50%',background:'rgba(16,122,90,0.75)',backdropFilter:'blur(8px)',border:'1px solid rgba(255,255,255,0.2)',color:'#fff',fontSize:'20px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
               📡
             </button>
@@ -1947,6 +1950,7 @@ buildTB();resize();saveH();
                   :<button onClick={()=>setShowAppPicker(true)} style={{...S.iconBtn,fontSize:'11px'}} title="Σύνδεση εφαρμογής">+🔗</button>
                 )}
                 {!isMobile&&<button onClick={()=>setShowCommentPanel(p=>!p)} style={{...S.iconBtn,background:showCommentPanel?PALETTE.peach.bgSoft:'#f4f4f4',borderColor:showCommentPanel?PALETTE.peach.deep:'#e0e0e0',color:showCommentPanel?PALETTE.peach.deep:'#444'}} title="Ετικέτες &amp; Σχόλια">🏷️</button>}
+                {!isMobile&&<button onClick={sendToLive} style={{...S.iconBtn,background:'#dcfce7',borderColor:'#16a34a',color:'#15803d'}} title="Στείλε στο διαδραστικό (live)">📡</button>}
                 <button onClick={()=>{setCurrentFile(null);zoomReset();appZoomReset();setShowCommentPanel(false);setShowLinkedApp(false);}} style={S.closeBtn}>✕</button>
               </div>
             </div>
