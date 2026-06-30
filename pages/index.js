@@ -203,7 +203,7 @@ export default function Home() {
   const [linkNameInput, setLinkNameInput] = useState('');
   const [customUrls, setCustomUrls] = useState([]);
   const [modalPickerSection, setModalPickerSection] = useState(null);
-  const [studentUrl, setStudentUrl] = useState('/student');
+  const [studentUrl, setStudentUrl] = useState('/class');
   const [publishing, setPublishing] = useState(false);
   const [liveSending, setLiveSending] = useState(false);
   const [liveToast, setLiveToast] = useState(null);
@@ -253,16 +253,7 @@ export default function Home() {
     } catch (e) {}
     setLoading(false);
   }, []);
-  const loadRole = async () => {
-    try {
-      const r = await fetch('/api/role');
-      const d = await r.json();
-      if (d.role) {
-        if (d.role === 'student') { router.replace('/student'); return; }
-        setUserRole(d.role);
-      }
-    } catch {}
-  };
+  const loadRole = async () => { setUserRole('teacher'); }; // κάθε σύνδεση = εκπαιδευτικός
   const loadCustomUrls = async () => {
     try { const r = await fetch('/api/custom-urls'); const d = await r.json(); setCustomUrls(d.urls || []); } catch {}
   };
