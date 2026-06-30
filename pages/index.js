@@ -485,10 +485,8 @@ export default function Home() {
     } catch(e) {}
     setPublishing(false);
     setVisibilityPicker(null);
-    setShareMessage('');
   };
   const togglePublish = (id) => {
-    setShareMessage('');
     setVisibilityPicker(id);
   };
   const toggleFavorite = (id, e) => {
