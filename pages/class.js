@@ -67,6 +67,7 @@ function PublicView({teacher,isMobile,hasSession}){
   const [loading,setLoading]=useState(true);
   const [search,setSearch]=useState('');
   const [expandedPub,setExpandedPub]=useState(null);
+  const [msgOpen,setMsgOpen]=useState(null); // id αρχείου του οποίου το μήνυμα είναι ανοιχτό
   const [qrFile,setQrFile]=useState(null);
 
   const [sidebarOpen,setSidebarOpen]=useState(!isMobile);
@@ -181,11 +182,18 @@ function PublicView({teacher,isMobile,hasSession}){
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:13,fontWeight:600,color:'#1a1a1a',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{trunc(f.name,25)}</div>
                   </div>
+                  {f.shareMessage&&(
+                    <button onClick={e=>{e.stopPropagation();setMsgOpen(msgOpen===f.id?null:f.id);}} title="Μήνυμα από τον εκπαιδευτικό"
+                      style={{display:'flex',alignItems:'center',justifyContent:'center',width:28,height:28,borderRadius:8,flexShrink:0,cursor:'pointer',fontSize:14,
+                        border:msgOpen===f.id?'1.5px solid #16a34a':'1px solid #bbe5c8',background:msgOpen===f.id?'#dcfce7':'#f0fdf4'}}>💬</button>
+                  )}
                   <span style={{fontSize:11,color:'#aeaeb8',flexShrink:0,transition:'transform 0.15s',transform:isExp?'rotate(180deg)':'none'}}>▼</span>
                 </div>
+                {f.shareMessage&&msgOpen===f.id&&(
+                  <div style={{margin:'0 14px 10px',fontSize:13,color:'#1a7f37',background:'#f0fdf4',border:'1px solid #dcfce7',padding:'9px 11px',borderRadius:8,lineHeight:1.5}}>💬 {f.shareMessage}</div>
+                )}
                 {isExp&&(
                   <div style={{padding:'0 14px 12px',borderTop:'1px solid rgba(0,0,0,0.04)'}}>
-                    {f.shareMessage&&<div style={{fontSize:15,fontWeight:600,color:'#1a7f37',background:'#f0fdf4',padding:'10px 12px',borderRadius:8,marginTop:8,lineHeight:1.6}}>💬 {f.shareMessage}</div>}
                     {f.info&&<div style={{fontSize:12,color:P.cream.deep,padding:'8px 0 6px',lineHeight:1.5}}>ℹ️ {f.info}</div>}
                     <div style={{display:'flex',gap:6,marginTop:6,flexWrap:'wrap',alignItems:'center'}}>
                       <button onClick={()=>openFile(f)} style={S.openBtn}>Άνοιγμα</button>
