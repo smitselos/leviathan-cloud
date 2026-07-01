@@ -68,6 +68,9 @@ function PublicView({teacher,isMobile,hasSession}){
   const [search,setSearch]=useState('');
   const [expandedPub,setExpandedPub]=useState(null);
   const [msgOpen,setMsgOpen]=useState(null); // id αρχείου του οποίου το μήνυμα είναι ανοιχτό
+  const [msgRead,setMsgRead]=useState({}); // ποια μηνύματα έχουν ανοιχτεί — χάνεται η προειδοποίηση
+  useEffect(()=>{try{setMsgRead(JSON.parse(localStorage.getItem('leviathanMsgRead')||'{}'));}catch{}},[]);
+  const markMsgRead=(key)=>setMsgRead(p=>{const n={...p,[key]:1};try{localStorage.setItem('leviathanMsgRead',JSON.stringify(n));}catch{}return n;});
   const [qrFile,setQrFile]=useState(null);
 
   const [sidebarOpen,setSidebarOpen]=useState(!isMobile);
@@ -175,6 +178,8 @@ function PublicView({teacher,isMobile,hasSession}){
         <div style={{display:'flex',flexDirection:'column',gap:6}}>
           {filtered.map(f=>{
             const isExp=expandedPub===f.id;
+            const msgKey=f.id+':'+(f.shareMessage||'').slice(0,40);
+            const msgUnread=!!f.shareMessage&&!msgRead[msgKey];
             return(
               <div key={f.id} style={{background:'#fff',border:'1px solid #ebebeb',borderRadius:14,overflow:'hidden',transition:'all 0.15s ease'}}>
                 <div style={{display:'flex',alignItems:'center',gap:10,padding:'11px 14px',cursor:'pointer'}} onClick={()=>setExpandedPub(isExp?null:f.id)}>
@@ -183,14 +188,20 @@ function PublicView({teacher,isMobile,hasSession}){
                     <div style={{fontSize:13,fontWeight:600,color:'#1a1a1a',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{trunc(f.name,25)}</div>
                   </div>
                   {f.shareMessage&&(
-                    <button onClick={e=>{e.stopPropagation();setMsgOpen(msgOpen===f.id?null:f.id);}} title="Μήνυμα από τον εκπαιδευτικό"
-                      style={{display:'flex',alignItems:'center',justifyContent:'center',width:28,height:28,borderRadius:8,flexShrink:0,cursor:'pointer',fontSize:14,
-                        border:msgOpen===f.id?'1.5px solid #16a34a':'1px solid #bbe5c8',background:msgOpen===f.id?'#dcfce7':'#f0fdf4'}}>💬</button>
+                    <button onClick={e=>{e.stopPropagation();const opening=msgOpen!==f.id;setMsgOpen(opening?f.id:null);if(opening)markMsgRead(msgKey);}}
+                      title={msgUnread?'Νέο μήνυμα από τον εκπαιδευτικό':'Μήνυμα από τον εκπαιδευτικό'}
+                      style={{position:'relative',display:'flex',alignItems:'center',justifyContent:'center',width:28,height:28,borderRadius:8,flexShrink:0,cursor:'pointer',
+                        border:msgUnread?'1.5px solid #f59e0b':'1px solid #e0e0e0',
+                        background:msgUnread?'#fff7ed':(msgOpen===f.id?'#f0fdf4':'#fafafa'),
+                        color:msgUnread?'#b45309':(msgOpen===f.id?'#16a34a':'#6b6b80')}}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 6l-10 7L2 6"/></svg>
+                      {msgUnread&&<span style={{position:'absolute',top:-3,right:-3,width:9,height:9,borderRadius:'50%',background:'#dc2626',border:'1.5px solid #fff'}}/>}
+                    </button>
                   )}
                   <span style={{fontSize:11,color:'#aeaeb8',flexShrink:0,transition:'transform 0.15s',transform:isExp?'rotate(180deg)':'none'}}>▼</span>
                 </div>
                 {f.shareMessage&&msgOpen===f.id&&(
-                  <div style={{margin:'0 14px 10px',fontSize:13,color:'#1a7f37',background:'#f0fdf4',border:'1px solid #dcfce7',padding:'9px 11px',borderRadius:8,lineHeight:1.5}}>💬 {f.shareMessage}</div>
+                  <div style={{margin:'0 14px 10px',fontSize:13,color:'#1a7f37',background:'#f0fdf4',border:'1px solid #dcfce7',padding:'9px 11px',borderRadius:8,lineHeight:1.5}}>✉️ {f.shareMessage}</div>
                 )}
                 {isExp&&(
                   <div style={{padding:'0 14px 12px',borderTop:'1px solid rgba(0,0,0,0.04)'}}>
