@@ -812,7 +812,7 @@ export default function Home() {
           <div style={S.navDiv} />
           <NavItem icon={Icon.apps} label="Εφαρμογές" active={activeView==='apps'} onClick={openApps} />
           <NavItem icon={Icon.live} label="Live" active={activeView==='liveCenter'} onClick={() => { setActiveView('liveCenter'); setOpenFolder(null); }} />
-          <NavItem icon={Icon.users} label="Μαθητές" active={activeView==='students'} onClick={() => { setActiveView('students'); setOpenFolder(null); }} />
+          <NavItem icon={Icon.net} label="Μαθητές" active={activeView==='students'} onClick={() => { setActiveView('students'); setOpenFolder(null); }} />
           <NavItem icon={Icon.globe} label="Ανοιχτή πρόσβαση" onClick={() => window.open('/s/' + (session.user?.email?.split('@')[0] || ''), '_blank')} />
           {liveFile && (
             <>
@@ -854,7 +854,7 @@ export default function Home() {
             {Icon.apps}<span style={{ fontSize:10 }}>Εφαρμογές</span>
           </button>
           <button className="btm-item" onClick={() => { setActiveView('students'); setOpenFolder(null); }} style={{ color: activeView==='students'?'#ececec':'#8e8ea0' }}>
-            {Icon.users}<span style={{ fontSize:10 }}>Μαθητές</span>
+            {Icon.net}<span style={{ fontSize:10 }}>Μαθητές</span>
           </button>
           <button className="btm-item" onClick={()=>signOut({callbackUrl:'/login'})} style={{ color:'#dc2626' }}>
             {Icon.logout}<span style={{ fontSize:10 }}>Έξοδος</span>
