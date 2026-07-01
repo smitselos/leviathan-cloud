@@ -132,7 +132,7 @@ function PublicView({teacher,isMobile,hasSession}){
       {/* Sidebar */}
       {!isMobile && (
         <div style={{...S.sidebar,width:sidebarOpen?220:56}}>
-          <div style={S.sidebarHeader}>{sidebarOpen&&<span style={{fontSize:15,fontWeight:500,color:'#ececec'}}>ΛΕΒΙΑΘΑΝ</span>}<button onClick={()=>setSidebarOpen(p=>!p)} style={S.collapseBtn}>{sidebarOpen?'◀':'▶'}</button></div>
+          <div style={S.sidebarHeader}>{sidebarOpen&&<img src="/logo-white.png" alt="Leviathan" style={{height:86,objectFit:'contain'}}/>}<button onClick={()=>setSidebarOpen(p=>!p)} style={S.collapseBtn}>{sidebarOpen?'◀':'▶'}</button></div>
           <nav style={S.nav}>
             <button onClick={()=>window.location.reload()} style={{...S.navItem,...S.navActive}}><span style={S.navIcon}>{Ic.book}</span>{sidebarOpen&&'Βιβλιοθήκη'}</button>
             <div style={S.navDiv}/>
@@ -144,7 +144,7 @@ function PublicView({teacher,isMobile,hasSession}){
 
       <div style={{flex:1,maxWidth:800,margin:'0 auto',padding:'24px 16px'}}>
         <div style={{textAlign:'center',marginBottom:28}}>
-          <img src="/logo.png" alt="Leviathan" style={{height:60,objectFit:'contain',marginBottom:8}}/>
+          <img src="/logo.png" alt="Leviathan" style={{height:110,objectFit:'contain',marginBottom:8}}/>
           <p style={{fontSize:13,color:'#6b6b80'}}>{files.length} αρχεία</p>
         </div>
         <div style={{background:'#fff',border:'1px solid #ebebeb',borderRadius:14,padding:'14px 16px',marginBottom:16}}>
