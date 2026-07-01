@@ -502,7 +502,7 @@ export default function Home() {
     try {
       setBusy('picker'); await loadPickerApi();
       const view = new window.google.picker.DocsView(window.google.picker.ViewId.DOCS).setIncludeFolders(false)
-        .setMimeTypes('application/pdf,application/vnd.google-apps.document,application/vnd.google-apps.presentation,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/html');
+        .setMimeTypes(openFolder.isApps ? 'text/html' : 'application/pdf,application/vnd.google-apps.document,application/vnd.google-apps.presentation,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/html');
       const picker = new window.google.picker.PickerBuilder().addView(view)
         .enableFeature(window.google.picker.Feature.MULTISELECT_ENABLED)
         .setOAuthToken(session.accessToken)
@@ -521,10 +521,18 @@ export default function Home() {
   const onUpload = async (e) => {
     const list = Array.from(e.target.files || []); e.target.value = '';
     if (!list.length || !openFolder) return;
+    let toUpload = list;
+    if (openFolder.isApps) {
+      toUpload = list.filter(f => /\.html?$/i.test(f.name) || f.type === 'text/html');
+      if (toUpload.length !== list.length) {
+        alert('Στις «Εφαρμογές» επιτρέπονται μόνο αρχεία HTML (ψηφιακές εφαρμογές).\nΤα PDF/Word/εικόνες βάλ’ τα στη Βιβλιοθήκη.');
+      }
+      if (!toUpload.length) return;
+    }
     setBusy('upload');
     try {
       const added = [];
-      for (const file of list) {
+      for (const file of toUpload) {
         const metadata = { name: file.name, mimeType: file.type || 'application/octet-stream', parents: [openFolder.id] };
         const form = new FormData();
         form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
@@ -972,7 +980,7 @@ export default function Home() {
                     <button onClick={() => uploadRef.current?.click()} disabled={!!busy} style={{ ...btn('mini'), fontSize:11, padding:'5px 10px', opacity:0.7 }} title="Ανέβασμα αρχείου">{busy==='upload'?'…':'＋ Ανέβασμα'}</button>
                   </>
                 )}
-                <input ref={uploadRef} type="file" multiple onChange={onUpload} style={{ display:'none' }} />
+                <input ref={uploadRef} type="file" multiple accept={openFolder?.isApps ? '.html,.htm,text/html' : undefined} onChange={onUpload} style={{ display:'none' }} />
               </div>
               <input type="search" placeholder="Αναζήτηση με όνομα ή ετικέτα στον φάκελο…" value={folderSearch} onChange={(e)=>setFolderSearch(e.target.value)}
                 style={{ width:'100%', padding:'10px 14px', border:'1px solid #ebebeb', borderRadius:12, fontSize: isMobile ? 16 : 13, background:'#fff', marginBottom:12 }} />
@@ -1020,7 +1028,7 @@ export default function Home() {
                 <div style={{ flex:1 }} />
                 <button onClick={openPicker} disabled={!!busy} style={{ ...btn('mini'), fontSize:11, padding: isMobile ? '7px 11px' : '5px 10px', opacity:0.75 }} title="Επιλογή από Google Drive">{busy==='picker'?'…':(isMobile?'📁':'＋ Drive')}</button>
                 <button onClick={() => uploadRef.current?.click()} disabled={!!busy} style={{ ...btn('mini'), fontSize:11, padding: isMobile ? '7px 11px' : '5px 10px', opacity:0.75 }} title="Ανέβασμα">{busy==='upload'?'…':(isMobile?'⬆️':'＋ Ανέβασμα')}</button>
-                <input ref={uploadRef} type="file" multiple onChange={onUpload} style={{ display:'none' }} />
+                <input ref={uploadRef} type="file" multiple accept={openFolder?.isApps ? '.html,.htm,text/html' : undefined} onChange={onUpload} style={{ display:'none' }} />
               </div>
               <p style={{ fontSize:13, color:'#6b6b80', marginTop:-8, marginBottom:16 }}>
                 Κάθε εφαρμογή εμφανίζεται ως κάρτα-φάκελος. Πάτησέ την για να ανοίξει.
