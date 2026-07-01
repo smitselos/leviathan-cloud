@@ -70,21 +70,25 @@ function PublicView({teacher,isMobile,hasSession}){
   const [qrFile,setQrFile]=useState(null);
 
   const [sidebarOpen,setSidebarOpen]=useState(!isMobile);
+  const [visitor,setVisitor]=useState('');
+  const [visitorInput,setVisitorInput]=useState('');
 
   // Teacher email: αν δεν έχει @ δοκίμασε @gmail.com
   const teacherEmail = teacher && !teacher.includes('@') ? teacher+'@gmail.com' : teacher;
 
   useEffect(()=>{
     if(!teacherEmail)return;
+    setLoading(true);
     (async()=>{
       try{
-        const r=await fetch(`/api/publish?email=${encodeURIComponent(teacherEmail)}`);
+        const q=`/api/publish?email=${encodeURIComponent(teacherEmail)}`+(visitor?`&visitor=${encodeURIComponent(visitor)}`:'');
+        const r=await fetch(q);
         const d=await r.json();
-        setFiles((d.items||[]).filter(f=>f.visibility==='public').sort((a,b)=>(b.publishedAt||b.addedAt||'').localeCompare(a.publishedAt||a.addedAt||'')));
+        setFiles((d.items||[]).sort((a,b)=>(b.publishedAt||b.addedAt||'').localeCompare(a.publishedAt||a.addedAt||'')));
       }catch{}
       setLoading(false);
     })();
-  },[teacherEmail]);
+  },[teacherEmail,visitor]);
 
   const filtered=useMemo(()=>{
     if(!search.trim())return files;
@@ -143,6 +147,25 @@ function PublicView({teacher,isMobile,hasSession}){
           <img src="/logo.png" alt="Leviathan" style={{height:60,objectFit:'contain',marginBottom:8}}/>
           <p style={{fontSize:13,color:'#6b6b80'}}>{files.length} αρχεία</p>
         </div>
+        <div style={{background:'#fff',border:'1px solid #ebebeb',borderRadius:14,padding:'14px 16px',marginBottom:16}}>
+          {!visitor ? (
+            <>
+              <div style={{fontSize:13,fontWeight:600,color:'#1a1a1a',marginBottom:6}}>Δες το προσωπικό σου υλικό</div>
+              <div style={{fontSize:12,color:'#6b6b80',marginBottom:10}}>Βάλε το gmail σου για να δεις ό,τι σου έχει σταλεί προσωπικά.</div>
+              <div style={{display:'flex',gap:8}}>
+                <input value={visitorInput} onChange={e=>setVisitorInput(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&visitorInput.trim())setVisitor(visitorInput.trim().toLowerCase());}} placeholder="email@gmail.com" type="email"
+                  style={{flex:1,padding:'10px 12px',border:'1px solid #e0e0e0',borderRadius:10,fontSize:isMobile?16:13,boxSizing:'border-box'}}/>
+                <button onClick={()=>{if(visitorInput.trim())setVisitor(visitorInput.trim().toLowerCase());}} disabled={!visitorInput.trim()}
+                  style={{padding:'10px 16px',borderRadius:10,border:'none',background:visitorInput.trim()?'#5c7a3a':'#e0e0e0',color:'#fff',fontSize:13,fontWeight:600,cursor:visitorInput.trim()?'pointer':'default',whiteSpace:'nowrap'}}>Δες</button>
+              </div>
+            </>
+          ) : (
+            <div style={{display:'flex',alignItems:'center',gap:8}}>
+              <span style={{fontSize:13,color:'#1a7f37',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>✓ {visitor}</span>
+              <button onClick={()=>{setVisitor('');setVisitorInput('');}} style={{marginLeft:'auto',background:'none',border:'none',color:'#6b6b80',fontSize:12,cursor:'pointer',textDecoration:'underline',flexShrink:0}}>Αλλαγή</button>
+            </div>
+          )}
+        </div>
         {loading&&<div style={S.empty}>Φόρτωση…</div>}
         {!loading&&files.length>3&&(
           <input type="search" placeholder="Αναζήτηση…" value={search} onChange={e=>setSearch(e.target.value)}
@@ -177,7 +200,7 @@ function PublicView({teacher,isMobile,hasSession}){
             );
           })}
         </div>
-        {!loading&&files.length===0&&<div style={{textAlign:'center',padding:60}}><div style={{fontSize:48,marginBottom:16}}>📭</div><div style={{fontSize:14,color:'#6b6b80'}}>Δεν υπάρχει δημοσιευμένο υλικό.</div></div>}
+        {!loading&&files.length===0&&<div style={{textAlign:'center',padding:60}}><div style={{fontSize:48,marginBottom:16}}>📭</div><div style={{fontSize:14,color:'#6b6b80'}}>{visitor?'Δεν υπάρχει υλικό για εσένα ακόμη.':'Βάλε το gmail σου παραπάνω για να δεις το υλικό σου.'}</div></div>}
       </div>
 
       {/* QR popup */}

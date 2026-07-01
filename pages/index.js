@@ -208,6 +208,12 @@ export default function Home() {
   const [liveSending, setLiveSending] = useState(false);
   const [liveToast, setLiveToast] = useState(null);
   const [visibilityPicker, setVisibilityPicker] = useState(null);
+  const [groups, setGroups] = useState([]);
+  const [roster, setRoster] = useState([]);
+  const [netEmail, setNetEmail] = useState('');
+  const [newGroupName, setNewGroupName] = useState('');
+  const [newGroupMembers, setNewGroupMembers] = useState([]);
+  const [showNewGroup, setShowNewGroup] = useState(false);
   const [liveItems, setLiveItems] = useState([]); // [{kind:'file'|'app'|'url', id?, name, url?}]
   const [liveUrlInput, setLiveUrlInput] = useState('');
   const [liveUrlName, setLiveUrlName] = useState('');
@@ -280,7 +286,7 @@ export default function Home() {
   // customUrls = πλήρης λίστα ιστοτόπων (defaults + custom), fallback σε SUGGESTED_URLS
   const allSuggestedUrls = customUrls.length > 0 ? customUrls : SUGGESTED_URLS;
 
-  useEffect(() => { if (status === 'authenticated') { loadAll(); loadRole(); loadCustomUrls(); } }, [status, loadAll]);
+  useEffect(() => { if (status === 'authenticated') { loadAll(); loadRole(); loadCustomUrls(); loadGroups(); } }, [status, loadAll]);
   // Περιοδική ανανέωση δικτύου ώστε να εμφανίζεται το κόκκινο σήμα όταν έρχεται νέα αποστολή
 
   // ── Φάκελοι ──
@@ -484,11 +490,41 @@ export default function Home() {
       if (r.ok) setFiles((p) => p.map((f) => f.id === id ? { ...f, visibility, published: visibility !== 'none' } : f));
     } catch(e) {}
     setPublishing(false);
-    setVisibilityPicker(null);
   };
   const togglePublish = (id) => {
     setVisibilityPicker(id);
   };
+  const loadGroups = async () => {
+    try {
+      const r = await fetch('/api/student-groups'); const d = await r.json();
+      const all = Array.isArray(d.groups) ? d.groups : [];
+      const rost = all.find(g => g.id === '__roster__');
+      setRoster(rost ? (rost.members || []) : []);
+      setGroups(all.filter(g => g.id !== '__roster__'));
+    } catch {}
+  };
+  const persistNet = async (namedGroups, rosterList) => {
+    setGroups(namedGroups); setRoster(rosterList);
+    const payload = [{ id:'__roster__', name:'__roster__', members: rosterList }, ...namedGroups];
+    try { await fetch('/api/student-groups', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ groups: payload }) }); } catch {}
+  };
+  const addStudent = () => {
+    const e = netEmail.trim().toLowerCase();
+    if (!e || !e.includes('@')) { alert('Βάλε ένα έγκυρο email.'); return; }
+    if (roster.includes(e)) { setNetEmail(''); return; }
+    persistNet(groups, [...roster, e]); setNetEmail('');
+  };
+  const removeStudent = (e) => {
+    if (!confirm('Αφαίρεση μαθητή; Θα φύγει και από τις ομάδες.')) return;
+    persistNet(groups.map(g => ({ ...g, members:(g.members||[]).filter(m=>m!==e) })), roster.filter(x=>x!==e));
+  };
+  const toggleGroupMember = (e) => setNewGroupMembers(p => p.includes(e) ? p.filter(x=>x!==e) : [...p, e]);
+  const createGroup = () => {
+    if (!newGroupName.trim() || !newGroupMembers.length) return;
+    persistNet([{ id: Date.now().toString(), name: newGroupName.trim(), members: newGroupMembers }, ...groups], roster);
+    setNewGroupName(''); setNewGroupMembers([]); setShowNewGroup(false);
+  };
+  const deleteGroup = (id) => { if (!confirm('Διαγραφή ομάδας;')) return; persistNet(groups.filter(g=>g.id!==id), roster); };
   const toggleFavorite = (id, e) => {
     if (e) e.stopPropagation();
     const cur = !!fileOf(id).favorite;
@@ -776,6 +812,7 @@ export default function Home() {
           <div style={S.navDiv} />
           <NavItem icon={Icon.apps} label="Εφαρμογές" active={activeView==='apps'} onClick={openApps} />
           <NavItem icon={Icon.live} label="Live" active={activeView==='liveCenter'} onClick={() => { setActiveView('liveCenter'); setOpenFolder(null); }} />
+          <NavItem icon={Icon.users} label="Μαθητές" active={activeView==='students'} onClick={() => { setActiveView('students'); setOpenFolder(null); }} />
           <NavItem icon={Icon.globe} label="Ανοιχτή πρόσβαση" onClick={() => window.open('/s/' + (session.user?.email?.split('@')[0] || ''), '_blank')} />
           {liveFile && (
             <>
@@ -815,6 +852,9 @@ export default function Home() {
           </button>
           <button className="btm-item" onClick={openApps} style={{ color: activeView==='apps'?'#ececec':'#8e8ea0' }}>
             {Icon.apps}<span style={{ fontSize:10 }}>Εφαρμογές</span>
+          </button>
+          <button className="btm-item" onClick={() => { setActiveView('students'); setOpenFolder(null); }} style={{ color: activeView==='students'?'#ececec':'#8e8ea0' }}>
+            {Icon.users}<span style={{ fontSize:10 }}>Μαθητές</span>
           </button>
           <button className="btm-item" onClick={()=>signOut({callbackUrl:'/login'})} style={{ color:'#dc2626' }}>
             {Icon.logout}<span style={{ fontSize:10 }}>Έξοδος</span>
@@ -1380,6 +1420,74 @@ export default function Home() {
             </div>
           )}
 
+          {activeView === 'students' && (
+            <>
+              <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:20 }}>
+                <button onClick={goHome} style={{ background:'none', border:'none', color:'#8a7d4a', cursor:'pointer', fontSize:14 }}>← Πίσω</button>
+                <h1 style={{ fontSize:22, fontWeight:700, color:'#1a1a1a', margin:0 }}>Μαθητές & Ομάδες</h1>
+              </div>
+              <div style={{ display:'grid', gap:20, gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', maxWidth:780 }}>
+                <div style={{ background:'#fff', border:'1px solid #ebebeb', borderRadius:16, padding:'18px' }}>
+                  <div style={{ fontSize:14, fontWeight:700, color:'#1a1a1a', marginBottom:4 }}>👤 Μαθητές ({roster.length})</div>
+                  <div style={{ fontSize:12, color:'#6b6b80', marginBottom:12 }}>Πρόσθεσε το gmail κάθε μαθητή. Θα το βάζει στη δημόσια σελίδα για να δει το υλικό του.</div>
+                  <div style={{ display:'flex', gap:8, marginBottom:12 }}>
+                    <input value={netEmail} onChange={e=>setNetEmail(e.target.value)} onKeyDown={e=>{ if(e.key==='Enter') addStudent(); }} placeholder="email@gmail.com" type="email"
+                      style={{ flex:1, padding:'10px 12px', border:'1px solid #e0e0e0', borderRadius:10, fontSize:isMobile?16:13, boxSizing:'border-box' }} />
+                    <button onClick={addStudent} style={{ padding:'10px 16px', borderRadius:10, border:'none', background:'#5c7a3a', color:'#fff', fontSize:13, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>+ Προσθήκη</button>
+                  </div>
+                  {roster.length === 0 && <div style={{ fontSize:12, color:'#aeaeb8', fontStyle:'italic' }}>Κανένας μαθητής ακόμη.</div>}
+                  <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+                    {roster.map(e => (
+                      <div key={e} style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 10px', background:'#fafafa', borderRadius:10 }}>
+                        <span style={{ flex:1, fontSize:13, color:'#3d3a2e', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{e}</span>
+                        <button onClick={()=>removeStudent(e)} title="Αφαίρεση" style={{ background:'none', border:'none', color:'#dc2626', cursor:'pointer', fontSize:14 }}>✕</button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ background:'#fff', border:'1px solid #ebebeb', borderRadius:16, padding:'18px' }}>
+                  <div style={{ display:'flex', alignItems:'center', marginBottom:12 }}>
+                    <div style={{ fontSize:14, fontWeight:700, color:'#1a1a1a' }}>👥 Ομάδες ({groups.length})</div>
+                    <button onClick={()=>{ setShowNewGroup(v=>!v); setNewGroupName(''); setNewGroupMembers([]); }} disabled={roster.length===0}
+                      style={{ marginLeft:'auto', padding:'6px 12px', borderRadius:8, border:'1px solid #e0dcc8', background:'#fff', color:'#8a7d4a', fontSize:12, fontWeight:600, cursor:roster.length?'pointer':'default', opacity:roster.length?1:0.5 }}>+ Νέα ομάδα</button>
+                  </div>
+                  {showNewGroup && (
+                    <div style={{ background:'#fafafa', borderRadius:12, padding:12, marginBottom:12 }}>
+                      <input value={newGroupName} onChange={e=>setNewGroupName(e.target.value)} placeholder="Όνομα ομάδας (π.χ. Α1)"
+                        style={{ width:'100%', padding:'9px 11px', border:'1px solid #e0e0e0', borderRadius:8, fontSize:isMobile?16:13, marginBottom:10, boxSizing:'border-box' }} />
+                      <div style={{ fontSize:11, fontWeight:700, color:'#aeaeb8', textTransform:'uppercase', marginBottom:6 }}>Μέλη {newGroupMembers.length>0 && `(${newGroupMembers.length})`}</div>
+                      <div style={{ display:'flex', flexDirection:'column', gap:4, maxHeight:170, overflowY:'auto', marginBottom:10 }}>
+                        {roster.map(e => { const sel=newGroupMembers.includes(e); return (
+                          <button key={e} onClick={()=>toggleGroupMember(e)} style={{ display:'flex', alignItems:'center', gap:8, padding:'7px 10px', borderRadius:8, border: sel?'1.5px solid #16a34a':'1px solid #ebebeb', background: sel?'#f0fdf4':'#fff', cursor:'pointer', textAlign:'left' }}>
+                            <span style={{ flex:1, fontSize:12, color:'#3d3a2e', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{e}</span>
+                            {sel && <span style={{ color:'#16a34a', fontSize:13 }}>✓</span>}
+                          </button>
+                        ); })}
+                      </div>
+                      <div style={{ display:'flex', gap:8 }}>
+                        <button onClick={()=>setShowNewGroup(false)} style={{ flex:1, padding:'9px', borderRadius:8, border:'1px solid #e0e0e0', background:'#fff', fontSize:13, cursor:'pointer', color:'#6b6b80' }}>Άκυρο</button>
+                        <button onClick={createGroup} disabled={!newGroupName.trim()||!newGroupMembers.length} style={{ flex:1, padding:'9px', borderRadius:8, border:'none', background:(newGroupName.trim()&&newGroupMembers.length)?'#5c7a3a':'#ccc', color:'#fff', fontSize:13, fontWeight:600, cursor:'pointer' }}>Δημιουργία</button>
+                      </div>
+                    </div>
+                  )}
+                  {groups.length === 0 && !showNewGroup && <div style={{ fontSize:12, color:'#aeaeb8', fontStyle:'italic' }}>Καμία ομάδα ακόμη.</div>}
+                  <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                    {groups.map(g => (
+                      <div key={g.id} style={{ padding:'10px 12px', background:'#fafafa', borderRadius:10 }}>
+                        <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
+                          <span style={{ fontSize:13, fontWeight:600, color:'#1a1a1a', flex:1 }}>{g.name}</span>
+                          <span style={{ fontSize:11, color:'#aeaeb8' }}>{(g.members||[]).length} μέλη</span>
+                          <button onClick={()=>deleteGroup(g.id)} title="Διαγραφή" style={{ background:'none', border:'none', color:'#dc2626', cursor:'pointer', fontSize:13 }}>🗑</button>
+                        </div>
+                        <div style={{ fontSize:11, color:'#6b6b80', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{(g.members||[]).map(m=>m.split('@')[0]).join(', ')}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
         </div>
       </main>
       {/* Μενού Δημιουργίας: Νέο / Συγχώνευση */}
@@ -1744,27 +1852,64 @@ export default function Home() {
       {visibilityPicker && (() => {
         const curFile = fileOf(visibilityPicker);
         const curV = curFile?.visibility || 'none';
-        const isPublic = curV !== 'none';
+        const isPublic = curV === 'public';
+        const curUsers = curV.startsWith('users:') ? (()=>{ try { return JSON.parse(curV.slice(6)); } catch { return []; } })()
+                        : curV.startsWith('user:') ? [curV.slice(5)] : [];
+        const setUsers = (arr) => {
+          const u = [...new Set(arr)];
+          if (u.length === 0) setVisibility(visibilityPicker, 'none');
+          else if (u.length === 1) setVisibility(visibilityPicker, 'user:' + u[0]);
+          else setVisibility(visibilityPicker, 'users:' + JSON.stringify(u));
+        };
+        const toggleUser = (e) => setUsers(curUsers.includes(e) ? curUsers.filter(x=>x!==e) : [...curUsers, e]);
+        const groupOn = (g) => { const m=(g.members||[]); return m.length>0 && m.every(x=>curUsers.includes(x)); };
         return (
           <div onClick={()=>setVisibilityPicker(null)} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:300, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
-            <div onClick={e=>e.stopPropagation()} style={{ background:'#fff', borderRadius:20, padding:'24px 20px', maxWidth:360, width:'100%', boxShadow:'0 20px 60px rgba(0,0,0,0.25)' }}>
-              <div style={{ fontSize:16, fontWeight:700, color:'#1a1a1a', marginBottom:4 }}>Δημοσίευση</div>
-              <div style={{ fontSize:12, color:'#6b6b80', marginBottom:16 }}>Δημόσια σελίδα μαθητών (χωρίς σύνδεση).</div>
+            <div onClick={e=>e.stopPropagation()} style={{ background:'#fff', borderRadius:20, padding:'24px 20px', maxWidth:380, width:'100%', maxHeight:'88vh', overflowY:'auto', boxShadow:'0 20px 60px rgba(0,0,0,0.25)' }}>
+              <div style={{ fontSize:16, fontWeight:700, color:'#1a1a1a', marginBottom:4 }}>Μοίρασμα</div>
+              <div style={{ fontSize:12, color:'#6b6b80', marginBottom:16 }}>Ποιος θα βλέπει αυτό το αρχείο στη δημόσια σελίδα.</div>
               <button onClick={()=>setVisibility(visibilityPicker, isPublic ? 'none' : 'public')}
-                style={{ display:'flex', alignItems:'center', gap:12, width:'100%', padding:'12px 14px', borderRadius:12,
-                  border: isPublic ? '2px solid #16a34a' : '1px solid #ebebeb',
-                  background: isPublic ? '#f0fdf4' : '#fafafa', cursor:'pointer', marginBottom:8, textAlign:'left' }}>
-                <span style={{ fontSize:22, flexShrink:0 }}>🌍</span>
+                style={{ display:'flex', alignItems:'center', gap:12, width:'100%', padding:'12px 14px', borderRadius:12, border: isPublic?'2px solid #16a34a':'1px solid #ebebeb', background: isPublic?'#f0fdf4':'#fafafa', cursor:'pointer', marginBottom:8, textAlign:'left' }}>
+                <span style={{ fontSize:22 }}>🌍</span>
                 <div style={{ flex:1 }}>
                   <div style={{ fontSize:13, fontWeight:600, color:'#1a1a1a' }}>Δημόσιο</div>
-                  <div style={{ fontSize:11, color:'#6b6b80' }}>Ορατό στη δημόσια σελίδα</div>
+                  <div style={{ fontSize:11, color:'#6b6b80' }}>Όλοι, χωρίς gmail</div>
                 </div>
-                {isPublic && <span style={{ fontSize:16, color:'#16a34a', flexShrink:0 }}>✓</span>}
+                {isPublic && <span style={{ color:'#16a34a' }}>✓</span>}
               </button>
-              {isPublic && (
+              {groups.length > 0 && <>
+                <div style={{ fontSize:11, fontWeight:700, color:'#aeaeb8', textTransform:'uppercase', letterSpacing:0.5, margin:'12px 0 6px' }}>Ομάδες</div>
+                {groups.map(g => { const on=groupOn(g); return (
+                  <button key={g.id} onClick={()=>{ if(on){ setUsers(curUsers.filter(x=>!(g.members||[]).includes(x))); } else { setUsers([...curUsers, ...(g.members||[])]); } }}
+                    style={{ display:'flex', alignItems:'center', gap:10, width:'100%', padding:'10px 14px', borderRadius:12, border: on?'2px solid #16a34a':'1px solid #ebebeb', background: on?'#f0fdf4':'#fafafa', cursor:'pointer', marginBottom:6, textAlign:'left' }}>
+                    <span style={{ fontSize:18 }}>👥</span>
+                    <div style={{ flex:1 }}>
+                      <div style={{ fontSize:13, fontWeight:600, color:'#1a1a1a' }}>{g.name}</div>
+                      <div style={{ fontSize:11, color:'#6b6b80' }}>{(g.members||[]).length} μαθητές</div>
+                    </div>
+                    {on && <span style={{ color:'#16a34a' }}>✓</span>}
+                  </button>
+                ); })}
+              </>}
+              {roster.length > 0 && <>
+                <div style={{ fontSize:11, fontWeight:700, color:'#aeaeb8', textTransform:'uppercase', letterSpacing:0.5, margin:'12px 0 6px' }}>Μεμονωμένοι {curUsers.length>0 && `(${curUsers.length})`}</div>
+                {roster.map(e => { const on=curUsers.includes(e); return (
+                  <button key={e} onClick={()=>toggleUser(e)}
+                    style={{ display:'flex', alignItems:'center', gap:10, width:'100%', padding:'9px 14px', borderRadius:12, border: on?'2px solid #16a34a':'1px solid #ebebeb', background: on?'#f0fdf4':'#fafafa', cursor:'pointer', marginBottom:6, textAlign:'left' }}>
+                    <span style={{ fontSize:16 }}>👤</span>
+                    <span style={{ flex:1, fontSize:12, color:'#3d3a2e', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{e}</span>
+                    {on && <span style={{ color:'#16a34a' }}>✓</span>}
+                  </button>
+                ); })}
+              </>}
+              {roster.length === 0 && groups.length === 0 && (
+                <div style={{ fontSize:12, color:'#aeaeb8', fontStyle:'italic', padding:'8px 0' }}>Δεν έχεις μαθητές/ομάδες. Πρόσθεσέ τους από το μενού «Μαθητές».</div>
+              )}
+              <div style={{ height:1, background:'#f0f0f0', margin:'12px 0 8px' }} />
+              {curV !== 'none' && (
                 <button onClick={()=>setVisibility(visibilityPicker, 'none')}
                   style={{ display:'flex', alignItems:'center', gap:12, width:'100%', padding:'10px 14px', borderRadius:12, border:'1px solid #fee2e2', background:'#fff', cursor:'pointer', marginBottom:8, textAlign:'left' }}>
-                  <span style={{ fontSize:20, flexShrink:0 }}>🔒</span>
+                  <span style={{ fontSize:20 }}>🔒</span>
                   <div>
                     <div style={{ fontSize:13, fontWeight:600, color:'#dc2626' }}>Απόσυρση</div>
                     <div style={{ fontSize:11, color:'#6b6b80' }}>Αφαίρεση από τη δημόσια σελίδα</div>
