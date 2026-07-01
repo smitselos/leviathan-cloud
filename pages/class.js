@@ -185,7 +185,7 @@ function PublicView({teacher,isMobile,hasSession}){
                 </div>
                 {isExp&&(
                   <div style={{padding:'0 14px 12px',borderTop:'1px solid rgba(0,0,0,0.04)'}}>
-                    {f.shareMessage&&<div style={{fontSize:12,color:'#1a7f37',background:'#f0fdf4',padding:'8px 10px',borderRadius:8,marginTop:8,lineHeight:1.5}}>💬 {f.shareMessage}</div>}
+                    {f.shareMessage&&<div style={{fontSize:15,fontWeight:600,color:'#1a7f37',background:'#f0fdf4',padding:'10px 12px',borderRadius:8,marginTop:8,lineHeight:1.6}}>💬 {f.shareMessage}</div>}
                     {f.info&&<div style={{fontSize:12,color:P.cream.deep,padding:'8px 0 6px',lineHeight:1.5}}>ℹ️ {f.info}</div>}
                     <div style={{display:'flex',gap:6,marginTop:6,flexWrap:'wrap',alignItems:'center'}}>
                       <button onClick={()=>openFile(f)} style={S.openBtn}>Άνοιγμα</button>

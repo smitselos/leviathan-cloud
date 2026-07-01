@@ -208,6 +208,8 @@ export default function Home() {
   const [liveSending, setLiveSending] = useState(false);
   const [liveToast, setLiveToast] = useState(null);
   const [visibilityPicker, setVisibilityPicker] = useState(null);
+  const [visibilityDraft, setVisibilityDraft] = useState('none'); // πρόχειρη επιλογή — αποθηκεύεται μόνο με «Αποθήκευση»
+  const [shareMessage, setShareMessage] = useState(''); // προαιρετικό μήνυμα προς παραλήπτες
   const [groups, setGroups] = useState([]);
   const [roster, setRoster] = useState([]);
   const [netEmail, setNetEmail] = useState('');
@@ -485,13 +487,19 @@ export default function Home() {
   };
   const setVisibility = async (id, visibility) => {
     setPublishing(true);
+    let ok = false;
     try {
-      const r = await fetch('/api/publish', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id, visibility }) });
-      if (r.ok) setFiles((p) => p.map((f) => f.id === id ? { ...f, visibility, published: visibility !== 'none' } : f));
+      const r = await fetch('/api/publish', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id, visibility, message: shareMessage.trim() || undefined }) });
+      if (r.ok) { setFiles((p) => p.map((f) => f.id === id ? { ...f, visibility, published: visibility !== 'none' } : f)); ok = true; }
     } catch(e) {}
     setPublishing(false);
+    if (ok) { setVisibilityPicker(null); setShareMessage(''); }
+    else alert('Σφάλμα αποθήκευσης — δοκιμάστε ξανά.');
+    return ok;
   };
   const togglePublish = (id) => {
+    setShareMessage('');
+    setVisibilityDraft(fileOf(id).visibility || 'none'); // ξεκίνα από την αποθηκευμένη κατάσταση
     setVisibilityPicker(id);
   };
   const loadGroups = async () => {
@@ -1851,24 +1859,28 @@ export default function Home() {
       {/* Visibility Picker */}
       {visibilityPicker && (() => {
         const curFile = fileOf(visibilityPicker);
-        const curV = curFile?.visibility || 'none';
+        const savedV = curFile?.visibility || 'none';
+        const curV = visibilityDraft; // οι επιλογές γίνονται τοπικά (draft) — αποστολή μόνο με «Αποθήκευση»
+        const isDirty = curV !== savedV;
+        const canSave = isDirty || (shareMessage.trim() !== '' && curV !== 'none'); // μήνυμα μόνο του: επανα-αποστολή με μήνυμα
         const isPublic = curV === 'public';
         const curUsers = curV.startsWith('users:') ? (()=>{ try { return JSON.parse(curV.slice(6)); } catch { return []; } })()
                         : curV.startsWith('user:') ? [curV.slice(5)] : [];
         const setUsers = (arr) => {
           const u = [...new Set(arr)];
-          if (u.length === 0) setVisibility(visibilityPicker, 'none');
-          else if (u.length === 1) setVisibility(visibilityPicker, 'user:' + u[0]);
-          else setVisibility(visibilityPicker, 'users:' + JSON.stringify(u));
+          if (u.length === 0) setVisibilityDraft('none');
+          else if (u.length === 1) setVisibilityDraft('user:' + u[0]);
+          else setVisibilityDraft('users:' + JSON.stringify(u));
         };
         const toggleUser = (e) => setUsers(curUsers.includes(e) ? curUsers.filter(x=>x!==e) : [...curUsers, e]);
         const groupOn = (g) => { const m=(g.members||[]); return m.length>0 && m.every(x=>curUsers.includes(x)); };
         return (
-          <div onClick={()=>setVisibilityPicker(null)} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:300, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
+          <div onClick={()=>{setVisibilityPicker(null);setShareMessage('');}} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:300, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
+            <style>{`.vp-opt{transition:transform 0.08s ease, background 0.12s ease, border-color 0.12s ease;} .vp-opt:active{transform:scale(0.97);background:#e8f7ee !important;}`}</style>
             <div onClick={e=>e.stopPropagation()} style={{ background:'#fff', borderRadius:20, padding:'24px 20px', maxWidth:380, width:'100%', maxHeight:'88vh', overflowY:'auto', boxShadow:'0 20px 60px rgba(0,0,0,0.25)' }}>
               <div style={{ fontSize:16, fontWeight:700, color:'#1a1a1a', marginBottom:4 }}>Μοίρασμα</div>
-              <div style={{ fontSize:12, color:'#6b6b80', marginBottom:16 }}>Ποιος θα βλέπει αυτό το αρχείο στη δημόσια σελίδα.</div>
-              <button onClick={()=>setVisibility(visibilityPicker, isPublic ? 'none' : 'public')}
+              <div style={{ fontSize:12, color:'#6b6b80', marginBottom:16 }}>Επίλεξε ποιος θα βλέπει αυτό το αρχείο και πάτησε «Αποθήκευση».</div>
+              <button className="vp-opt" onClick={()=>setVisibilityDraft(isPublic ? 'none' : 'public')}
                 style={{ display:'flex', alignItems:'center', gap:12, width:'100%', padding:'12px 14px', borderRadius:12, border: isPublic?'2px solid #16a34a':'1px solid #ebebeb', background: isPublic?'#f0fdf4':'#fafafa', cursor:'pointer', marginBottom:8, textAlign:'left' }}>
                 <span style={{ fontSize:22 }}>🌍</span>
                 <div style={{ flex:1 }}>
@@ -1880,7 +1892,7 @@ export default function Home() {
               {groups.length > 0 && <>
                 <div style={{ fontSize:11, fontWeight:700, color:'#aeaeb8', textTransform:'uppercase', letterSpacing:0.5, margin:'12px 0 6px' }}>Ομάδες</div>
                 {groups.map(g => { const on=groupOn(g); return (
-                  <button key={g.id} onClick={()=>{ if(on){ setUsers(curUsers.filter(x=>!(g.members||[]).includes(x))); } else { setUsers([...curUsers, ...(g.members||[])]); } }}
+                  <button key={g.id} className="vp-opt" onClick={()=>{ if(on){ setUsers(curUsers.filter(x=>!(g.members||[]).includes(x))); } else { setUsers([...curUsers, ...(g.members||[])]); } }}
                     style={{ display:'flex', alignItems:'center', gap:10, width:'100%', padding:'10px 14px', borderRadius:12, border: on?'2px solid #16a34a':'1px solid #ebebeb', background: on?'#f0fdf4':'#fafafa', cursor:'pointer', marginBottom:6, textAlign:'left' }}>
                     <span style={{ fontSize:18 }}>👥</span>
                     <div style={{ flex:1 }}>
@@ -1894,7 +1906,7 @@ export default function Home() {
               {roster.length > 0 && <>
                 <div style={{ fontSize:11, fontWeight:700, color:'#aeaeb8', textTransform:'uppercase', letterSpacing:0.5, margin:'12px 0 6px' }}>Μεμονωμένοι {curUsers.length>0 && `(${curUsers.length})`}</div>
                 {roster.map(e => { const on=curUsers.includes(e); return (
-                  <button key={e} onClick={()=>toggleUser(e)}
+                  <button key={e} className="vp-opt" onClick={()=>toggleUser(e)}
                     style={{ display:'flex', alignItems:'center', gap:10, width:'100%', padding:'9px 14px', borderRadius:12, border: on?'2px solid #16a34a':'1px solid #ebebeb', background: on?'#f0fdf4':'#fafafa', cursor:'pointer', marginBottom:6, textAlign:'left' }}>
                     <span style={{ fontSize:16 }}>👤</span>
                     <span style={{ flex:1, fontSize:12, color:'#3d3a2e', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{e}</span>
@@ -1905,18 +1917,35 @@ export default function Home() {
               {roster.length === 0 && groups.length === 0 && (
                 <div style={{ fontSize:12, color:'#aeaeb8', fontStyle:'italic', padding:'8px 0' }}>Δεν έχεις μαθητές/ομάδες. Πρόσθεσέ τους από το μενού «Μαθητές».</div>
               )}
+
+              {/* Μήνυμα προς παραλήπτες */}
+              <div style={{ marginTop:10 }}>
+                <div style={{ fontSize:11, color:'#6b6b80', fontWeight:600, marginBottom:4 }}>💬 Μήνυμα (προαιρετικό)</div>
+                <textarea value={shareMessage} onChange={e => setShareMessage(e.target.value)}
+                  placeholder="π.χ. Δείτε το κείμενο και ετοιμάστε σχόλια…"
+                  rows={2} style={{ width:'100%', padding:'8px 10px', border:'1px solid #e0e0e0', borderRadius:10, fontSize:13, resize:'vertical', fontFamily:'inherit', boxSizing:'border-box' }} />
+              </div>
+
               <div style={{ height:1, background:'#f0f0f0', margin:'12px 0 8px' }} />
-              {curV !== 'none' && (
-                <button onClick={()=>setVisibility(visibilityPicker, 'none')}
-                  style={{ display:'flex', alignItems:'center', gap:12, width:'100%', padding:'10px 14px', borderRadius:12, border:'1px solid #fee2e2', background:'#fff', cursor:'pointer', marginBottom:8, textAlign:'left' }}>
+              {(curV !== 'none' || savedV !== 'none') && (
+                <button className="vp-opt" onClick={()=>setVisibilityDraft('none')}
+                  style={{ display:'flex', alignItems:'center', gap:12, width:'100%', padding:'10px 14px', borderRadius:12, border: curV === 'none' ? '2px solid #dc2626' : '1px solid #fee2e2', background:'#fff', cursor:'pointer', marginBottom:8, textAlign:'left' }}>
                   <span style={{ fontSize:20 }}>🔒</span>
-                  <div>
+                  <div style={{ flex:1 }}>
                     <div style={{ fontSize:13, fontWeight:600, color:'#dc2626' }}>Απόσυρση</div>
                     <div style={{ fontSize:11, color:'#6b6b80' }}>Αφαίρεση από τη δημόσια σελίδα</div>
                   </div>
+                  {curV === 'none' && savedV !== 'none' && <span style={{ color:'#dc2626' }}>✓</span>}
                 </button>
               )}
-              <button onClick={()=>setVisibilityPicker(null)} style={{ width:'100%', padding:'10px', borderRadius:12, border:'1px solid #e0e0e0', background:'#fff', fontSize:13, cursor:'pointer', color:'#6b6b80' }}>Κλείσιμο</button>
+              <div style={{ display:'flex', gap:8 }}>
+                <button onClick={()=>{setVisibilityPicker(null);setShareMessage('');}} disabled={publishing}
+                  style={{ flex:1, padding:'11px', borderRadius:12, border:'1px solid #e0e0e0', background:'#fff', fontSize:13, cursor:'pointer', color:'#6b6b80', opacity:publishing?0.5:1 }}>Άκυρο</button>
+                <button onClick={()=>setVisibility(visibilityPicker, curV)} disabled={publishing || !canSave}
+                  style={{ flex:2, padding:'11px', borderRadius:12, border:'none', background: (!canSave||publishing) ? '#a7d7b9' : '#16a34a', color:'#fff', fontSize:13, fontWeight:700, cursor:(publishing||!canSave)?'default':'pointer' }}>
+                  {publishing ? 'Αποθήκευση…' : 'Αποθήκευση'}
+                </button>
+              </div>
             </div>
           </div>
         );
