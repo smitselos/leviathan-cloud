@@ -33,7 +33,13 @@ async function refreshAccessToken(token) {
       }),
     });
     const refreshed = await response.json();
-    if (!response.ok) throw refreshed;
+    if (!response.ok) {
+      // Ανακλημένο/ληγμένο refresh token: σβήσ' το από το KV για να μη «δηλητηριάζει» τις επόμενες συνδέσεις
+      if (refreshed.error === 'invalid_grant') {
+        try { await getKV().del(RT_KEY(token.email)); } catch {}
+      }
+      throw refreshed;
+    }
     if (refreshed.refresh_token) { await saveRefresh(token.email, refreshed.refresh_token); refreshToken = refreshed.refresh_token; }
     return {
       ...token,
@@ -78,7 +84,11 @@ export const authOptions = {
           email,
           accessToken: account.access_token,
           refreshToken: refreshToken || token.refreshToken,
-          accessTokenExpires: Date.now() + account.expires_in * 1000,
+          // Η Google δίνει expires_at (δευτ. εποχής), όχι expires_in — αλλιώς προέκυπτε NaN
+          // και το σύστημα επιχειρούσε ανανέωση αμέσως μετά τη σύνδεση.
+          accessTokenExpires: account.expires_at
+            ? account.expires_at * 1000
+            : Date.now() + ((account.expires_in ?? 3600) * 1000),
           error: undefined,
         };
       }
