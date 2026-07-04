@@ -9,7 +9,7 @@
 // και καθαρίζονται αυτόματα (>24h) στην επόμενη σύνδεση. Τα μοιρασμένα μένουν ΜΟΝΟ
 // όσο είναι στη δημόσια σελίδα — το ✕ τα αφαιρεί και από το Drive.
 //
-// ΑΠΑΙΤΕΙΤΑΙ: πρόσθεσε "jszip" στα dependencies του package.json (για εξαγωγή PDF από .pages/.key)
+// Χωρίς πρόσθετες εξαρτήσεις: το JSZip φορτώνεται από CDN μόνο όταν ανέβει .pages/.key
 
 import { useState, useEffect, useCallback } from 'react';
 import { useSession, signOut } from 'next-auth/react';
@@ -21,9 +21,25 @@ const ACCEPT = '.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.pages,.key,image/*';
 
 const cleanName = (n) => n.replace(/^live-tmp-\d+-/, '').replace(/\.(pdf|docx?|pptx?|xlsx?|pages|key)$/i, '');
 
+// Φόρτωση JSZip από CDN κατά ζήτηση (καμία εξάρτηση στο package.json)
+let _jszipPromise = null;
+function loadJSZip() {
+  if (typeof window !== 'undefined' && window.JSZip) return Promise.resolve(window.JSZip);
+  if (!_jszipPromise) {
+    _jszipPromise = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+      s.onload = () => resolve(window.JSZip);
+      s.onerror = () => { _jszipPromise = null; reject(new Error('Αποτυχία φόρτωσης JSZip')); };
+      document.head.appendChild(s);
+    });
+  }
+  return _jszipPromise;
+}
+
 // .pages/.key = πακέτο ZIP με ενσωματωμένο QuickLook/Preview.pdf → το εξάγουμε στον browser
 async function iworkToPdf(file) {
-  const JSZip = (await import('jszip')).default;
+  const JSZip = await loadJSZip();
   const zip = await JSZip.loadAsync(await file.arrayBuffer());
   const hit = zip.file(/quicklook\/preview\.pdf$/i)[0];
   if (!hit) return null;
