@@ -16,8 +16,9 @@ import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/router';
 
 /* ── Βοηθητικά ── */
-const IWORK_RE = /\.(pages|key|numbers)$/i;
-const ACCEPT = '.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.pages,.key,image/*';
+const IWORK_RE = /\.(pages|key|numbers)(\.zip)?$/i;   // και .pages.zip: έτσι παραδίδει το iOS τα πακέτα iWork
+const ZIP_RE = /\.zip$/i;
+const ACCEPT = '.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.pages,.key,.numbers,.zip,image/*';
 
 const cleanName = (n) => n.replace(/^live-tmp-\d+-/, '').replace(/\.(pdf|docx?|pptx?|xlsx?|pages|key)$/i, '');
 
@@ -41,19 +42,24 @@ function loadJSZip() {
 async function iworkToPdf(file) {
   const JSZip = await loadJSZip();
   const zip = await JSZip.loadAsync(await file.arrayBuffer());
-  const hit = zip.file(/quicklook\/preview\.pdf$/i)[0];
+  const hit = zip.file(/quicklook\/preview\.pdf$/i)[0];   // πιάνει και «Όνομα.pages/QuickLook/Preview.pdf»
   if (!hit) return null;
   const blob = await hit.async('blob');
-  return new File([blob], file.name.replace(IWORK_RE, '.pdf'), { type: 'application/pdf' });
+  const base = file.name.replace(IWORK_RE, '').replace(ZIP_RE, '');
+  return new File([blob], base + '.pdf', { type: 'application/pdf' });
 }
 
 async function prepareFile(file) {
-  if (IWORK_RE.test(file.name)) {
+  if (IWORK_RE.test(file.name) || ZIP_RE.test(file.name)) {
     try {
       const pdf = await iworkToPdf(file);
       if (pdf) return pdf;
     } catch {}
-    alert(`Το «${file.name}» δεν περιέχει ενσωματωμένη προεπισκόπηση PDF.\n\nΆνοιξέ το στο Pages/Keynote και κάνε Εξαγωγή → PDF, μετά ανέβασε το PDF.`);
+    if (IWORK_RE.test(file.name)) {
+      alert(`Το «${file.name}» δεν περιέχει ενσωματωμένη προεπισκόπηση PDF.\n\nΆνοιξέ το στο Pages/Keynote και κάνε Εξαγωγή → PDF, μετά ανέβασε το PDF.`);
+    } else {
+      alert(`Το «${file.name}» δεν είναι έγγραφο iWork με προεπισκόπηση PDF — δεν υποστηρίζεται.`);
+    }
     return null;
   }
   return file; // PDF/Office/εικόνες: όπως είναι (τα Office αποδίδονται ως PDF από το pipeline προβολής)
@@ -92,7 +98,7 @@ export default function Home() {
   /* ── Σύνδεση / αρχικοποίηση ── */
   useEffect(() => {
     if (status === 'unauthenticated') router.replace('/login');
-    if (session?.error === 'RefreshAccessTokenError') signOut({ callbackUrl: '/login' });
+    if (session?.error === 'RefreshAccessTokenError') signOut({ callbackUrl: '/login?reauth=1' });
   }, [status, session, router]);
 
   useEffect(() => {

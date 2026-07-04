@@ -6,12 +6,13 @@ import { useEffect } from 'react';
 export default function Login() {
   const { status } = useSession();
   const router = useRouter();
+  const reauth = router.query.reauth === '1'; // ζητήθηκε επανασύνδεση λόγω ληγμένης άδειας Google
 
   useEffect(() => {
-    if (status === 'authenticated') router.replace('/');
-  }, [status, router]);
+    if (status === 'authenticated' && !reauth) router.replace('/');
+  }, [status, router, reauth]);
 
-  if (status === 'loading' || status === 'authenticated') {
+  if (status === 'loading' || (status === 'authenticated' && !reauth)) {
     return (
       <div style={S.page}><div style={S.card}><div style={{ fontSize: 14, color: '#6b6b80' }}>Φόρτωση…</div></div></div>
     );
@@ -25,7 +26,14 @@ export default function Login() {
         <p style={{ fontSize: 13, color: '#6b6b80', marginBottom: 28, lineHeight: 1.6 }}>
           Συνδέσου με τον λογαριασμό Google σου. Τα αρχεία σου μένουν στο δικό σου Google Drive.
         </p>
-        <button onClick={() => signIn('google', { callbackUrl: '/login' })} style={S.googleBtn}>
+        {reauth && (
+          <div style={{ marginBottom: 16, padding: '10px 14px', background: '#fdf6e3', border: '1px solid #e8dfc0', borderRadius: 12, fontSize: 12.5, color: '#8a6d1a', lineHeight: 1.55, textAlign: 'left' }}>
+            Η άδεια πρόσβασης της Google έληξε. Πάτησε «Σύνδεση με Google» και <b>αποδέξου ξανά</b> την πρόσβαση — μία φορά αρκεί.
+          </div>
+        )}
+        <button
+          onClick={() => signIn('google', { callbackUrl: '/login' }, reauth ? { prompt: 'consent', access_type: 'offline' } : undefined)}
+          style={S.googleBtn}>
           Σύνδεση με Google
         </button>
         <div style={{ marginTop: 22, paddingTop: 16, borderTop: '1px solid #f0ece0' }}>
