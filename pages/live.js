@@ -123,6 +123,10 @@ export default function LivePage() {
           <link rel="manifest" href="/manifest.json" />
         </Head>
         <style>{css}</style>
+        <button onClick={()=>window.history.back()} title="Πίσω"
+          style={{ position:'fixed', top:14, left:14, width:38, height:38, background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:12, cursor:'pointer', fontSize:17, color:'#ececec', display:'flex', alignItems:'center', justifyContent:'center' }}>←</button>
+        <button onClick={()=>window.history.forward()} title="Μπροστά"
+          style={{ position:'fixed', top:14, left:58, width:38, height:38, background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:12, cursor:'pointer', fontSize:17, color:'#ececec', display:'flex', alignItems:'center', justifyContent:'center' }}>→</button>
         <div style={S.entryCard}>
           <div style={{ fontSize:11, textTransform:'uppercase', letterSpacing:2, color:'#e8c96a', marginBottom:8 }}>ΛΕΒΙΑΘΑΝ</div>
           <h1 style={{ fontSize:24, fontWeight:700, color:'#1a1a1a', margin:'0 0 8px' }}>Live</h1>
