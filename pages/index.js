@@ -89,10 +89,16 @@ export default function Home() {
   const [urlName, setUrlName] = useState('');
   const [liveCode, setLiveCode] = useState(null);
   const [liveCount, setLiveCount] = useState(0);       // πόσα στοιχεία έχει το ενεργό live
+  const [liveDriveItems, setLiveDriveItems] = useState([]); // [{id,name}] από τη Βιβλιοθήκη προς Live (ήδη στο Drive)
 
   // Μοίρασμα
   const [shared, setShared] = useState([]);            // δημόσια αρχεία (από registry, αόρατο υπόβαθρο)
   const [shareDone, setShareDone] = useState(false);
+
+  // Βιβλιοθήκη (προαιρετική) & Σετ
+  const [libOn, setLibOn] = useState(false);           // ενεργοποιημένη; (τοπική προτίμηση συσκευής)
+  const [library, setLibrary] = useState([]);          // ΟΛΑ τα αρχεία του registry (δημόσια + μη)
+  const [sets, setSets] = useState([]);                // αποθηκευμένα σετ [{id,name}] — JSON αρχεία στο Drive
 
   const publicPath = '/s/' + (session?.user?.email?.split('@')[0] || '');
 
@@ -112,9 +118,22 @@ export default function Home() {
     try {
       const r = await fetch('/api/registry');
       const d = await r.json();
+      setLibrary(d.files || []); // πλήρης λίστα — τη βλέπει η Βιβλιοθήκη
       setShared((d.files || []).filter((x) => x.visibility === 'public' || x.published));
     } catch {}
   }, []);
+
+  // ── Σετ: μικρά JSON αρχεία «live-set-*.json» στον φάκελο της εφαρμογής στο Drive ──
+  const loadSets = useCallback(async () => {
+    if (!session?.accessToken || !rootId) return;
+    try {
+      const q = encodeURIComponent(`name contains 'live-set-' and '${rootId}' in parents and trashed=false`);
+      const r = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)&orderBy=createdTime desc`,
+        { headers: { Authorization: 'Bearer ' + session.accessToken } });
+      const d = await r.json();
+      setSets((d.files || []).map((f) => ({ id: f.id, name: f.name.replace(/^live-set-/, '').replace(/\.json$/i, '') })));
+    } catch {}
+  }, [session, rootId]);
 
   // Καθάρισμα προσωρινών του Live (>24 ωρών) — τρέχει αθόρυβα στη σύνδεση
   const cleanupTemp = useCallback(async () => {
@@ -151,6 +170,12 @@ export default function Home() {
       cleanupTemp();
     })();
   }, [status, loadShared, cleanupTemp]);
+
+  // ── Βιβλιοθήκη: επαναφορά προτίμησης + φόρτωση σετ ──
+  useEffect(() => {
+    try { if (localStorage.getItem('leviathan_light_library') === '1') setLibOn(true); } catch {}
+  }, []);
+  useEffect(() => { if (libOn) loadSets(); }, [libOn, loadSets]);
 
   // ── Επαναφορά ενεργού Live (π.χ. μετά από ανανέωση σελίδας) — ο server ξέρει το live_active:{email} ──
   useEffect(() => {
@@ -196,22 +221,34 @@ export default function Home() {
     setUrlInput(''); setUrlName('');
   };
 
+  // Συγκέντρωση της τρέχουσας σύνθεσης σε items[] — ανεβάζει ό,τι είναι τοπικό
+  // prefix: 'live-tmp-…' για εφήμερα, '' για μόνιμα (βιβλιοθήκη)
+  const buildItems = async (prefix) => {
+    const items = [];
+    for (const it of liveDriveItems) items.push({ kind: 'file', id: it.id, name: it.name });
+    const uploaded = [];
+    for (const f of liveFiles) {
+      const doc = await uploadToDrive(f, prefix);
+      items.push({ kind: 'file', id: doc.id, name: cleanName(f.name) });
+      uploaded.push(doc);
+    }
+    for (const u of liveUrls) items.push({ kind: 'url', url: u.url, name: u.name });
+    return { items, uploaded };
+  };
+
+  const compositionEmpty = !liveFiles.length && !liveUrls.length && !liveDriveItems.length;
+
   const startLive = async () => {
-    if ((!liveFiles.length && !liveUrls.length) || busy || !rootId) return;
+    if (compositionEmpty || busy || !rootId) return;
     setBusy('live'); setLiveCode(null);
     try {
-      const items = [];
-      for (const f of liveFiles) {
-        const doc = await uploadToDrive(f, 'live-tmp-' + Date.now() + '-');
-        items.push({ kind: 'file', id: doc.id, name: cleanName(f.name) });
-      }
-      for (const u of liveUrls) items.push({ kind: 'url', url: u.url, name: u.name });
+      const { items } = await buildItems('live-tmp-' + Date.now() + '-');
       const r = await fetch('/api/live', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ items, title: items[0]?.name || 'Live' }),
       });
       const d = await r.json();
-      if (d.code) { setLiveCode(d.code); setLiveCount(items.length); setLiveFiles([]); setLiveUrls([]); }
+      if (d.code) { setLiveCode(d.code); setLiveCount(items.length); setLiveFiles([]); setLiveUrls([]); setLiveDriveItems([]); }
       else alert(d.error || 'Δεν δόθηκε κωδικός — δοκίμασε ξανά.');
     } catch (err) { alert('Σφάλμα: ' + err.message); }
     setBusy('');
@@ -219,15 +256,10 @@ export default function Home() {
 
   /* ── LIVE: προσθήκη ΝΕΩΝ στοιχείων στο ήδη ενεργό live (PATCH /api/live) ── */
   const addToLive = async () => {
-    if ((!liveFiles.length && !liveUrls.length) || busy || !rootId || !liveCode) return;
+    if (compositionEmpty || busy || !rootId || !liveCode) return;
     setBusy('add');
     try {
-      const items = [];
-      for (const f of liveFiles) {
-        const doc = await uploadToDrive(f, 'live-tmp-' + Date.now() + '-');
-        items.push({ kind: 'file', id: doc.id, name: cleanName(f.name) });
-      }
-      for (const u of liveUrls) items.push({ kind: 'url', url: u.url, name: u.name });
+      const { items } = await buildItems('live-tmp-' + Date.now() + '-');
       for (const it of items) {
         const r = await fetch('/api/live', {
           method: 'PATCH', headers: { 'Content-Type': 'application/json' },
@@ -242,7 +274,7 @@ export default function Home() {
         }
         setLiveCount((c) => c + 1);
       }
-      setLiveFiles([]); setLiveUrls([]);
+      setLiveFiles([]); setLiveUrls([]); setLiveDriveItems([]);
     } catch (err) { alert('Σφάλμα: ' + err.message); }
     setBusy('');
   };
@@ -252,6 +284,142 @@ export default function Home() {
     if (!confirm('Να τερματιστεί το ενεργό Live; Οι θεατές θα χάσουν την πρόσβαση.')) return;
     try { await fetch('/api/live', { method: 'DELETE' }); } catch {}
     setLiveCode(null); setLiveCount(0);
+  };
+
+  /* ── ΣΕΤ: αποθήκευση της τρέχουσας σύνθεσης ως επαναχρησιμοποιήσιμο σετ ── */
+  const saveAsSet = async () => {
+    if (compositionEmpty || busy || !rootId) return;
+    if (!libOn) {
+      if (!confirm('Τα σετ χρειάζονται τη Βιβλιοθήκη: τα αρχεία τους μένουν μόνιμα στο Google Drive σου (δεν σβήνονται σε 24 ώρες). Να ενεργοποιηθεί;')) return;
+      activateLibrary();
+    }
+    const name = (prompt('Όνομα σετ (π.χ. «Αντιγόνη — Γ2»):') || '').trim();
+    if (!name) return;
+    setBusy('set');
+    try {
+      // Τα τοπικά αρχεία ανεβαίνουν ΜΟΝΙΜΑ (χωρίς live-tmp-) και μπαίνουν στη βιβλιοθήκη —
+      // αλλιώς το σετ θα «έσπαγε» μόλις καθαριστούν τα προσωρινά.
+      const converted = [];
+      const added = [];
+      for (const f of liveFiles) {
+        const doc = await uploadToDrive(f);
+        converted.push({ id: doc.id, name: cleanName(doc.name) });
+        added.push({ id: doc.id, name: doc.name, mimeType: doc.mimeType, folderId: rootId });
+      }
+      if (added.length) {
+        await fetch('/api/registry', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ files: added }) });
+      }
+      const items = [
+        ...liveDriveItems.map((it) => ({ kind: 'file', id: it.id, name: it.name })),
+        ...converted.map((it) => ({ kind: 'file', id: it.id, name: it.name })),
+        ...liveUrls.map((u) => ({ kind: 'url', url: u.url, name: u.name })),
+      ];
+      const json = new File([JSON.stringify({ name, items }, null, 2)], `live-set-${name}.json`, { type: 'application/json' });
+      await uploadToDrive(json);
+      // Η σύνθεση διατηρείται — τα τοπικά αρχεία έγιναν πλέον στοιχεία βιβλιοθήκης
+      setLiveFiles([]);
+      setLiveDriveItems((p) => [...p, ...converted]);
+      await loadShared(); await loadSets();
+      alert(`✓ Το σετ «${name}» αποθηκεύτηκε — θα το βρίσκεις στη Βιβλιοθήκη.`);
+    } catch (err) { alert('Σφάλμα: ' + err.message); }
+    setBusy('');
+  };
+
+  /* ── ΣΕΤ: εκκίνηση Live από αποθηκευμένο σετ ── */
+  const launchSet = async (s) => {
+    if (busy) return;
+    setBusy('live'); setLiveCode(null); setMode('live');
+    try {
+      const r = await fetch(`https://www.googleapis.com/drive/v3/files/${s.id}?alt=media`,
+        { headers: { Authorization: 'Bearer ' + session.accessToken } });
+      const data = await r.json();
+      const items = []; const missing = [];
+      for (const it of data.items || []) {
+        if (it.kind === 'file') {
+          // Έλεγχος ύπαρξης + αθόρυβη ανανέωση ονόματος από το Drive
+          const c = await fetch(`https://www.googleapis.com/drive/v3/files/${it.id}?fields=id,name,trashed`,
+            { headers: { Authorization: 'Bearer ' + session.accessToken } });
+          const f = c.ok ? await c.json() : null;
+          if (f && !f.trashed) items.push({ kind: 'file', id: it.id, name: cleanName(f.name) || it.name });
+          else missing.push(it.name);
+        } else items.push(it);
+      }
+      if (missing.length) alert('Λείπουν από τη βιβλιοθήκη και παραλείπονται: ' + missing.join(', '));
+      if (!items.length) { alert('Το σετ δεν έχει κανένα διαθέσιμο στοιχείο.'); setBusy(''); return; }
+      const rr = await fetch('/api/live', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items, title: items[0].name }),
+      });
+      const d = await rr.json();
+      if (d.code) { setLiveCode(d.code); setLiveCount(items.length); }
+      else alert(d.error || 'Δεν δόθηκε κωδικός — δοκίμασε ξανά.');
+    } catch (err) { alert('Σφάλμα: ' + err.message); }
+    setBusy('');
+  };
+
+  const deleteSet = async (s) => {
+    if (!confirm(`Να διαγραφεί το σετ «${s.name}»; (Τα αρχεία του μένουν στη βιβλιοθήκη.)`)) return;
+    try {
+      await fetch(`https://www.googleapis.com/drive/v3/files/${s.id}`, {
+        method: 'PATCH',
+        headers: { Authorization: 'Bearer ' + session.accessToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ trashed: true }),
+      });
+      loadSets();
+    } catch {}
+  };
+
+  /* ── ΒΙΒΛΙΟΘΗΚΗ ── */
+  const activateLibrary = () => {
+    setLibOn(true);
+    try { localStorage.setItem('leviathan_light_library', '1'); } catch {}
+  };
+  const hideLibrary = () => {
+    setLibOn(false);
+    try { localStorage.removeItem('leviathan_light_library'); } catch {}
+    setMode('live');
+  };
+
+  const pickLibFiles = async (e) => {
+    const list = Array.from(e.target.files || []); e.target.value = '';
+    if (!list.length || busy || !rootId) return;
+    setBusy('lib');
+    try {
+      const added = [];
+      for (const f of list) {
+        const p = await prepareFile(f); if (!p) continue;
+        const doc = await uploadToDrive(p); // ΧΩΡΙΣ live-tmp- πρόθεμα — μόνιμο
+        added.push({ id: doc.id, name: doc.name, mimeType: doc.mimeType, folderId: rootId });
+      }
+      if (added.length) {
+        await fetch('/api/registry', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ files: added }) });
+        await loadShared();
+      }
+    } catch (err) { alert('Σφάλμα: ' + err.message); }
+    setBusy('');
+  };
+
+  const isPublicFile = (f) => f.visibility === 'public' || f.published;
+
+  const togglePublic = async (f) => {
+    try {
+      await fetch('/api/publish', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: f.id, visibility: isPublicFile(f) ? 'none' : 'public' }) });
+      await loadShared();
+    } catch {}
+  };
+
+  const removeFromLibrary = async (f) => {
+    if (!confirm(`Να διαγραφεί οριστικά το «${cleanName(f.name)}» από τη βιβλιοθήκη και το Drive;${isPublicFile(f) ? '\n(Θα φύγει και από τη δημόσια σελίδα.)' : ''}`)) return;
+    try {
+      if (isPublicFile(f)) await fetch('/api/publish', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: f.id, visibility: 'none' }) });
+      await fetch('/api/registry', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: f.id, deleteFromDrive: true }) });
+      setLiveDriveItems((p) => p.filter((x) => x.id !== f.id));
+      await loadShared();
+    } catch {}
+  };
+
+  const addLibToLive = (f) => {
+    setLiveDriveItems((p) => p.find((x) => x.id === f.id) ? p : [...p, { id: f.id, name: cleanName(f.name) }]);
   };
 
   /* ── ΜΟΙΡΑΣΜΑ: ανέβασμα → PDF → δημόσια σελίδα ── */
@@ -279,6 +447,15 @@ export default function Home() {
   };
 
   const unshare = async (f) => {
+    // Με ενεργή Βιβλιοθήκη το ✕ ΔΕΝ διαγράφει το αρχείο — απλώς το αποσύρει από τη δημόσια σελίδα
+    if (libOn) {
+      if (!confirm(`Να αφαιρεθεί το «${cleanName(f.name)}» από τη δημόσια σελίδα;\n(Μένει στη Βιβλιοθήκη σου.)`)) return;
+      try {
+        await fetch('/api/publish', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: f.id, visibility: 'none' }) });
+        await loadShared();
+      } catch {}
+      return;
+    }
     if (!confirm(`Να αφαιρεθεί το «${cleanName(f.name)}» από τη δημόσια σελίδα;\n(Θα διαγραφεί — δεν κρατιέται πουθενά.)`)) return;
     try {
       await fetch('/api/publish', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: f.id, visibility: 'none' }) });
@@ -322,10 +499,17 @@ export default function Home() {
           </button>
         </div>
 
-        {/* Δύο λειτουργίες */}
+        {/* Λειτουργίες — η Βιβλιοθήκη με σκούρο χρωματισμό, διακριτή από τις δύο βασικές */}
         <div style={{ display: 'flex', gap: 10, marginBottom: 18 }}>
           <button style={S.tab(mode === 'live')} onClick={() => setMode('live')}>📡 Live</button>
           <button style={S.tab(mode === 'share')} onClick={() => setMode('share')}>🌍 Μοίρασμα</button>
+          <button onClick={() => setMode('library')}
+            style={{ ...S.tab(mode === 'library'),
+              ...(mode === 'library'
+                ? { background: C.dark, borderColor: C.dark, color: C.live }
+                : { color: C.sub }) }}>
+            📚 Βιβλιοθήκη
+          </button>
         </div>
 
         {/* ═══ LIVE ═══ */}
@@ -353,8 +537,16 @@ export default function Home() {
               </div>
 
               {/* Λίστα προς προβολή */}
-              {(liveFiles.length > 0 || liveUrls.length > 0) && (
+              {!compositionEmpty && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 14 }}>
+                  {liveDriveItems.map((it, i) => (
+                    <div key={'d' + i} style={S.row}>
+                      <span>📚</span>
+                      <span style={{ flex: 1, fontSize: 13, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.name}</span>
+                      <span style={{ fontSize: 10, color: C.cream, fontWeight: 700, flexShrink: 0 }}>ΒΙΒΛΙΟΘΗΚΗ</span>
+                      <button style={S.x} onClick={() => setLiveDriveItems((p) => p.filter((_, j) => j !== i))}>✕</button>
+                    </div>
+                  ))}
                   {liveFiles.map((f, i) => (
                     <div key={'f' + i} style={S.row}>
                       <span>📄</span>
@@ -373,17 +565,28 @@ export default function Home() {
               )}
             </div>
 
-            {/* Προσθήκη στο ενεργό Live — εμφανίζεται μόνο όταν τρέχει live ΚΑΙ υπάρχουν νέα στοιχεία */}
-            {liveCode && (liveFiles.length > 0 || liveUrls.length > 0) && (
-              <button onClick={addToLive} disabled={!!busy}
-                style={{ width: '100%', padding: 14, borderRadius: 14, border: 'none', background: busy ? '#e0e0e0' : C.green, color: '#fff', fontSize: 15, fontWeight: 600, cursor: busy ? 'default' : 'pointer', marginBottom: 10 }}>
-                {busy === 'add' ? '⏳ Ανέβασμα & προσθήκη…' : `➕ Προσθήκη ${liveFiles.length + liveUrls.length === 1 ? 'στοιχείου' : (liveFiles.length + liveUrls.length) + ' στοιχείων'} στο ενεργό Live ${liveCode}`}
-              </button>
-            )}
+            {/* Προσθήκη στο ενεργό Live — μόνο όταν τρέχει live ΚΑΙ υπάρχουν νέα στοιχεία */}
+            {liveCode && !compositionEmpty && (() => {
+              const n = liveDriveItems.length + liveFiles.length + liveUrls.length;
+              return (
+                <button onClick={addToLive} disabled={!!busy}
+                  style={{ width: '100%', padding: 14, borderRadius: 14, border: 'none', background: busy ? '#e0e0e0' : C.green, color: '#fff', fontSize: 15, fontWeight: 600, cursor: busy ? 'default' : 'pointer', marginBottom: 10 }}>
+                  {busy === 'add' ? '⏳ Ανέβασμα & προσθήκη…' : `➕ Προσθήκη ${n === 1 ? 'στοιχείου' : n + ' στοιχείων'} στο ενεργό Live ${liveCode}`}
+                </button>
+              );
+            })()}
 
-            <button style={S.go((liveFiles.length || liveUrls.length) && !busy)} disabled={(!liveFiles.length && !liveUrls.length) || !!busy} onClick={startLive}>
+            <button style={S.go(!compositionEmpty && !busy)} disabled={compositionEmpty || !!busy} onClick={startLive}>
               {busy === 'live' ? '⏳ Ανέβασμα & δημιουργία…' : (liveCode ? '📡 Νέο Live (νέος κωδικός)' : '📡 Έναρξη Live')}
             </button>
+
+            {/* Αποθήκευση σύνθεσης ως σετ — για επανάληψη σε άλλο τμήμα/μέρα */}
+            {!compositionEmpty && (
+              <button onClick={saveAsSet} disabled={!!busy}
+                style={{ width: '100%', padding: 12, borderRadius: 14, border: '2px solid ' + C.creamLine, background: '#fff', color: C.cream, fontSize: 13, fontWeight: 600, cursor: busy ? 'default' : 'pointer', marginTop: 10 }}>
+                {busy === 'set' ? '⏳ Αποθήκευση…' : '💾 Αποθήκευση ως σετ — για να το ξανατρέξεις όποτε θες'}
+              </button>
+            )}
 
             {liveCode && (
               <div style={{ marginTop: 16, padding: 24, background: 'linear-gradient(135deg,#1a1a1a,#2d2a1e)', borderRadius: 18, textAlign: 'center' }}>
@@ -448,6 +651,101 @@ export default function Home() {
 
             <div style={{ fontSize: 12, color: C.mut, textAlign: 'center' }}>
               Δημόσια διεύθυνση: <b style={{ color: C.sub }}>{typeof window !== 'undefined' ? window.location.host : ''}{publicPath}</b>
+            </div>
+          </>
+        )}
+
+        {/* ═══ ΒΙΒΛΙΟΘΗΚΗ (προαιρετική) ═══ */}
+        {mode === 'library' && !libOn && (
+          <div style={{ ...S.card, background: C.dark, border: 'none', padding: isMobile ? 22 : 28 }}>
+            <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 2, color: C.live, marginBottom: 12 }}>📚 Βιβλιοθήκη — προαιρετική</div>
+            <div style={{ fontSize: 14, lineHeight: 1.75, color: '#d4d4dc', marginBottom: 14 }}>
+              Κανονικά η εφαρμογή <b style={{ color: '#fff' }}>δεν κρατά τίποτε</b>: ό,τι ανεβάζεις για Live σβήνεται σε 24 ώρες.
+              Αν ενεργοποιήσεις τη Βιβλιοθήκη, τα αρχεία που βάζεις σε αυτήν <b style={{ color: '#fff' }}>μένουν αποθηκευμένα στο δικό σου Google Drive</b>, ώστε:
+            </div>
+            <div style={{ fontSize: 13.5, lineHeight: 1.9, color: '#d4d4dc', marginBottom: 14, paddingLeft: 4 }}>
+              <div>✦ να ξεκινάς Live από έτοιμο αρχείο, χωρίς να το ξανανεβάζεις κάθε φορά·</div>
+              <div>✦ να αποθηκεύεις <b style={{ color: '#fff' }}>σετ</b> — έτοιμες συνθέσεις μαθήματος (κείμενο + βίντεο + φύλλο εργασίας) που ξανατρέχουν με ένα πάτημα, σε όποιο τμήμα θες·</div>
+              <div>✦ να βάζεις και να βγάζεις αρχεία από τη δημόσια σελίδα με έναν διακόπτη, χωρίς να διαγράφονται.</div>
+            </div>
+            <div style={{ fontSize: 12.5, lineHeight: 1.7, color: '#8e8ea0', marginBottom: 20 }}>
+              Όλα μένουν αποκλειστικά στον δικό σου λογαριασμό Google — πουθενά αλλού. Τα διαγράφεις όποτε θελήσεις,
+              και το Live & το Μοίρασμα συνεχίζουν να δουλεύουν ακριβώς όπως πριν.
+            </div>
+            <button onClick={activateLibrary}
+              style={{ width: '100%', padding: 14, borderRadius: 14, border: 'none', background: C.live, color: C.dark, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
+              ✓ Ενεργοποίηση Βιβλιοθήκης
+            </button>
+          </div>
+        )}
+
+        {mode === 'library' && libOn && (
+          <>
+            {/* Ανέβασμα στη βιβλιοθήκη */}
+            <div style={{ ...S.card, background: C.dark, border: 'none' }}>
+              <div style={{ fontSize: 13, color: '#8e8ea0', marginBottom: 14 }}>
+                Ό,τι ανεβάζεις εδώ <b style={{ color: '#d4d4dc' }}>μένει στο Drive σου</b> — έτοιμο για Live ή Μοίρασμα, όσες φορές θες.
+              </div>
+              <label style={{ ...S.upBtn, background: 'rgba(232,201,106,0.08)', border: '2px dashed rgba(232,201,106,0.35)', color: C.live }}>
+                {busy === 'lib' ? '⏳ Ανέβασμα…' : '⬆️ Προσθήκη αρχείου στη βιβλιοθήκη…'}
+                <input type="file" multiple accept={ACCEPT} onChange={pickLibFiles} style={{ display: 'none' }} disabled={!!busy} />
+              </label>
+            </div>
+
+            {/* Σετ */}
+            <div style={{ ...S.card, background: C.dark, border: 'none' }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: C.live, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>🎬 Σετ — έτοιμα μαθήματα ({sets.length})</div>
+              {!sets.length && (
+                <div style={{ fontSize: 13, color: '#8e8ea0' }}>
+                  Κανένα ακόμη. Στήσε μια σύνθεση στο 📡 Live και πάτησε «💾 Αποθήκευση ως σετ».
+                </div>
+              )}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {sets.map((s) => (
+                  <div key={s.id} style={{ ...S.row, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    <span>🎬</span>
+                    <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</span>
+                    <button onClick={() => launchSet(s)} disabled={!!busy} title="Έναρξη Live με νέο κωδικό"
+                      style={{ padding: '5px 12px', borderRadius: 8, border: 'none', background: C.live, color: C.dark, fontSize: 12, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>▶ Live</button>
+                    <button style={{ ...S.x, color: '#8e8ea0' }} title="Διαγραφή σετ" onClick={() => deleteSet(s)}>✕</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Αρχεία βιβλιοθήκης */}
+            <div style={{ ...S.card, background: C.dark, border: 'none' }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: C.live, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>📄 Αρχεία ({library.length})</div>
+              {!library.length && <div style={{ fontSize: 13, color: '#8e8ea0' }}>Τίποτα ακόμη — ανέβασε το πρώτο αρχείο.</div>}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {library.map((f) => {
+                  const inLive = liveDriveItems.some((x) => x.id === f.id);
+                  const pub = isPublicFile(f);
+                  return (
+                    <div key={f.id} style={{ ...S.row, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
+                      <span>📄</span>
+                      <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: isMobile ? '100%' : 0 }}>{cleanName(f.name)}</span>
+                      <button onClick={() => addLibToLive(f)} disabled={inLive} title="Προσθήκη στη σύνθεση Live"
+                        style={{ padding: '5px 10px', borderRadius: 8, border: '1px solid rgba(232,201,106,0.4)', background: inLive ? 'rgba(232,201,106,0.15)' : 'transparent', color: C.live, fontSize: 12, fontWeight: 600, cursor: inLive ? 'default' : 'pointer', flexShrink: 0 }}>
+                        {inLive ? '✓ στο Live' : '➕ Live'}
+                      </button>
+                      <button onClick={() => togglePublic(f)} title={pub ? 'Απόσυρση από τη δημόσια σελίδα' : 'Δημοσίευση στη δημόσια σελίδα'}
+                        style={{ padding: '5px 10px', borderRadius: 8, border: '1px solid ' + (pub ? 'rgba(74,222,128,0.5)' : 'rgba(255,255,255,0.2)'), background: pub ? 'rgba(74,222,128,0.12)' : 'transparent', color: pub ? '#4ade80' : '#8e8ea0', fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>
+                        {pub ? '🌍 Δημόσιο' : '🌍 Όχι'}
+                      </button>
+                      <button style={{ ...S.x, color: '#f87171' }} title="Οριστική διαγραφή από βιβλιοθήκη & Drive" onClick={() => removeFromLibrary(f)}>✕</button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div style={{ fontSize: 12, color: C.mut, textAlign: 'center' }}>
+              Τα αρχεία φυλάσσονται στο Google Drive σου. {' '}
+              <button onClick={hideLibrary} style={{ background: 'none', border: 'none', color: C.sub, fontSize: 12, cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
+                Απόκρυψη βιβλιοθήκης
+              </button>
+              {' '}(τα αρχεία δεν διαγράφονται).
             </div>
           </>
         )}
