@@ -147,7 +147,7 @@ function PublicView({teacher,isMobile,hasSession}){
             <div style={S.navDiv}/>
             <button onClick={()=>window.location.reload()} style={{...S.navItem,...S.navActive}}><span style={S.navIcon}>{Ic.book}</span>{sidebarOpen&&'Βιβλιοθήκη'}</button>
             <div style={S.navDiv}/>
-            <button onClick={()=>window.open('/live','_blank')} style={S.navItem}><span style={S.navIcon}>{Ic.live}</span>{sidebarOpen&&'Live'}</button>
+            <button onClick={()=>{window.location.href='/live';}} style={S.navItem}><span style={S.navIcon}>{Ic.live}</span>{sidebarOpen&&'Live'}</button>
           </nav>
           <div style={S.sidebarFooter}><div style={S.userCard}><div style={{...S.userAvatar,background:'#b8d4e3'}}>{Ic.user}</div>{sidebarOpen&&<div style={{fontSize:12,color:'#ececec'}}>Επισκέπτης</div>}</div></div>
         </div>
@@ -249,7 +249,7 @@ function PublicView({teacher,isMobile,hasSession}){
           <MobBtn icon={Ic.back} label="Πίσω" onClick={()=>window.history.back()}/>
           <MobBtn icon={Ic.fwd} label="Μπροστά" onClick={()=>window.history.forward()}/>
           <MobBtn icon={Ic.book} label="Βιβλιοθήκη" active onClick={()=>window.location.reload()}/>
-          <MobBtn icon={Ic.live} label="Live" onClick={()=>window.open('/live','_blank')}/>
+          <MobBtn icon={Ic.live} label="Live" onClick={()=>{window.location.href='/live';}}/>
         </nav>
       )}
     </div>
