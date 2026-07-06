@@ -779,8 +779,6 @@ export default function Home() {
       {/* ── Κάτω μπάρα (μόνο mobile): πλοήγηση, Βιβλιοθήκη, Ανοιχτή πρόσβαση, Έξοδος ── */}
       {isMobile && (
         <nav style={S.mobBar}>
-          <MobB icon="←" label="Πίσω" onClick={() => router.back()} />
-          <MobB icon="→" label="Μπροστά" onClick={() => window.history.forward()} />
           <MobB icon="📚" label="Βιβλιοθήκη" active={mode === 'library'} onClick={() => setMode('library')} />
           <MobB icon="🌍" label="Ανοιχτή" onClick={() => router.push(publicPath)} />
           <MobB icon="⏻" label="Έξοδος" red onClick={() => signOut({ callbackUrl: '/login' })} />

@@ -26,6 +26,8 @@ const Ic={
   globe:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>,
   login:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>,
   net:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="5" r="2.4"/><circle cx="5" cy="19" r="2.4"/><circle cx="19" cy="19" r="2.4"/><line x1="12" y1="7.4" x2="5.8" y2="16.8"/><line x1="12" y1="7.4" x2="18.2" y2="16.8"/><line x1="7" y1="19" x2="17" y2="19"/></svg>,
+  back:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>,
+  fwd:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>,
 };
 
 export default function StudentPage({ teacher: ssrTeacher }){
@@ -43,6 +45,8 @@ function ClassEntry({isMobile}){
   const go=()=>{ const v=name.trim(); if(v) router.push('/class?teacher='+encodeURIComponent(v)); };
   return (
     <div style={S.page}>
+      <button onClick={()=>window.history.back()} title="Πίσω"
+        style={{position:'fixed',top:14,left:14,width:38,height:38,background:'#fff',border:'1px solid #e0e0e0',borderRadius:12,cursor:'pointer',fontSize:17,color:'#6b6b80',display:'flex',alignItems:'center',justifyContent:'center'}}>←</button>
       <div style={{...S.card,maxWidth:420}}>
         <img src="/logo.png" alt="Leviathan" style={{height:80,objectFit:'contain',marginBottom:12}}/>
         <div style={{fontSize:18,fontWeight:700,color:'#1a1a1a',marginBottom:8}}>Δημόσιο υλικό</div>
@@ -138,6 +142,9 @@ function PublicView({teacher,isMobile,hasSession}){
         <div style={{...S.sidebar,width:sidebarOpen?220:56}}>
           <div style={S.sidebarHeader}>{sidebarOpen&&<img src="/logo-white.png" alt="Leviathan" style={{height:86,objectFit:'contain'}}/>}<button onClick={()=>setSidebarOpen(p=>!p)} style={S.collapseBtn}>{sidebarOpen?'◀':'▶'}</button></div>
           <nav style={S.nav}>
+            <button onClick={()=>window.history.back()} style={S.navItem} title="Πίσω"><span style={S.navIcon}>{Ic.back}</span>{sidebarOpen&&'Πίσω'}</button>
+            <button onClick={()=>window.history.forward()} style={S.navItem} title="Μπροστά"><span style={S.navIcon}>{Ic.fwd}</span>{sidebarOpen&&'Μπροστά'}</button>
+            <div style={S.navDiv}/>
             <button onClick={()=>window.location.reload()} style={{...S.navItem,...S.navActive}}><span style={S.navIcon}>{Ic.book}</span>{sidebarOpen&&'Βιβλιοθήκη'}</button>
             <div style={S.navDiv}/>
             <button onClick={()=>window.open('/live','_blank')} style={S.navItem}><span style={S.navIcon}>{Ic.live}</span>{sidebarOpen&&'Live'}</button>
@@ -239,6 +246,8 @@ function PublicView({teacher,isMobile,hasSession}){
       {/* Mobile bottom nav */}
       {isMobile&&(
         <nav style={{position:'fixed',bottom:0,left:0,right:0,background:'#1a1a1a',display:'flex',justifyContent:'space-around',alignItems:'center',padding:'8px 0 max(8px,env(safe-area-inset-bottom))',zIndex:300,borderTop:'1px solid rgba(255,255,255,0.06)'}}>
+          <MobBtn icon={Ic.back} label="Πίσω" onClick={()=>window.history.back()}/>
+          <MobBtn icon={Ic.fwd} label="Μπροστά" onClick={()=>window.history.forward()}/>
           <MobBtn icon={Ic.book} label="Βιβλιοθήκη" active onClick={()=>window.location.reload()}/>
           <MobBtn icon={Ic.live} label="Live" onClick={()=>window.open('/live','_blank')}/>
         </nav>
