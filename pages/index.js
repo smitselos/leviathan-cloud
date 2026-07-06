@@ -88,6 +88,7 @@ export default function Home() {
   const [urlInput, setUrlInput] = useState('');
   const [urlName, setUrlName] = useState('');
   const [liveCode, setLiveCode] = useState(null);
+  const [liveCount, setLiveCount] = useState(0);       // πόσα στοιχεία έχει το ενεργό live
 
   // Μοίρασμα
   const [shared, setShared] = useState([]);            // δημόσια αρχεία (από registry, αόρατο υπόβαθρο)
@@ -151,6 +152,22 @@ export default function Home() {
     })();
   }, [status, loadShared, cleanupTemp]);
 
+  // ── Επαναφορά ενεργού Live (π.χ. μετά από ανανέωση σελίδας) — ο server ξέρει το live_active:{email} ──
+  useEffect(() => {
+    if (status !== 'authenticated') return;
+    (async () => {
+      try {
+        const r = await fetch('/api/live?active=1');
+        if (!r.ok) return;
+        const d = await r.json();
+        if (d.code) {
+          setLiveCode(d.code);
+          setLiveCount(d.data ? 1 + (d.data.links || []).length : 0);
+        }
+      } catch {}
+    })();
+  }, [status]);
+
   /* ── Ανέβασμα στο Drive (multipart, με το token του χρήστη) ── */
   const uploadToDrive = async (file, prefix = '') => {
     const metadata = { name: prefix + file.name, mimeType: file.type || 'application/octet-stream', parents: [rootId] };
@@ -169,14 +186,14 @@ export default function Home() {
     const list = Array.from(e.target.files || []); e.target.value = '';
     const ok = [];
     for (const f of list) { const p = await prepareFile(f); if (p) ok.push(p); }
-    if (ok.length) { setLiveFiles((prev) => [...prev, ...ok]); setLiveCode(null); }
+    if (ok.length) setLiveFiles((prev) => [...prev, ...ok]); // το liveCode μένει — μπορεί να γίνει προσθήκη στο ενεργό live
   };
 
   const addUrl = () => {
     let u = urlInput.trim(); if (!u) return;
     if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
     setLiveUrls((p) => [...p, { url: u, name: urlName.trim() || u.replace(/^https?:\/\//, '').slice(0, 40) }]);
-    setUrlInput(''); setUrlName(''); setLiveCode(null);
+    setUrlInput(''); setUrlName('');
   };
 
   const startLive = async () => {
@@ -194,10 +211,47 @@ export default function Home() {
         body: JSON.stringify({ items, title: items[0]?.name || 'Live' }),
       });
       const d = await r.json();
-      if (d.code) { setLiveCode(d.code); setLiveFiles([]); setLiveUrls([]); }
+      if (d.code) { setLiveCode(d.code); setLiveCount(items.length); setLiveFiles([]); setLiveUrls([]); }
       else alert(d.error || 'Δεν δόθηκε κωδικός — δοκίμασε ξανά.');
     } catch (err) { alert('Σφάλμα: ' + err.message); }
     setBusy('');
+  };
+
+  /* ── LIVE: προσθήκη ΝΕΩΝ στοιχείων στο ήδη ενεργό live (PATCH /api/live) ── */
+  const addToLive = async () => {
+    if ((!liveFiles.length && !liveUrls.length) || busy || !rootId || !liveCode) return;
+    setBusy('add');
+    try {
+      const items = [];
+      for (const f of liveFiles) {
+        const doc = await uploadToDrive(f, 'live-tmp-' + Date.now() + '-');
+        items.push({ kind: 'file', id: doc.id, name: cleanName(f.name) });
+      }
+      for (const u of liveUrls) items.push({ kind: 'url', url: u.url, name: u.name });
+      for (const it of items) {
+        const r = await fetch('/api/live', {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ item: it, code: liveCode }),
+        });
+        if (!r.ok) {
+          const d = await r.json().catch(() => ({}));
+          alert('✗ ' + (d.error || 'Σφάλμα προσθήκης στο live'));
+          if (r.status === 404) { setLiveCode(null); setLiveCount(0); } // το live έληξε
+          setBusy('');
+          return;
+        }
+        setLiveCount((c) => c + 1);
+      }
+      setLiveFiles([]); setLiveUrls([]);
+    } catch (err) { alert('Σφάλμα: ' + err.message); }
+    setBusy('');
+  };
+
+  /* ── LIVE: τερματισμός (DELETE /api/live) ── */
+  const stopLive = async () => {
+    if (!confirm('Να τερματιστεί το ενεργό Live; Οι θεατές θα χάσουν την πρόσβαση.')) return;
+    try { await fetch('/api/live', { method: 'DELETE' }); } catch {}
+    setLiveCode(null); setLiveCount(0);
   };
 
   /* ── ΜΟΙΡΑΣΜΑ: ανέβασμα → PDF → δημόσια σελίδα ── */
@@ -319,22 +373,35 @@ export default function Home() {
               )}
             </div>
 
+            {/* Προσθήκη στο ενεργό Live — εμφανίζεται μόνο όταν τρέχει live ΚΑΙ υπάρχουν νέα στοιχεία */}
+            {liveCode && (liveFiles.length > 0 || liveUrls.length > 0) && (
+              <button onClick={addToLive} disabled={!!busy}
+                style={{ width: '100%', padding: 14, borderRadius: 14, border: 'none', background: busy ? '#e0e0e0' : C.green, color: '#fff', fontSize: 15, fontWeight: 600, cursor: busy ? 'default' : 'pointer', marginBottom: 10 }}>
+                {busy === 'add' ? '⏳ Ανέβασμα & προσθήκη…' : `➕ Προσθήκη ${liveFiles.length + liveUrls.length === 1 ? 'στοιχείου' : (liveFiles.length + liveUrls.length) + ' στοιχείων'} στο ενεργό Live ${liveCode}`}
+              </button>
+            )}
+
             <button style={S.go((liveFiles.length || liveUrls.length) && !busy)} disabled={(!liveFiles.length && !liveUrls.length) || !!busy} onClick={startLive}>
-              {busy === 'live' ? '⏳ Ανέβασμα & δημιουργία…' : '📡 Έναρξη Live'}
+              {busy === 'live' ? '⏳ Ανέβασμα & δημιουργία…' : (liveCode ? '📡 Νέο Live (νέος κωδικός)' : '📡 Έναρξη Live')}
             </button>
 
             {liveCode && (
               <div style={{ marginTop: 16, padding: 24, background: 'linear-gradient(135deg,#1a1a1a,#2d2a1e)', borderRadius: 18, textAlign: 'center' }}>
-                <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 2, color: C.live, marginBottom: 10 }}>Κωδικός Live</div>
+                <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 2, color: C.live, marginBottom: 10 }}>
+                  <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#4ade80', marginRight: 6, verticalAlign: 'middle' }} />Ενεργό Live
+                </div>
                 <div style={{ fontSize: 52, fontWeight: 700, color: '#fff', letterSpacing: '0.15em', fontFamily: 'monospace', marginBottom: 10 }}>{liveCode}</div>
                 <div style={{ fontSize: 12, color: '#8e8ea0', marginBottom: 16 }}>
-                  Στον διαδραστικό: άνοιξε την <b>Ανοιχτή πρόσβαση</b>, πάτησε <b>Live</b> και βάλε τον κωδικό. Ισχύει ~2 ώρες.
+                  {liveCount > 0 && <>{liveCount} {liveCount === 1 ? 'στοιχείο' : 'στοιχεία'} στην παρουσίαση · </>}
+                  ό,τι προσθέσεις εμφανίζεται στους θεατές αυτόματα (~5″). Στον διαδραστικό: <b>Ανοιχτή πρόσβαση → Live</b> + κωδικός. Ισχύει ~2 ώρες.
                 </div>
                 <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
                   <button onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/live?code=${liveCode}`).catch(() => {}); }}
                     style={{ padding: '10px 18px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.2)', background: 'transparent', color: C.live, fontSize: 13, cursor: 'pointer' }}>📋 Αντιγραφή συνδέσμου</button>
                   <button onClick={() => window.open(`/live?code=${liveCode}`, '_blank')}
                     style={{ padding: '10px 18px', borderRadius: 10, border: 'none', background: C.live, color: C.dark, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Άνοιγμα →</button>
+                  <button onClick={stopLive}
+                    style={{ padding: '10px 18px', borderRadius: 10, border: '1px solid rgba(239,68,68,0.5)', background: 'transparent', color: '#f87171', fontSize: 13, cursor: 'pointer' }}>⏹ Τερματισμός</button>
                 </div>
               </div>
             )}
