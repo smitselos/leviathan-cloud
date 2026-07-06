@@ -77,7 +77,7 @@ export default function Home() {
   const router = useRouter();
   const { data: session, status } = useSession();
 
-  const [mode, setMode] = useState('live');            // 'live' | 'share'
+  const [mode, setMode] = useState('live');            // 'live' | 'share' | 'photo' | 'library'
   const [rootId, setRootId] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
   const [busy, setBusy] = useState('');                // '' | 'live' | 'share' | 'load'
@@ -470,8 +470,11 @@ export default function Home() {
   }
 
   const S = {
-    wrap: { minHeight: '100vh', background: C.bg, fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif", paddingBottom: 40 },
+    wrap: { minHeight: '100vh', background: C.bg, fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif",
+      paddingBottom: isMobile ? 96 : 40 },
     inner: { maxWidth: 640, margin: '0 auto', padding: isMobile ? '20px 16px' : '36px 20px' },
+    // ── Κάτω μπάρα (mobile) ──
+    mobBar: { position: 'fixed', bottom: 0, left: 0, right: 0, background: C.dark, display: 'flex', justifyContent: 'space-around', alignItems: 'center', padding: '8px 0 max(8px,env(safe-area-inset-bottom))', zIndex: 300, borderTop: '1px solid rgba(255,255,255,0.06)' },
     card: { background: C.card, border: '1px solid ' + C.line, borderRadius: 16, padding: isMobile ? 16 : 20, marginBottom: 16 },
     h1: { fontSize: isMobile ? 20 : 24, fontWeight: 700, color: C.ink, margin: 0 },
     sub: { fontSize: 13, color: C.sub, margin: '4px 0 0' },
@@ -487,29 +490,40 @@ export default function Home() {
     <div style={S.wrap}>
       <div style={S.inner}>
 
-        {/* Κεφαλίδα */}
+        {/* Κεφαλίδα — στο desktop: Ανοιχτή πρόσβαση + Έξοδος δεξιά· στο κινητό είναι στην κάτω μπάρα */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22 }}>
           <div>
             <h1 style={S.h1}>ΛΕΒΙΑΘΑΝ <span style={{ fontWeight: 400, color: C.cream }}>light</span></h1>
             <p style={S.sub}>Γεια σου, {session.user?.name || session.user?.email} 👋</p>
           </div>
-          <button onClick={() => signOut({ callbackUrl: '/login' })}
-            style={{ background: 'none', border: '1px solid ' + C.line, borderRadius: 10, padding: '8px 14px', color: C.red, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-            Έξοδος
-          </button>
+          {!isMobile && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <button onClick={() => router.push(publicPath)}
+                style={{ background: 'none', border: 'none', color: C.cream, fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: 0 }}>
+                🌍 Ανοιχτή πρόσβαση
+              </button>
+              <button onClick={() => signOut({ callbackUrl: '/login' })}
+                style={{ background: 'none', border: '1px solid ' + C.line, borderRadius: 10, padding: '8px 14px', color: C.red, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                Έξοδος
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* Λειτουργίες — η Βιβλιοθήκη με σκούρο χρωματισμό, διακριτή από τις δύο βασικές */}
-        <div style={{ display: 'flex', gap: 10, marginBottom: 18 }}>
+        {/* Λειτουργίες — στο desktop και οι τέσσερις· στο κινητό η Βιβλιοθήκη ζει στην κάτω μπάρα */}
+        <div style={{ display: 'flex', gap: isMobile ? 8 : 10, marginBottom: 18 }}>
           <button style={S.tab(mode === 'live')} onClick={() => setMode('live')}>📡 Live</button>
           <button style={S.tab(mode === 'share')} onClick={() => setMode('share')}>🌍 Μοίρασμα</button>
-          <button onClick={() => setMode('library')}
-            style={{ ...S.tab(mode === 'library'),
-              ...(mode === 'library'
-                ? { background: C.dark, borderColor: C.dark, color: C.live }
-                : { color: C.sub }) }}>
-            📚 Βιβλιοθήκη
-          </button>
+          <button style={S.tab(mode === 'photo')} onClick={() => setMode('photo')}>📷 Φωτό</button>
+          {!isMobile && (
+            <button onClick={() => setMode('library')}
+              style={{ ...S.tab(mode === 'library'),
+                ...(mode === 'library'
+                  ? { background: C.dark, borderColor: C.dark, color: C.live }
+                  : { color: C.sub }) }}>
+              📚 Βιβλιοθήκη
+            </button>
+          )}
         </div>
 
         {/* ═══ LIVE ═══ */}
@@ -633,7 +647,7 @@ export default function Home() {
             <div style={S.card}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: C.cream, textTransform: 'uppercase', letterSpacing: 0.5 }}>Στη δημόσια σελίδα ({shared.length})</div>
-                <button onClick={() => window.open(publicPath, '_blank')}
+                <button onClick={() => router.push(publicPath)}
                   style={{ background: 'none', border: 'none', color: C.cream, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Άνοιγμα →</button>
               </div>
               {busy === 'load' && <div style={{ fontSize: 12, color: C.mut }}>Φόρτωση…</div>}
@@ -653,6 +667,17 @@ export default function Home() {
               Δημόσια διεύθυνση: <b style={{ color: C.sub }}>{typeof window !== 'undefined' ? window.location.host : ''}{publicPath}</b>
             </div>
           </>
+        )}
+
+        {/* ═══ ΦΩΤΟ → PDF (προσεχώς) ═══ */}
+        {mode === 'photo' && (
+          <div style={S.card}>
+            <div style={{ fontSize: 13, color: C.sub, lineHeight: 1.7 }}>
+              📷 <b style={{ color: C.ink }}>Φωτογραφίες → PDF</b> — έρχεται στο επόμενο βήμα:
+              συνεχόμενες λήψεις με την κάμερα, ένωση σε ενιαίο PDF και επιλογή
+              Live, Μοιράσματος ή αποθήκευσης στη Βιβλιοθήκη.
+            </div>
+          </div>
         )}
 
         {/* ═══ ΒΙΒΛΙΟΘΗΚΗ (προαιρετική) ═══ */}
@@ -750,6 +775,29 @@ export default function Home() {
           </>
         )}
       </div>
+
+      {/* ── Κάτω μπάρα (μόνο mobile): πλοήγηση, Βιβλιοθήκη, Ανοιχτή πρόσβαση, Έξοδος ── */}
+      {isMobile && (
+        <nav style={S.mobBar}>
+          <MobB icon="←" label="Πίσω" onClick={() => router.back()} />
+          <MobB icon="→" label="Μπροστά" onClick={() => window.history.forward()} />
+          <MobB icon="📚" label="Βιβλιοθήκη" active={mode === 'library'} onClick={() => setMode('library')} />
+          <MobB icon="🌍" label="Ανοιχτή" onClick={() => router.push(publicPath)} />
+          <MobB icon="⏻" label="Έξοδος" red onClick={() => signOut({ callbackUrl: '/login' })} />
+        </nav>
+      )}
     </div>
+  );
+}
+
+/* Κουμπί κάτω μπάρας (mobile) */
+function MobB({ icon, label, active, red, onClick }) {
+  return (
+    <button onClick={onClick}
+      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, background: 'transparent', border: 'none',
+        color: red ? '#f87171' : active ? '#ececec' : '#8e8ea0', fontSize: 10, cursor: 'pointer', padding: '4px 8px' }}>
+      <span style={{ fontSize: 16, lineHeight: '18px' }}>{icon}</span>
+      <span>{label}</span>
+    </button>
   );
 }
