@@ -11,7 +11,7 @@
 //
 // Χωρίς πρόσθετες εξαρτήσεις: το JSZip φορτώνεται από CDN μόνο όταν ανέβει .pages/.key
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/router';
 
@@ -65,6 +65,60 @@ async function prepareFile(file) {
   return file; // PDF/Office/εικόνες: όπως είναι (τα Office αποδίδονται ως PDF από το pipeline προβολής)
 }
 
+/* ── Φόρτωση pdf-lib από CDN κατά ζήτηση (όπως το JSZip — καμία εξάρτηση στο package.json) ── */
+let _pdfLibPromise = null;
+function loadPdfLib() {
+  if (typeof window !== 'undefined' && window.PDFLib) return Promise.resolve(window.PDFLib);
+  if (!_pdfLibPromise) {
+    _pdfLibPromise = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js';
+      s.onload = () => resolve(window.PDFLib);
+      s.onerror = () => { _pdfLibPromise = null; reject(new Error('Αποτυχία φόρτωσης pdf-lib')); };
+      document.head.appendChild(s);
+    });
+  }
+  return _pdfLibPromise;
+}
+
+/* ── Συμπίεση φωτογραφίας μέσω canvas (μέγ. 1600px, JPEG 0.8) — διορθώνει και τον προσανατολισμό EXIF ── */
+function photoToJpeg(file, maxSide = 1600, quality = 0.8) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const scale = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+        const w = Math.max(1, Math.round(img.naturalWidth * scale));
+        const h = Math.max(1, Math.round(img.naturalHeight * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        URL.revokeObjectURL(url);
+        canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('Αποτυχία συμπίεσης εικόνας')), 'image/jpeg', quality);
+      } catch (e) { URL.revokeObjectURL(url); reject(e); }
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Μη αναγνώσιμη εικόνα: ' + file.name)); };
+    img.src = url;
+  });
+}
+
+/* ── Συγχώνευση φωτογραφιών σε ενιαίο PDF (μία σελίδα ανά φωτογραφία) ── */
+async function photosToPdf(files, name) {
+  const { PDFDocument } = await loadPdfLib();
+  const pdf = await PDFDocument.create();
+  for (const f of files) {
+    const jpeg = await photoToJpeg(f);
+    const bytes = new Uint8Array(await jpeg.arrayBuffer());
+    const image = await pdf.embedJpg(bytes);
+    const page = pdf.addPage([image.width, image.height]);
+    page.drawImage(image, { x: 0, y: 0, width: image.width, height: image.height });
+  }
+  const out = await pdf.save();
+  const fname = /\.pdf$/i.test(name) ? name : name + '.pdf';
+  return new File([out], fname, { type: 'application/pdf' });
+}
+
 /* ── Χρώματα (κρέμ παλέτα ΛΕΒΙΑΘΑΝ) ── */
 const C = {
   bg: '#f7f5f0', card: '#ffffff', line: '#ebebeb',
@@ -97,6 +151,12 @@ export default function Home() {
 
   // Βιβλιοθήκη (προαιρετική) & Σετ
   const [libOn, setLibOn] = useState(false);           // ενεργοποιημένη; (τοπική προτίμηση συσκευής)
+
+  /* ── ΦΩΤΟ → PDF ── */
+  const [photos, setPhotos] = useState([]);            // [{ file, url }] — λήψεις με μικρογραφίες
+  const [photoName, setPhotoName] = useState('');      // προαιρετικό όνομα PDF
+  const [photoPdf, setPhotoPdf] = useState(null);      // έτοιμο File PDF → οθόνη επιλογής προορισμού
+  const photoInputRef = useRef(null);
   const [library, setLibrary] = useState([]);          // ΟΛΑ τα αρχεία του registry (δημόσια + μη)
   const [sets, setSets] = useState([]);                // αποθηκευμένα σετ [{id,name}] — JSON αρχεία στο Drive
 
@@ -464,6 +524,74 @@ export default function Home() {
     } catch {}
   };
 
+  /* ── ΦΩΤΟ → PDF: λήψεις → ενιαίο PDF → επιλογή προορισμού ── */
+  const pickPhotos = (e) => {
+    const list = Array.from(e.target.files || []).filter((f) => f.type.startsWith('image/'));
+    e.target.value = '';
+    if (!list.length) return;
+    setPhotos((prev) => [...prev, ...list.map((f) => ({ file: f, url: URL.createObjectURL(f) }))]);
+  };
+
+  const removePhoto = (i) => setPhotos((prev) => {
+    URL.revokeObjectURL(prev[i].url);
+    return prev.filter((_, x) => x !== i);
+  });
+
+  const clearPhotos = () => setPhotos((prev) => { prev.forEach((p) => URL.revokeObjectURL(p.url)); return []; });
+
+  const finishPhotos = async () => {
+    if (!photos.length || busy) return;
+    setBusy('photo');
+    try {
+      const d = new Date();
+      const auto = `Φωτογραφίες ${d.getDate()}-${d.getMonth() + 1} ${String(d.getHours()).padStart(2, '0')}.${String(d.getMinutes()).padStart(2, '0')}`;
+      const pdf = await photosToPdf(photos.map((p) => p.file), photoName.trim() || auto);
+      setPhotoPdf(pdf); // ανοίγει η οθόνη επιλογής προορισμού
+    } catch (err) { alert('Σφάλμα: ' + err.message); }
+    setBusy('');
+  };
+
+  // Προορισμός 1 — Live: το PDF μπαίνει στη σύνθεση του Live (Έναρξη ή Προσθήκη από εκεί)
+  const photoPdfToLive = () => {
+    if (!photoPdf) return;
+    setLiveFiles((prev) => [...prev, photoPdf]);
+    setPhotoPdf(null); clearPhotos(); setPhotoName('');
+    setMode('live');
+  };
+
+  // Προορισμός 2 — Μοίρασμα: ανέβασμα, καταχώριση, δημοσίευση στη δημόσια σελίδα
+  const photoPdfToShare = async () => {
+    if (!photoPdf || busy || !rootId) return;
+    setBusy('photo-share');
+    try {
+      const doc = await uploadToDrive(photoPdf); // ΧΩΡΙΣ live-tmp- — μένει όσο είναι δημόσιο
+      await fetch('/api/registry', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ files: [{ id: doc.id, name: doc.name, mimeType: doc.mimeType, folderId: rootId }] }) });
+      await fetch('/api/publish', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: doc.id, visibility: 'public' }) });
+      await loadShared();
+      setPhotoPdf(null); clearPhotos(); setPhotoName('');
+      setShareDone(true); setMode('share');
+    } catch (err) { alert('Σφάλμα: ' + err.message); }
+    setBusy('');
+  };
+
+  // Προορισμός 3 — Αποθήκευση: μόνιμα στη Βιβλιοθήκη (με ερώτηση ενεργοποίησης αν είναι κλειστή)
+  const photoPdfToLibrary = async () => {
+    if (!photoPdf || busy || !rootId) return;
+    if (!libOn) {
+      if (!confirm('Η αποθήκευση χρειάζεται τη Βιβλιοθήκη: το αρχείο μένει μόνιμα στο Google Drive σου (δεν σβήνεται σε 24 ώρες). Να ενεργοποιηθεί;')) return;
+      activateLibrary();
+    }
+    setBusy('photo-save');
+    try {
+      const doc = await uploadToDrive(photoPdf); // ΧΩΡΙΣ live-tmp- — μόνιμο, δεν το σαρώνει ο καθαρισμός
+      await fetch('/api/registry', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ files: [{ id: doc.id, name: doc.name, mimeType: doc.mimeType, folderId: rootId }] }) });
+      await loadShared();
+      setPhotoPdf(null); clearPhotos(); setPhotoName('');
+      setMode('library');
+    } catch (err) { alert('Σφάλμα: ' + err.message); }
+    setBusy('');
+  };
+
   /* ── UI ── */
   if (status === 'loading' || status === 'unauthenticated') {
     return <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.sub, fontFamily: 'system-ui' }}>Φόρτωση…</div>;
@@ -669,15 +797,87 @@ export default function Home() {
           </>
         )}
 
-        {/* ═══ ΦΩΤΟ → PDF (προσεχώς) ═══ */}
+        {/* ═══ ΦΩΤΟ → PDF ═══ */}
         {mode === 'photo' && (
-          <div style={S.card}>
-            <div style={{ fontSize: 13, color: C.sub, lineHeight: 1.7 }}>
-              📷 <b style={{ color: C.ink }}>Φωτογραφίες → PDF</b> — έρχεται στο επόμενο βήμα:
-              συνεχόμενες λήψεις με την κάμερα, ένωση σε ενιαίο PDF και επιλογή
-              Live, Μοιράσματος ή αποθήκευσης στη Βιβλιοθήκη.
-            </div>
-          </div>
+          <>
+            {/* Κρυφό input — στο κινητό ανοίγει απευθείας την κάμερα */}
+            <input ref={photoInputRef} type="file" accept="image/*" capture="environment" multiple
+              onChange={pickPhotos} style={{ display: 'none' }} />
+
+            {/* Βήμα 1: λήψεις */}
+            {!photoPdf && (
+              <div style={S.card}>
+                {photos.length === 0 ? (
+                  <>
+                    <button style={S.upBtn} onClick={() => photoInputRef.current?.click()}>
+                      📷 Λήψη φωτογραφίας
+                    </button>
+                    <div style={{ fontSize: 12, color: C.mut, marginTop: 10, lineHeight: 1.6 }}>
+                      Συνεχόμενες λήψεις (π.χ. σελίδες βιβλίου, γραπτά) ενώνονται σε <b>ενιαίο PDF</b>,
+                      το οποίο στη συνέχεια στέλνεται σε Live, στη δημόσια σελίδα ή στη Βιβλιοθήκη.
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {/* Μικρογραφίες με αρίθμηση σελίδων */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(90px,1fr))', gap: 8, marginBottom: 14 }}>
+                      {photos.map((p, i) => (
+                        <div key={p.url} style={{ position: 'relative', border: '1px solid ' + C.creamLine, borderRadius: 10, overflow: 'hidden', background: '#fff' }}>
+                          <img src={p.url} alt={'Σελίδα ' + (i + 1)} style={{ width: '100%', height: 110, objectFit: 'cover', display: 'block' }} />
+                          <span style={{ position: 'absolute', top: 4, left: 4, background: 'rgba(26,26,26,0.75)', color: '#fff', fontSize: 10, fontWeight: 700, borderRadius: 6, padding: '2px 6px' }}>{i + 1}</span>
+                          <button onClick={() => removePhoto(i)} title="Αφαίρεση"
+                            style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(26,26,26,0.75)', color: '#fff', border: 'none', borderRadius: 6, width: 20, height: 20, fontSize: 11, cursor: 'pointer', lineHeight: '20px', padding: 0 }}>✕</button>
+                        </div>
+                      ))}
+                      {/* Πλακίδιο «άλλη σελίδα» μέσα στο πλέγμα */}
+                      <button onClick={() => photoInputRef.current?.click()}
+                        style={{ height: 110, border: '2px dashed ' + C.creamLine, borderRadius: 10, background: C.creamBg, color: C.cream, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                        📷<br />Άλλη σελίδα
+                      </button>
+                    </div>
+
+                    <input value={photoName} onChange={(e) => setPhotoName(e.target.value)}
+                      placeholder="Όνομα PDF (προαιρετικό — αλλιώς με ημερομηνία/ώρα)" style={{ ...S.input, marginBottom: 10 }} />
+
+                    <button style={S.go(!busy)} onClick={finishPhotos} disabled={!!busy}>
+                      {busy === 'photo' ? 'Δημιουργία PDF…' : `Ολοκλήρωση → PDF (${photos.length} σελ.)`}
+                    </button>
+                    <button onClick={clearPhotos}
+                      style={{ background: 'none', border: 'none', color: C.mut, fontSize: 12, cursor: 'pointer', marginTop: 10, padding: 0 }}>
+                      Καθαρισμός όλων
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Βήμα 2: επιλογή προορισμού */}
+            {photoPdf && (
+              <div style={S.card}>
+                <div style={{ fontSize: 14, color: C.ink, marginBottom: 4 }}>
+                  ✅ Το PDF <b>«{photoPdf.name}»</b> είναι έτοιμο ({photos.length} σελ., {(photoPdf.size / 1024 / 1024).toFixed(1)} MB).
+                </div>
+                <div style={{ fontSize: 12, color: C.sub, marginBottom: 16 }}>Πού να πάει;</div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <button style={S.go(!busy)} onClick={photoPdfToLive} disabled={!!busy}>
+                    📡 Live — προσθήκη στη σύνθεση
+                  </button>
+                  <button style={{ ...S.go(!busy), background: busy ? '#e0e0e0' : C.cream }} onClick={photoPdfToShare} disabled={!!busy}>
+                    {busy === 'photo-share' ? 'Δημοσίευση…' : '🌍 Μοίρασμα — στη δημόσια σελίδα'}
+                  </button>
+                  <button style={{ ...S.go(!busy), background: busy ? '#e0e0e0' : '#fff', color: C.ink, border: '2px solid ' + C.line }} onClick={photoPdfToLibrary} disabled={!!busy}>
+                    {busy === 'photo-save' ? 'Αποθήκευση…' : '💾 Αποθήκευση στη Βιβλιοθήκη' + (libOn ? '' : ' (θα ενεργοποιηθεί)')}
+                  </button>
+                </div>
+
+                <button onClick={() => setPhotoPdf(null)}
+                  style={{ background: 'none', border: 'none', color: C.mut, fontSize: 12, cursor: 'pointer', marginTop: 14, padding: 0 }}>
+                  ← Πίσω στις φωτογραφίες
+                </button>
+              </div>
+            )}
+          </>
         )}
 
         {/* ═══ ΒΙΒΛΙΟΘΗΚΗ (προαιρετική) ═══ */}
