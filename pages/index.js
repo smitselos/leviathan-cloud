@@ -600,7 +600,7 @@ export default function Home() {
   const S = {
     wrap: { minHeight: '100vh', background: C.bg, fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif",
       paddingBottom: isMobile ? 96 : 40 },
-    inner: { maxWidth: 640, margin: '0 auto', padding: isMobile ? '20px 16px' : '36px 20px' },
+    inner: { maxWidth: isMobile ? 640 : 880, margin: '0 auto', padding: isMobile ? '20px 16px' : '36px 24px' },
     // ── Κάτω μπάρα (mobile) ──
     mobBar: { position: 'fixed', bottom: 0, left: 0, right: 0, background: C.dark, display: 'flex', justifyContent: 'space-around', alignItems: 'center', padding: '8px 0 max(8px,env(safe-area-inset-bottom))', zIndex: 300, borderTop: '1px solid rgba(255,255,255,0.06)' },
     card: { background: C.card, border: '1px solid ' + C.line, borderRadius: 16, padding: isMobile ? 16 : 20, marginBottom: 16 },
