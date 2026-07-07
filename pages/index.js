@@ -946,19 +946,43 @@ export default function Home() {
                 {library.map((f) => {
                   const inLive = liveDriveItems.some((x) => x.id === f.id);
                   const pub = isPublicFile(f);
-                  return (
-                    <div key={f.id} style={{ ...S.row, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
+                  const btnLive = (
+                    <button onClick={() => addLibToLive(f)} disabled={inLive} title="Προσθήκη στη σύνθεση Live"
+                      style={{ padding: '5px 10px', borderRadius: 8, border: '1px solid rgba(232,201,106,0.4)', background: inLive ? 'rgba(232,201,106,0.15)' : 'transparent', color: C.live, fontSize: 12, fontWeight: 600, cursor: inLive ? 'default' : 'pointer', flexShrink: 0 }}>
+                      {inLive ? '✓ στο Live' : '➕ Live'}
+                    </button>
+                  );
+                  const btnPub = (
+                    <button onClick={() => togglePublic(f)} title={pub ? 'Απόσυρση από τη δημόσια σελίδα' : 'Δημοσίευση στη δημόσια σελίδα'}
+                      style={{ padding: '5px 10px', borderRadius: 8, border: '1px solid ' + (pub ? 'rgba(74,222,128,0.5)' : 'rgba(255,255,255,0.2)'), background: pub ? 'rgba(74,222,128,0.12)' : 'transparent', color: pub ? '#4ade80' : '#8e8ea0', fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>
+                      {pub ? '🌍 Δημόσιο' : '🌍 Όχι'}
+                    </button>
+                  );
+                  const btnDel = (
+                    <button style={{ ...S.x, color: '#f87171' }} title="Οριστική διαγραφή από βιβλιοθήκη & Drive" onClick={() => removeFromLibrary(f)}>✕</button>
+                  );
+                  return isMobile ? (
+                    /* Κινητό: εικονίδιο αριστερά σε όλο το ύψος · δεξιά πάνω το όνομα (κόβεται), κάτω τα κουμπιά */
+                    <div key={f.id} style={{ ...S.row, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', alignItems: 'center' }}>
+                      <span style={{ fontSize: 24, flexShrink: 0 }}>📄</span>
+                      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 7 }}>
+                        <span style={{ fontSize: 13, fontWeight: 500, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cleanName(f.name)}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          {btnLive}
+                          {btnPub}
+                          <span style={{ flex: 1 }} />
+                          {btnDel}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Desktop: μία γραμμή, όπως πριν */
+                    <div key={f.id} style={{ ...S.row, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
                       <span>📄</span>
-                      <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: isMobile ? '100%' : 0 }}>{cleanName(f.name)}</span>
-                      <button onClick={() => addLibToLive(f)} disabled={inLive} title="Προσθήκη στη σύνθεση Live"
-                        style={{ padding: '5px 10px', borderRadius: 8, border: '1px solid rgba(232,201,106,0.4)', background: inLive ? 'rgba(232,201,106,0.15)' : 'transparent', color: C.live, fontSize: 12, fontWeight: 600, cursor: inLive ? 'default' : 'pointer', flexShrink: 0 }}>
-                        {inLive ? '✓ στο Live' : '➕ Live'}
-                      </button>
-                      <button onClick={() => togglePublic(f)} title={pub ? 'Απόσυρση από τη δημόσια σελίδα' : 'Δημοσίευση στη δημόσια σελίδα'}
-                        style={{ padding: '5px 10px', borderRadius: 8, border: '1px solid ' + (pub ? 'rgba(74,222,128,0.5)' : 'rgba(255,255,255,0.2)'), background: pub ? 'rgba(74,222,128,0.12)' : 'transparent', color: pub ? '#4ade80' : '#8e8ea0', fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>
-                        {pub ? '🌍 Δημόσιο' : '🌍 Όχι'}
-                      </button>
-                      <button style={{ ...S.x, color: '#f87171' }} title="Οριστική διαγραφή από βιβλιοθήκη & Drive" onClick={() => removeFromLibrary(f)}>✕</button>
+                      <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{cleanName(f.name)}</span>
+                      {btnLive}
+                      {btnPub}
+                      {btnDel}
                     </div>
                   );
                 })}
