@@ -1,5 +1,5 @@
 // pages/index.js — ΛΕΒΙΑΘΑΝ Light
-// Δύο λειτουργίες ΜΟΝΟ: 📡 Live  &  🌍 Μοίρασμα (Ανοιχτή πρόσβαση)
+// Λειτουργίες: 📡 Live · 🌍 Μοίρασμα (Ανοιχτή πρόσβαση) · 👤 Προσωπικό (αποστολή σε μαθητή με ψευδομέιλ)
 // Σύνδεση με Gmail (NextAuth). Χωρίς βιβλιοθήκη, ετικέτες, σχόλια, μαθητές, επεξεργασία.
 //
 // Ροή Live:      ανέβασμα αρχείου (ή σύνδεσμος) → PDF → κωδικός PIN → προβολή στον διαδραστικό (/live?code=…)
@@ -21,6 +21,9 @@ const ZIP_RE = /\.zip$/i;
 const ACCEPT = '.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.pages,.key,.numbers,.zip,image/*';
 
 const cleanName = (n) => n.replace(/^live-tmp-\d+-/, '').replace(/\.(pdf|docx?|pptx?|xlsx?|pages|key)$/i, '');
+
+// Ομαλοποίηση ψευδομέιλ μαθητή: πεζά, χωρίς κενά, με @gmail.com αν λείπει το @
+const normEmail = (s) => { const v = (s || '').trim().toLowerCase(); if (!v) return ''; return v.includes('@') ? v : v + '@gmail.com'; };
 
 // Φόρτωση JSZip από CDN κατά ζήτηση (καμία εξάρτηση στο package.json)
 let _jszipPromise = null;
@@ -149,6 +152,12 @@ export default function Home() {
   const [shared, setShared] = useState([]);            // δημόσια αρχεία (από registry, αόρατο υπόβαθρο)
   const [shareDone, setShareDone] = useState(false);
 
+  // Προσωπικό — αποστολή σε συγκεκριμένο μαθητή (visibility: user:<ψευδομέιλ>)
+  const [recipient, setRecipient] = useState('');      // ψευδομέιλ μαθητή
+  const [personalMsg, setPersonalMsg] = useState('');  // προαιρετικό μήνυμα ✉️
+  const [personalDone, setPersonalDone] = useState(false);
+  const [personal, setPersonal] = useState([]);        // ενεργές προσωπικές αποστολές
+
   // Βιβλιοθήκη (προαιρετική) & Σετ
   const [libOn, setLibOn] = useState(false);           // ενεργοποιημένη; (τοπική προτίμηση συσκευής)
 
@@ -179,7 +188,8 @@ export default function Home() {
       const r = await fetch('/api/registry');
       const d = await r.json();
       setLibrary(d.files || []); // πλήρης λίστα — τη βλέπει η Βιβλιοθήκη
-      setShared((d.files || []).filter((x) => x.visibility === 'public' || x.published));
+      setShared((d.files || []).filter((x) => x.visibility === 'public'));
+      setPersonal((d.files || []).filter((x) => (x.visibility || '').startsWith('user:')));
     } catch {}
   }, []);
 
@@ -459,7 +469,9 @@ export default function Home() {
     setBusy('');
   };
 
-  const isPublicFile = (f) => f.visibility === 'public' || f.published;
+  const isPublicFile = (f) => f.visibility === 'public';
+  const isPersonalFile = (f) => (f.visibility || '').startsWith('user:');
+  const personalRecipient = (f) => (f.visibility || '').replace(/^user:/, '');
 
   const togglePublic = async (f) => {
     try {
@@ -469,9 +481,9 @@ export default function Home() {
   };
 
   const removeFromLibrary = async (f) => {
-    if (!confirm(`Να διαγραφεί οριστικά το «${cleanName(f.name)}» από τη βιβλιοθήκη και το Drive;${isPublicFile(f) ? '\n(Θα φύγει και από τη δημόσια σελίδα.)' : ''}`)) return;
+    if (!confirm(`Να διαγραφεί οριστικά το «${cleanName(f.name)}» από τη βιβλιοθήκη και το Drive;${isPublicFile(f) ? '\n(Θα φύγει και από τη δημόσια σελίδα.)' : isPersonalFile(f) ? '\n(Θα πάψει να το βλέπει και ο μαθητής.)' : ''}`)) return;
     try {
-      if (isPublicFile(f)) await fetch('/api/publish', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: f.id, visibility: 'none' }) });
+      if (isPublicFile(f) || isPersonalFile(f)) await fetch('/api/publish', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: f.id, visibility: 'none' }) });
       await fetch('/api/registry', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: f.id, deleteFromDrive: true }) });
       setLiveDriveItems((p) => p.filter((x) => x.id !== f.id));
       await loadShared();
@@ -517,6 +529,50 @@ export default function Home() {
       return;
     }
     if (!confirm(`Να αφαιρεθεί το «${cleanName(f.name)}» από τη δημόσια σελίδα;\n(Θα διαγραφεί — δεν κρατιέται πουθενά.)`)) return;
+    try {
+      await fetch('/api/publish', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: f.id, visibility: 'none' }) });
+      await fetch('/api/registry', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: f.id, deleteFromDrive: true }) });
+      await loadShared();
+    } catch {}
+  };
+
+  /* ── ΠΡΟΣΩΠΙΚΟ: ανέβασμα → PDF → ορατό ΜΟΝΟ στον μαθητή με το ψευδομέιλ ── */
+  const pickPersonalFiles = async (e) => {
+    const list = Array.from(e.target.files || []); e.target.value = '';
+    const rcpt = normEmail(recipient);
+    if (!list.length || busy || !rootId || !rcpt) return;
+    setBusy('personal'); setPersonalDone(false);
+    try {
+      const added = [];
+      for (const f of list) {
+        const p = await prepareFile(f); if (!p) continue;
+        const doc = await uploadToDrive(p);
+        added.push({ id: doc.id, name: doc.name, mimeType: doc.mimeType, folderId: rootId });
+      }
+      if (added.length) {
+        await fetch('/api/registry', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ files: added }) });
+        for (const a of added) {
+          await fetch('/api/publish', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: a.id, visibility: 'user:' + rcpt, message: personalMsg.trim() }) });
+        }
+        await loadShared();
+        setPersonalDone(true); setPersonalMsg('');
+      }
+    } catch (err) { alert('Σφάλμα: ' + err.message); }
+    setBusy('');
+  };
+
+  const unpersonal = async (f) => {
+    const who = personalRecipient(f);
+    // Με ενεργή Βιβλιοθήκη η ανάκληση ΔΕΝ διαγράφει το αρχείο — μένει στη Βιβλιοθήκη
+    if (libOn) {
+      if (!confirm(`Να πάψει ο/η ${who} να βλέπει το «${cleanName(f.name)}»;\n(Μένει στη Βιβλιοθήκη σου.)`)) return;
+      try {
+        await fetch('/api/publish', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: f.id, visibility: 'none' }) });
+        await loadShared();
+      } catch {}
+      return;
+    }
+    if (!confirm(`Να πάψει ο/η ${who} να βλέπει το «${cleanName(f.name)}»;\n(Θα διαγραφεί — δεν κρατιέται πουθενά.)`)) return;
     try {
       await fetch('/api/publish', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: f.id, visibility: 'none' }) });
       await fetch('/api/registry', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: f.id, deleteFromDrive: true }) });
@@ -606,7 +662,7 @@ export default function Home() {
     card: { background: C.card, border: '1px solid ' + C.line, borderRadius: 16, padding: isMobile ? 16 : 20, marginBottom: 16 },
     h1: { fontSize: isMobile ? 20 : 24, fontWeight: 700, color: C.ink, margin: 0 },
     sub: { fontSize: 13, color: C.sub, margin: '4px 0 0' },
-    tab: (on) => ({ flex: 1, padding: '13px 10px', borderRadius: 14, border: '2px solid ' + (on ? C.cream : C.line), background: on ? C.creamBg : '#fff', color: on ? C.cream : C.sub, fontSize: 14, fontWeight: 700, cursor: 'pointer' }),
+    tab: (on) => ({ flex: 1, padding: isMobile ? '12px 4px' : '13px 8px', borderRadius: 14, border: '2px solid ' + (on ? C.cream : C.line), background: on ? C.creamBg : '#fff', color: on ? C.cream : C.sub, fontSize: isMobile ? 12 : 14, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }),
     upBtn: { display: 'block', width: '100%', padding: '26px 14px', borderRadius: 14, border: '2px dashed ' + C.creamLine, background: C.creamBg, color: C.cream, fontSize: 14, fontWeight: 600, cursor: 'pointer', textAlign: 'center', boxSizing: 'border-box' },
     go: (on) => ({ width: '100%', padding: 14, borderRadius: 14, border: 'none', background: on ? C.dark : '#e0e0e0', color: '#fff', fontSize: 15, fontWeight: 600, cursor: on ? 'pointer' : 'default' }),
     row: { display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', background: '#fff', border: '1px solid ' + C.creamLine, borderRadius: 12 },
@@ -642,6 +698,7 @@ export default function Home() {
         <div style={{ display: 'flex', gap: isMobile ? 8 : 10, marginBottom: 18 }}>
           <button style={S.tab(mode === 'live')} onClick={() => setMode('live')}>📡 Live</button>
           <button style={S.tab(mode === 'share')} onClick={() => setMode('share')}>🌍 Μοίρασμα</button>
+          <button style={S.tab(mode === 'personal')} onClick={() => setMode('personal')}>👤 Προσωπικό</button>
           <button style={S.tab(mode === 'photo')} onClick={() => setMode('photo')}>📷 Φωτό</button>
           {!isMobile && (
             <button onClick={() => setMode('library')}
@@ -793,6 +850,63 @@ export default function Home() {
 
             <div style={{ fontSize: 12, color: C.mut, textAlign: 'center' }}>
               Δημόσια διεύθυνση: <b style={{ color: C.sub }}>{typeof window !== 'undefined' ? window.location.host : ''}{publicPath}</b>
+            </div>
+          </>
+        )}
+
+        {/* ═══ ΠΡΟΣΩΠΙΚΟ ═══ */}
+        {mode === 'personal' && (
+          <>
+            <div style={S.card}>
+              <div style={{ fontSize: 13, color: C.sub, marginBottom: 14 }}>
+                Ανέβασε αρχείο για <b>συγκεκριμένο μαθητή</b> — το βλέπει μόνο αυτός στη δημόσια σελίδα σου,
+                όταν βάλει το ψευδομέιλ του στο πλαίσιο «Δες το προσωπικό σου υλικό».
+              </div>
+              <input value={recipient} onChange={(e) => { setRecipient(e.target.value); setPersonalDone(false); }}
+                placeholder="Ψευδομέιλ μαθητή (π.χ. nikos.b2@gmail.com)" type="email"
+                style={{ ...S.input, marginBottom: 8 }} />
+              <input value={personalMsg} onChange={(e) => setPersonalMsg(e.target.value)}
+                placeholder="✉️ Μήνυμα προς τον μαθητή (προαιρετικό)"
+                style={{ ...S.input, marginBottom: 10 }} />
+              {recipient.trim() && !recipient.includes('@') && (
+                <div style={{ fontSize: 12, color: C.sub, marginBottom: 10 }}>Θα σταλεί στο: <b>{normEmail(recipient)}</b></div>
+              )}
+              <label style={{ ...S.upBtn, ...(recipient.trim() && !busy ? {} : { opacity: 0.5, cursor: 'default' }) }}>
+                {busy === 'personal' ? '⏳ Ανέβασμα & αποστολή…' : '⬆️ Επιλογή αρχείου για τον μαθητή…'}
+                <input type="file" multiple accept={ACCEPT} onChange={pickPersonalFiles} style={{ display: 'none' }} disabled={!!busy || !recipient.trim()} />
+              </label>
+              {personalDone && (
+                <div style={{ marginTop: 12, padding: '10px 14px', background: '#f0faf0', border: '1px solid #cde8cd', borderRadius: 12, fontSize: 13, color: C.green, fontWeight: 600 }}>
+                  ✓ Στάλθηκε προσωπικά στο {normEmail(recipient)}
+                </div>
+              )}
+            </div>
+
+            {/* Ενεργές προσωπικές αποστολές */}
+            <div style={S.card}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: C.cream, textTransform: 'uppercase', letterSpacing: 0.5 }}>Προσωπικές αποστολές ({personal.length})</div>
+                <button onClick={() => router.push(publicPath)}
+                  style={{ background: 'none', border: 'none', color: C.cream, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Άνοιγμα →</button>
+              </div>
+              {busy === 'load' && <div style={{ fontSize: 12, color: C.mut }}>Φόρτωση…</div>}
+              {!personal.length && busy !== 'load' && <div style={{ fontSize: 13, color: C.mut }}>Καμία ακόμη — γράψε το ψευδομέιλ του μαθητή και ανέβασε το πρώτο αρχείο.</div>}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {personal.map((f) => (
+                  <div key={f.id} style={S.row}>
+                    <span>👤</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cleanName(f.name)}</div>
+                      <div style={{ fontSize: 11, color: C.sub, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>→ {personalRecipient(f)}{f.shareMessage ? ' · ✉️ ' + f.shareMessage : ''}</div>
+                    </div>
+                    <button style={{ ...S.x, color: C.red }} title="Ανάκληση — ο μαθητής παύει να το βλέπει" onClick={() => unpersonal(f)}>✕</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ fontSize: 12, color: C.mut, textAlign: 'center' }}>
+              Ο μαθητής το βρίσκει στο <b style={{ color: C.sub }}>{typeof window !== 'undefined' ? window.location.host : ''}{publicPath}</b> βάζοντας το ψευδομέιλ του.
             </div>
           </>
         )}
@@ -952,7 +1066,12 @@ export default function Home() {
                       {inLive ? '✓ στο Live' : '➕ Live'}
                     </button>
                   );
-                  const btnPub = (
+                  const btnPub = isPersonalFile(f) ? (
+                    <button onClick={() => unpersonal(f)} title={'Προσωπικό — το βλέπει μόνο: ' + personalRecipient(f) + '. Πάτησε για ανάκληση.'}
+                      style={{ padding: '5px 10px', borderRadius: 8, border: '1px solid rgba(96,165,250,0.5)', background: 'rgba(96,165,250,0.12)', color: '#60a5fa', fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0, maxWidth: 130, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      👤 {personalRecipient(f).split('@')[0]}
+                    </button>
+                  ) : (
                     <button onClick={() => togglePublic(f)} title={pub ? 'Απόσυρση από τη δημόσια σελίδα' : 'Δημοσίευση στη δημόσια σελίδα'}
                       style={{ padding: '5px 10px', borderRadius: 8, border: '1px solid ' + (pub ? 'rgba(74,222,128,0.5)' : 'rgba(255,255,255,0.2)'), background: pub ? 'rgba(74,222,128,0.12)' : 'transparent', color: pub ? '#4ade80' : '#8e8ea0', fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>
                       {pub ? '🌍 Δημόσιο' : '🌍 Όχι'}

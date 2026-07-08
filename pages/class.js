@@ -80,6 +80,8 @@ function PublicView({teacher,isMobile,hasSession}){
   const [sidebarOpen,setSidebarOpen]=useState(!isMobile);
   const [visitor,setVisitor]=useState('');
   const [visitorInput,setVisitorInput]=useState('');
+  // Ομαλοποίηση: πεζά + @gmail.com αν λείπει — ώστε να ταιριάζει με το user:<email> του καθηγητή
+  const applyVisitor=()=>{let v=visitorInput.trim().toLowerCase();if(!v)return;if(!v.includes('@'))v+='@gmail.com';setVisitor(v);};
 
   // Teacher email: αν δεν έχει @ δοκίμασε @gmail.com
   const teacherEmail = teacher && !teacher.includes('@') ? teacher+'@gmail.com' : teacher;
@@ -164,9 +166,9 @@ function PublicView({teacher,isMobile,hasSession}){
               <div style={{fontSize:13,fontWeight:600,color:'#1a1a1a',marginBottom:6}}>Δες το προσωπικό σου υλικό</div>
               <div style={{fontSize:12,color:'#6b6b80',marginBottom:10}}>Βάλε το gmail σου για να δεις ό,τι σου έχει σταλεί προσωπικά.</div>
               <div style={{display:'flex',gap:8}}>
-                <input value={visitorInput} onChange={e=>setVisitorInput(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&visitorInput.trim())setVisitor(visitorInput.trim().toLowerCase());}} placeholder="email@gmail.com" type="email"
+                <input value={visitorInput} onChange={e=>setVisitorInput(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')applyVisitor();}} placeholder="email@gmail.com" type="email"
                   style={{flex:1,padding:'10px 12px',border:'1px solid #e0e0e0',borderRadius:10,fontSize:isMobile?16:13,boxSizing:'border-box'}}/>
-                <button onClick={()=>{if(visitorInput.trim())setVisitor(visitorInput.trim().toLowerCase());}} disabled={!visitorInput.trim()}
+                <button onClick={applyVisitor} disabled={!visitorInput.trim()}
                   style={{padding:'10px 16px',borderRadius:10,border:'none',background:visitorInput.trim()?'#5c7a3a':'#e0e0e0',color:'#fff',fontSize:13,fontWeight:600,cursor:visitorInput.trim()?'pointer':'default',whiteSpace:'nowrap'}}>Δες</button>
               </div>
             </>
