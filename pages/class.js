@@ -14,6 +14,18 @@ const P = {
 const TAG_COLORS=[{bg:'#ede9fe',text:'#6d28d9'},{bg:'#dcfce7',text:'#15803d'},{bg:'#fef3c7',text:'#b45309'},{bg:'#dbeafe',text:'#1d4ed8'},{bg:'#fce7f3',text:'#9d174d'},{bg:'#e0f2fe',text:'#0369a1'},{bg:'#f3f4f6',text:'#374151'}];
 const tagColor=t=>TAG_COLORS[Math.abs([...t].reduce((a,c)=>a+c.charCodeAt(0),0))%TAG_COLORS.length];
 const trunc=(s,n)=>s&&s.length>n?s.slice(0,n)+'…':s;
+
+// «Πίσω» με δίχτυ ασφαλείας: αν το history.back() δεν οδηγήσει πουθενά
+// (π.χ. η σελίδα άνοιξε απευθείας από σύνδεσμο/QR), πάμε στο fallback.
+const goBack=(fallback='/class')=>{
+  if(typeof window==='undefined')return;
+  let moved=false;
+  const mark=()=>{moved=true;};
+  window.addEventListener('popstate',mark,{once:true});
+  window.addEventListener('pagehide',mark,{once:true});
+  setTimeout(()=>{ if(!moved) window.location.href=fallback; },500);
+  try{window.history.back();}catch{window.location.href=fallback;}
+};
 const teacherColor=(email)=>TAG_COLORS[Math.abs([...(email||'')].reduce((a,c)=>a+c.charCodeAt(0),0))%TAG_COLORS.length];
 
 const Ic={
@@ -45,7 +57,7 @@ function ClassEntry({isMobile}){
   const go=()=>{ const v=name.trim(); if(v) router.push('/class?teacher='+encodeURIComponent(v)); };
   return (
     <div style={S.page}>
-      <button onClick={()=>window.history.back()} title="Πίσω"
+      <button onClick={()=>goBack('/')} title="Πίσω"
         style={{position:'fixed',top:14,left:14,width:38,height:38,background:'#fff',border:'1px solid #e0e0e0',borderRadius:12,cursor:'pointer',fontSize:17,color:'#6b6b80',display:'flex',alignItems:'center',justifyContent:'center'}}>←</button>
       <div style={{...S.card,maxWidth:420}}>
         <img src="/logo.png" alt="Leviathan" style={{height:80,objectFit:'contain',marginBottom:12}}/>
@@ -144,7 +156,7 @@ function PublicView({teacher,isMobile,hasSession}){
         <div style={{...S.sidebar,width:sidebarOpen?220:56}}>
           <div style={S.sidebarHeader}>{sidebarOpen&&<img src="/logo-white.png" alt="Leviathan" style={{height:86,objectFit:'contain'}}/>}<button onClick={()=>setSidebarOpen(p=>!p)} style={S.collapseBtn}>{sidebarOpen?'◀':'▶'}</button></div>
           <nav style={S.nav}>
-            <button onClick={()=>window.history.back()} style={S.navItem} title="Πίσω"><span style={S.navIcon}>{Ic.back}</span>{sidebarOpen&&'Πίσω'}</button>
+            <button onClick={()=>goBack()} style={S.navItem} title="Πίσω"><span style={S.navIcon}>{Ic.back}</span>{sidebarOpen&&'Πίσω'}</button>
             <button onClick={()=>window.history.forward()} style={S.navItem} title="Μπροστά"><span style={S.navIcon}>{Ic.fwd}</span>{sidebarOpen&&'Μπροστά'}</button>
             <div style={S.navDiv}/>
             <button onClick={()=>window.location.reload()} style={{...S.navItem,...S.navActive}}><span style={S.navIcon}>{Ic.book}</span>{sidebarOpen&&'Βιβλιοθήκη'}</button>
@@ -155,7 +167,7 @@ function PublicView({teacher,isMobile,hasSession}){
         </div>
       )}
 
-      <div style={{flex:1,maxWidth:800,margin:'0 auto',padding:'24px 16px'}}>
+      <div style={{flex:1,maxWidth:800,margin:'0 auto',padding:isMobile?'24px 16px 110px':'24px 16px'}}>
         <div style={{textAlign:'center',marginBottom:28}}>
           <img src="/logo.png" alt="Leviathan" style={{height:110,objectFit:'contain',marginBottom:8}}/>
           <p style={{fontSize:13,color:'#6b6b80'}}>{files.length} αρχεία</p>
@@ -247,8 +259,8 @@ function PublicView({teacher,isMobile,hasSession}){
 
       {/* Mobile bottom nav */}
       {isMobile&&(
-        <nav style={{position:'fixed',bottom:0,left:0,right:0,background:'#1a1a1a',display:'flex',justifyContent:'space-around',alignItems:'center',padding:'8px 0 max(8px,env(safe-area-inset-bottom))',zIndex:300,borderTop:'1px solid rgba(255,255,255,0.06)'}}>
-          <MobBtn icon={Ic.back} label="Πίσω" onClick={()=>window.history.back()}/>
+        <nav style={{position:'fixed',bottom:0,left:0,right:0,background:'#1a1a1a',display:'flex',justifyContent:'space-around',alignItems:'center',padding:'14px 0 max(14px,env(safe-area-inset-bottom))',zIndex:300,borderTop:'1px solid rgba(255,255,255,0.06)'}}>
+          <MobBtn icon={Ic.back} label="Πίσω" onClick={()=>goBack()}/>
           <MobBtn icon={Ic.fwd} label="Μπροστά" onClick={()=>window.history.forward()}/>
           <MobBtn icon={Ic.book} label="Βιβλιοθήκη" active onClick={()=>window.location.reload()}/>
           <MobBtn icon={Ic.live} label="Live" onClick={()=>{window.location.href='/live';}}/>
@@ -263,7 +275,7 @@ function PublicView({teacher,isMobile,hasSession}){
    ΜΑΘΗΤΗΣ — μία σελίδα: invite + εισερχόμενα | upload + αποστολές
    ══════════════════════════════════════════════════════════════ */
 function MobBtn({icon,label,active,disabled,onClick,badge}){
-  return(<button onClick={disabled?undefined:onClick} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:2,background:'transparent',border:'none',color:active?'#ececec':'#8e8ea0',fontSize:10,cursor:disabled?'default':'pointer',padding:'4px 8px',opacity:disabled?0.35:1,position:'relative'}}>
+  return(<button onClick={disabled?undefined:onClick} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:3,background:'transparent',border:'none',color:active?'#ececec':'#8e8ea0',fontSize:11,cursor:disabled?'default':'pointer',padding:'6px 10px',opacity:disabled?0.35:1,position:'relative'}}>
     {icon}<span>{label}</span>
     {badge>0&&<span style={{position:'absolute',top:-2,right:0,...S.badgeStyle}}>{badge}</span>}
   </button>);

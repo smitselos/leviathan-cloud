@@ -1,5 +1,5 @@
 // pages/index.js — ΛΕΒΙΑΘΑΝ Light
-// Λειτουργίες: 📡 Live · 🌍 Μοίρασμα (Ανοιχτή πρόσβαση) · 👤 Προσωπικό (αποστολή σε μαθητή με ψευδομέιλ)
+// Λειτουργίες: 📡 Live · 🌍 Μοίρασμα (δημόσιο ή προσωπικό σε μαθητή) · 📷 Φωτό · 📚 Βιβλιοθήκη
 // Σύνδεση με Gmail (NextAuth). Χωρίς βιβλιοθήκη, ετικέτες, σχόλια, μαθητές, επεξεργασία.
 //
 // Ροή Live:      ανέβασμα αρχείου (ή σύνδεσμος) → PDF → κωδικός PIN → προβολή στον διαδραστικό (/live?code=…)
@@ -561,9 +561,9 @@ export default function Home() {
     setBusy('');
   };
 
+  // Ανάκληση προσωπικής αποστολής — με Βιβλιοθήκη το αρχείο μένει, αλλιώς διαγράφεται
   const unpersonal = async (f) => {
     const who = personalRecipient(f);
-    // Με ενεργή Βιβλιοθήκη η ανάκληση ΔΕΝ διαγράφει το αρχείο — μένει στη Βιβλιοθήκη
     if (libOn) {
       if (!confirm(`Να πάψει ο/η ${who} να βλέπει το «${cleanName(f.name)}»;\n(Μένει στη Βιβλιοθήκη σου.)`)) return;
       try {
@@ -578,6 +578,19 @@ export default function Home() {
       await fetch('/api/registry', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: f.id, deleteFromDrive: true }) });
       await loadShared();
     } catch {}
+  };
+
+  // ΒΙΒΛΙΟΘΗΚΗ → προσωπική αποστολή υπάρχοντος αρχείου σε μαθητή
+  const sendLibToStudent = async (f) => {
+    const rcpt = normEmail(prompt(`Ψευδομέιλ μαθητή για το «${cleanName(f.name)}»:`) || '');
+    if (!rcpt) return;
+    if (isPublicFile(f) && !confirm('Το αρχείο είναι τώρα δημόσιο — θα γίνει προσωπικό και θα φύγει από τη δημόσια σελίδα. Συνέχεια;')) return;
+    const msg = (prompt('✉️ Μήνυμα προς τον μαθητή (προαιρετικό):') || '').trim();
+    try {
+      await fetch('/api/publish', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: f.id, visibility: 'user:' + rcpt, message: msg }) });
+      await loadShared();
+      alert(`✓ Το «${cleanName(f.name)}» στάλθηκε προσωπικά στο ${rcpt}.`);
+    } catch (err) { alert('Σφάλμα: ' + err.message); }
   };
 
   /* ── ΦΩΤΟ → PDF: λήψεις → ενιαίο PDF → επιλογή προορισμού ── */
@@ -655,14 +668,14 @@ export default function Home() {
 
   const S = {
     wrap: { minHeight: '100vh', background: C.bg, fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif",
-      paddingBottom: isMobile ? 96 : 40 },
+      paddingBottom: isMobile ? 112 : 40 },
     inner: { maxWidth: isMobile ? 640 : 880, margin: '0 auto', padding: isMobile ? '20px 16px' : '36px 24px' },
     // ── Κάτω μπάρα (mobile) ──
-    mobBar: { position: 'fixed', bottom: 0, left: 0, right: 0, background: C.dark, display: 'flex', justifyContent: 'space-around', alignItems: 'center', padding: '8px 0 max(8px,env(safe-area-inset-bottom))', zIndex: 300, borderTop: '1px solid rgba(255,255,255,0.06)' },
+    mobBar: { position: 'fixed', bottom: 0, left: 0, right: 0, background: C.dark, display: 'flex', justifyContent: 'space-around', alignItems: 'center', padding: '14px 0 max(14px,env(safe-area-inset-bottom))', zIndex: 300, borderTop: '1px solid rgba(255,255,255,0.06)' },
     card: { background: C.card, border: '1px solid ' + C.line, borderRadius: 16, padding: isMobile ? 16 : 20, marginBottom: 16 },
     h1: { fontSize: isMobile ? 20 : 24, fontWeight: 700, color: C.ink, margin: 0 },
     sub: { fontSize: 13, color: C.sub, margin: '4px 0 0' },
-    tab: (on) => ({ flex: 1, padding: isMobile ? '12px 4px' : '13px 8px', borderRadius: 14, border: '2px solid ' + (on ? C.cream : C.line), background: on ? C.creamBg : '#fff', color: on ? C.cream : C.sub, fontSize: isMobile ? 12 : 14, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }),
+    tab: (on) => ({ flex: 1, padding: '13px 10px', borderRadius: 14, border: '2px solid ' + (on ? C.cream : C.line), background: on ? C.creamBg : '#fff', color: on ? C.cream : C.sub, fontSize: 14, fontWeight: 700, cursor: 'pointer' }),
     upBtn: { display: 'block', width: '100%', padding: '26px 14px', borderRadius: 14, border: '2px dashed ' + C.creamLine, background: C.creamBg, color: C.cream, fontSize: 14, fontWeight: 600, cursor: 'pointer', textAlign: 'center', boxSizing: 'border-box' },
     go: (on) => ({ width: '100%', padding: 14, borderRadius: 14, border: 'none', background: on ? C.dark : '#e0e0e0', color: '#fff', fontSize: 15, fontWeight: 600, cursor: on ? 'pointer' : 'default' }),
     row: { display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', background: '#fff', border: '1px solid ' + C.creamLine, borderRadius: 12 },
@@ -698,7 +711,6 @@ export default function Home() {
         <div style={{ display: 'flex', gap: isMobile ? 8 : 10, marginBottom: 18 }}>
           <button style={S.tab(mode === 'live')} onClick={() => setMode('live')}>📡 Live</button>
           <button style={S.tab(mode === 'share')} onClick={() => setMode('share')}>🌍 Μοίρασμα</button>
-          <button style={S.tab(mode === 'personal')} onClick={() => setMode('personal')}>👤 Προσωπικό</button>
           <button style={S.tab(mode === 'photo')} onClick={() => setMode('photo')}>📷 Φωτό</button>
           {!isMobile && (
             <button onClick={() => setMode('library')}
@@ -828,6 +840,47 @@ export default function Home() {
               )}
             </div>
 
+            {/* 👤 Προσωπικό — αποστολή σε συγκεκριμένο μαθητή */}
+            <div style={S.card}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: C.cream, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>👤 Προσωπικό — σε συγκεκριμένο μαθητή</div>
+              <div style={{ fontSize: 13, color: C.sub, marginBottom: 12 }}>
+                Το αρχείο το βλέπει <b>μόνο</b> ο μαθητής που θα βάλει το ψευδομέιλ του στο πλαίσιο «Δες το προσωπικό σου υλικό» της δημόσιας σελίδας.
+              </div>
+              <input value={recipient} onChange={(e) => { setRecipient(e.target.value); setPersonalDone(false); }}
+                placeholder="Ψευδομέιλ μαθητή (π.χ. nikos.b2@gmail.com)" type="email"
+                style={{ ...S.input, marginBottom: 8 }} />
+              <input value={personalMsg} onChange={(e) => setPersonalMsg(e.target.value)}
+                placeholder="✉️ Μήνυμα προς τον μαθητή (προαιρετικό)"
+                style={{ ...S.input, marginBottom: 10 }} />
+              {recipient.trim() && !recipient.includes('@') && (
+                <div style={{ fontSize: 12, color: C.sub, marginBottom: 10 }}>Θα σταλεί στο: <b>{normEmail(recipient)}</b></div>
+              )}
+              <label style={{ ...S.upBtn, ...(recipient.trim() && !busy ? {} : { opacity: 0.5, cursor: 'default' }) }}>
+                {busy === 'personal' ? '⏳ Ανέβασμα & αποστολή…' : '⬆️ Επιλογή αρχείου για τον μαθητή…'}
+                <input type="file" multiple accept={ACCEPT} onChange={pickPersonalFiles} style={{ display: 'none' }} disabled={!!busy || !recipient.trim()} />
+              </label>
+              {personalDone && (
+                <div style={{ marginTop: 12, padding: '10px 14px', background: '#f0faf0', border: '1px solid #cde8cd', borderRadius: 12, fontSize: 13, color: C.green, fontWeight: 600 }}>
+                  ✓ Στάλθηκε προσωπικά στο {normEmail(recipient)}
+                </div>
+              )}
+              {personal.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 14 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: C.mut, textTransform: 'uppercase', letterSpacing: 0.5 }}>Ενεργές προσωπικές αποστολές ({personal.length})</div>
+                  {personal.map((f) => (
+                    <div key={f.id} style={S.row}>
+                      <span>👤</span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cleanName(f.name)}</div>
+                        <div style={{ fontSize: 11, color: C.sub, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>→ {personalRecipient(f)}{f.shareMessage ? ' · ✉️ ' + f.shareMessage : ''}</div>
+                      </div>
+                      <button style={{ ...S.x, color: C.red }} title="Ανάκληση — ο μαθητής παύει να το βλέπει" onClick={() => unpersonal(f)}>✕</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Τι βλέπουν τώρα οι μαθητές */}
             <div style={S.card}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
@@ -850,63 +903,6 @@ export default function Home() {
 
             <div style={{ fontSize: 12, color: C.mut, textAlign: 'center' }}>
               Δημόσια διεύθυνση: <b style={{ color: C.sub }}>{typeof window !== 'undefined' ? window.location.host : ''}{publicPath}</b>
-            </div>
-          </>
-        )}
-
-        {/* ═══ ΠΡΟΣΩΠΙΚΟ ═══ */}
-        {mode === 'personal' && (
-          <>
-            <div style={S.card}>
-              <div style={{ fontSize: 13, color: C.sub, marginBottom: 14 }}>
-                Ανέβασε αρχείο για <b>συγκεκριμένο μαθητή</b> — το βλέπει μόνο αυτός στη δημόσια σελίδα σου,
-                όταν βάλει το ψευδομέιλ του στο πλαίσιο «Δες το προσωπικό σου υλικό».
-              </div>
-              <input value={recipient} onChange={(e) => { setRecipient(e.target.value); setPersonalDone(false); }}
-                placeholder="Ψευδομέιλ μαθητή (π.χ. nikos.b2@gmail.com)" type="email"
-                style={{ ...S.input, marginBottom: 8 }} />
-              <input value={personalMsg} onChange={(e) => setPersonalMsg(e.target.value)}
-                placeholder="✉️ Μήνυμα προς τον μαθητή (προαιρετικό)"
-                style={{ ...S.input, marginBottom: 10 }} />
-              {recipient.trim() && !recipient.includes('@') && (
-                <div style={{ fontSize: 12, color: C.sub, marginBottom: 10 }}>Θα σταλεί στο: <b>{normEmail(recipient)}</b></div>
-              )}
-              <label style={{ ...S.upBtn, ...(recipient.trim() && !busy ? {} : { opacity: 0.5, cursor: 'default' }) }}>
-                {busy === 'personal' ? '⏳ Ανέβασμα & αποστολή…' : '⬆️ Επιλογή αρχείου για τον μαθητή…'}
-                <input type="file" multiple accept={ACCEPT} onChange={pickPersonalFiles} style={{ display: 'none' }} disabled={!!busy || !recipient.trim()} />
-              </label>
-              {personalDone && (
-                <div style={{ marginTop: 12, padding: '10px 14px', background: '#f0faf0', border: '1px solid #cde8cd', borderRadius: 12, fontSize: 13, color: C.green, fontWeight: 600 }}>
-                  ✓ Στάλθηκε προσωπικά στο {normEmail(recipient)}
-                </div>
-              )}
-            </div>
-
-            {/* Ενεργές προσωπικές αποστολές */}
-            <div style={S.card}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: C.cream, textTransform: 'uppercase', letterSpacing: 0.5 }}>Προσωπικές αποστολές ({personal.length})</div>
-                <button onClick={() => router.push(publicPath)}
-                  style={{ background: 'none', border: 'none', color: C.cream, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Άνοιγμα →</button>
-              </div>
-              {busy === 'load' && <div style={{ fontSize: 12, color: C.mut }}>Φόρτωση…</div>}
-              {!personal.length && busy !== 'load' && <div style={{ fontSize: 13, color: C.mut }}>Καμία ακόμη — γράψε το ψευδομέιλ του μαθητή και ανέβασε το πρώτο αρχείο.</div>}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {personal.map((f) => (
-                  <div key={f.id} style={S.row}>
-                    <span>👤</span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cleanName(f.name)}</div>
-                      <div style={{ fontSize: 11, color: C.sub, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>→ {personalRecipient(f)}{f.shareMessage ? ' · ✉️ ' + f.shareMessage : ''}</div>
-                    </div>
-                    <button style={{ ...S.x, color: C.red }} title="Ανάκληση — ο μαθητής παύει να το βλέπει" onClick={() => unpersonal(f)}>✕</button>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div style={{ fontSize: 12, color: C.mut, textAlign: 'center' }}>
-              Ο μαθητής το βρίσκει στο <b style={{ color: C.sub }}>{typeof window !== 'undefined' ? window.location.host : ''}{publicPath}</b> βάζοντας το ψευδομέιλ του.
             </div>
           </>
         )}
@@ -1077,6 +1073,13 @@ export default function Home() {
                       {pub ? '🌍 Δημόσιο' : '🌍 Όχι'}
                     </button>
                   );
+                  // 👤 δίπλα στο 🌍: προσωπική αποστολή αρχείου βιβλιοθήκης σε μαθητή
+                  const btnPers = isPersonalFile(f) ? null : (
+                    <button onClick={() => sendLibToStudent(f)} title="Αποστολή σε συγκεκριμένο μαθητή (ψευδομέιλ)"
+                      style={{ padding: '5px 10px', borderRadius: 8, border: '1px solid rgba(96,165,250,0.4)', background: 'transparent', color: '#60a5fa', fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>
+                      👤
+                    </button>
+                  );
                   const btnDel = (
                     <button style={{ ...S.x, color: '#f87171' }} title="Οριστική διαγραφή από βιβλιοθήκη & Drive" onClick={() => removeFromLibrary(f)}>✕</button>
                   );
@@ -1089,6 +1092,7 @@ export default function Home() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                           {btnLive}
                           {btnPub}
+                          {btnPers}
                           <span style={{ flex: 1 }} />
                           {btnDel}
                         </div>
@@ -1101,6 +1105,7 @@ export default function Home() {
                       <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{cleanName(f.name)}</span>
                       {btnLive}
                       {btnPub}
+                      {btnPers}
                       {btnDel}
                     </div>
                   );
@@ -1135,9 +1140,9 @@ export default function Home() {
 function MobB({ icon, label, active, red, onClick }) {
   return (
     <button onClick={onClick}
-      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, background: 'transparent', border: 'none',
-        color: red ? '#f87171' : active ? '#ececec' : '#8e8ea0', fontSize: 10, cursor: 'pointer', padding: '4px 8px' }}>
-      <span style={{ fontSize: 16, lineHeight: '18px' }}>{icon}</span>
+      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, background: 'transparent', border: 'none',
+        color: red ? '#f87171' : active ? '#ececec' : '#8e8ea0', fontSize: 11, cursor: 'pointer', padding: '6px 10px' }}>
+      <span style={{ fontSize: 19, lineHeight: '21px' }}>{icon}</span>
       <span>{label}</span>
     </button>
   );
