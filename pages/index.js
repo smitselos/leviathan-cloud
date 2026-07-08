@@ -24,6 +24,10 @@ const cleanName = (n) => n.replace(/^live-tmp-\d+-/, '').replace(/\.(pdf|docx?|p
 
 // Ομαλοποίηση ψευδομέιλ μαθητή: πεζά, χωρίς κενά, με @gmail.com αν λείπει το @
 const normEmail = (s) => { const v = (s || '').trim().toLowerCase(); if (!v) return ''; return v.includes('@') ? v : v + '@gmail.com'; };
+// Πολλαπλά ψευδομέιλ: χωρισμός με κόμμα/κενό/;/newline → κανονικοποίηση → μοναδικά
+const parseRecipients = (s) => [...new Set((s || '').split(/[\s,;]+/).map(normEmail).filter(Boolean))];
+// visibility για 1 ή περισσότερους παραλήπτες — ο server δέχεται και «user:» και «users:» (JSON λίστα)
+const visForRecipients = (arr) => arr.length === 1 ? 'user:' + arr[0] : 'users:' + JSON.stringify(arr);
 
 // Φόρτωση JSZip από CDN κατά ζήτηση (καμία εξάρτηση στο package.json)
 let _jszipPromise = null;
@@ -189,7 +193,7 @@ export default function Home() {
       const d = await r.json();
       setLibrary(d.files || []); // πλήρης λίστα — τη βλέπει η Βιβλιοθήκη
       setShared((d.files || []).filter((x) => x.visibility === 'public'));
-      setPersonal((d.files || []).filter((x) => (x.visibility || '').startsWith('user:')));
+      setPersonal((d.files || []).filter((x) => /^users?:/.test(x.visibility || '')));
     } catch {}
   }, []);
 
@@ -470,8 +474,14 @@ export default function Home() {
   };
 
   const isPublicFile = (f) => f.visibility === 'public';
-  const isPersonalFile = (f) => (f.visibility || '').startsWith('user:');
-  const personalRecipient = (f) => (f.visibility || '').replace(/^user:/, '');
+  const isPersonalFile = (f) => /^users?:/.test(f.visibility || '');
+  const personalRecipients = (f) => {
+    const v = f.visibility || '';
+    if (v.startsWith('users:')) { try { return JSON.parse(v.slice(6)); } catch { return []; } }
+    if (v.startsWith('user:')) return [v.slice(5)];
+    return [];
+  };
+  const personalRecipient = (f) => personalRecipients(f).join(', ');
 
   const togglePublic = async (f) => {
     try {
@@ -539,8 +549,8 @@ export default function Home() {
   /* ── ΠΡΟΣΩΠΙΚΟ: ανέβασμα → PDF → ορατό ΜΟΝΟ στον μαθητή με το ψευδομέιλ ── */
   const pickPersonalFiles = async (e) => {
     const list = Array.from(e.target.files || []); e.target.value = '';
-    const rcpt = normEmail(recipient);
-    if (!list.length || busy || !rootId || !rcpt) return;
+    const rcpts = parseRecipients(recipient);
+    if (!list.length || busy || !rootId || !rcpts.length) return;
     setBusy('personal'); setPersonalDone(false);
     try {
       const added = [];
@@ -552,7 +562,7 @@ export default function Home() {
       if (added.length) {
         await fetch('/api/registry', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ files: added }) });
         for (const a of added) {
-          await fetch('/api/publish', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: a.id, visibility: 'user:' + rcpt, message: personalMsg.trim() }) });
+          await fetch('/api/publish', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: a.id, visibility: visForRecipients(rcpts), message: personalMsg.trim() }) });
         }
         await loadShared();
         setPersonalDone(true); setPersonalMsg('');
@@ -582,14 +592,14 @@ export default function Home() {
 
   // ΒΙΒΛΙΟΘΗΚΗ → προσωπική αποστολή υπάρχοντος αρχείου σε μαθητή
   const sendLibToStudent = async (f) => {
-    const rcpt = normEmail(prompt(`Ψευδομέιλ μαθητή για το «${cleanName(f.name)}»:`) || '');
-    if (!rcpt) return;
+    const rcpts = parseRecipients(prompt(`Ψευδομέιλ μαθητή/-ών για το «${cleanName(f.name)}»\n(πολλά χωρισμένα με κόμμα):`) || '');
+    if (!rcpts.length) return;
     if (isPublicFile(f) && !confirm('Το αρχείο είναι τώρα δημόσιο — θα γίνει προσωπικό και θα φύγει από τη δημόσια σελίδα. Συνέχεια;')) return;
-    const msg = (prompt('✉️ Μήνυμα προς τον μαθητή (προαιρετικό):') || '').trim();
+    const msg = (prompt('✉️ Μήνυμα προς τον/τους μαθητή/-ές (προαιρετικό):') || '').trim();
     try {
-      await fetch('/api/publish', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: f.id, visibility: 'user:' + rcpt, message: msg }) });
+      await fetch('/api/publish', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: f.id, visibility: visForRecipients(rcpts), message: msg }) });
       await loadShared();
-      alert(`✓ Το «${cleanName(f.name)}» στάλθηκε προσωπικά στο ${rcpt}.`);
+      alert(`✓ Το «${cleanName(f.name)}» στάλθηκε προσωπικά σε: ${rcpts.join(', ')}.`);
     } catch (err) { alert('Σφάλμα: ' + err.message); }
   };
 
@@ -844,24 +854,26 @@ export default function Home() {
             <div style={S.card}>
               <div style={{ fontSize: 12, fontWeight: 700, color: C.cream, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>👤 Προσωπικό — σε συγκεκριμένο μαθητή</div>
               <div style={{ fontSize: 13, color: C.sub, marginBottom: 12 }}>
-                Το αρχείο το βλέπει <b>μόνο</b> ο μαθητής που θα βάλει το ψευδομέιλ του στο πλαίσιο «Δες το προσωπικό σου υλικό» της δημόσιας σελίδας.
+                Το αρχείο το βλέπουν <b>μόνο</b> οι μαθητές που θα βάλουν το ψευδομέιλ τους στο πλαίσιο «Δες το προσωπικό σου υλικό» της δημόσιας σελίδας. Για πολλούς, χώρισε τα ψευδομέιλ με <b>κόμμα</b>.
               </div>
               <input value={recipient} onChange={(e) => { setRecipient(e.target.value); setPersonalDone(false); }}
-                placeholder="Ψευδομέιλ μαθητή (π.χ. nikos.b2@gmail.com)" type="email"
+                placeholder="Ψευδομέιλ μαθητή/-ών (π.χ. nikos.b2, maria.a1@gmail.com)" type="text"
                 style={{ ...S.input, marginBottom: 8 }} />
               <input value={personalMsg} onChange={(e) => setPersonalMsg(e.target.value)}
-                placeholder="✉️ Μήνυμα προς τον μαθητή (προαιρετικό)"
+                placeholder="✉️ Μήνυμα προς τον/τους μαθητή/-ές (προαιρετικό)"
                 style={{ ...S.input, marginBottom: 10 }} />
-              {recipient.trim() && !recipient.includes('@') && (
-                <div style={{ fontSize: 12, color: C.sub, marginBottom: 10 }}>Θα σταλεί στο: <b>{normEmail(recipient)}</b></div>
+              {parseRecipients(recipient).length > 0 && (
+                <div style={{ fontSize: 12, color: C.sub, marginBottom: 10 }}>
+                  Θα σταλεί σε {parseRecipients(recipient).length} {parseRecipients(recipient).length === 1 ? 'μαθητή' : 'μαθητές'}: <b>{parseRecipients(recipient).join(', ')}</b>
+                </div>
               )}
-              <label style={{ ...S.upBtn, ...(recipient.trim() && !busy ? {} : { opacity: 0.5, cursor: 'default' }) }}>
-                {busy === 'personal' ? '⏳ Ανέβασμα & αποστολή…' : '⬆️ Επιλογή αρχείου για τον μαθητή…'}
-                <input type="file" multiple accept={ACCEPT} onChange={pickPersonalFiles} style={{ display: 'none' }} disabled={!!busy || !recipient.trim()} />
+              <label style={{ ...S.upBtn, ...(parseRecipients(recipient).length && !busy ? {} : { opacity: 0.5, cursor: 'default' }) }}>
+                {busy === 'personal' ? '⏳ Ανέβασμα & αποστολή…' : '⬆️ Επιλογή αρχείου για τον/τους μαθητή/-ές…'}
+                <input type="file" multiple accept={ACCEPT} onChange={pickPersonalFiles} style={{ display: 'none' }} disabled={!!busy || !parseRecipients(recipient).length} />
               </label>
               {personalDone && (
                 <div style={{ marginTop: 12, padding: '10px 14px', background: '#f0faf0', border: '1px solid #cde8cd', borderRadius: 12, fontSize: 13, color: C.green, fontWeight: 600 }}>
-                  ✓ Στάλθηκε προσωπικά στο {normEmail(recipient)}
+                  ✓ Στάλθηκε προσωπικά σε: {parseRecipients(recipient).join(', ')}
                 </div>
               )}
               {personal.length > 0 && (
@@ -1065,7 +1077,7 @@ export default function Home() {
                   const btnPub = isPersonalFile(f) ? (
                     <button onClick={() => unpersonal(f)} title={'Προσωπικό — το βλέπει μόνο: ' + personalRecipient(f) + '. Πάτησε για ανάκληση.'}
                       style={{ padding: '5px 10px', borderRadius: 8, border: '1px solid rgba(96,165,250,0.5)', background: 'rgba(96,165,250,0.12)', color: '#60a5fa', fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0, maxWidth: 130, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      👤 {personalRecipient(f).split('@')[0]}
+                      👤 {personalRecipients(f).length > 1 ? personalRecipients(f).length + ' μαθητές' : (personalRecipients(f)[0] || '').split('@')[0]}
                     </button>
                   ) : (
                     <button onClick={() => togglePublic(f)} title={pub ? 'Απόσυρση από τη δημόσια σελίδα' : 'Δημοσίευση στη δημόσια σελίδα'}
