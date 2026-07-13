@@ -4,7 +4,7 @@
 // DELETE → { ok }         auth — αποδημοσίευση
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from './auth/[...nextauth]';
-import { getDrive, loadRegistry, saveRegistry, ensurePdfCopy, isOfficeFile } from '../../lib/drive';
+import { getDrive, loadRegistry, saveRegistry, ensurePdfCopy, isOfficeFile, unsharePdfCopies } from '../../lib/drive';
 import { createClient } from '@vercel/kv';
 
 /* ── KV client ── */
@@ -140,6 +140,8 @@ export default async function handler(req, res) {
         }
       } else {
         await unsharePublic(drive, id);
+        // Και το PDF αντίγραφο παύει να είναι δημόσιο (μένει στο Drive για επαναχρήση)
+        await unsharePdfCopies(drive, id);
       }
       await saveRegistry(drive, reg);
 
@@ -187,6 +189,7 @@ export default async function handler(req, res) {
         reg.files[idx].visibility = 'none';
         reg.files[idx].published = false;
         await unsharePublic(drive, key);
+        await unsharePdfCopies(drive, key);
       }
       await saveRegistry(drive, reg);
       const items = buildItems(reg);
