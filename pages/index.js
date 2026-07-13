@@ -483,9 +483,22 @@ export default function Home() {
   };
   const personalRecipient = (f) => personalRecipients(f).join(', ');
 
+  // Δημοσίευση με έλεγχο μετατροπής PDF: αν ο server επιστρέψει pdfFailed,
+  // ο καθηγητής ειδοποιείται ότι οι μαθητές θα κατεβάζουν το Office αντί να βλέπουν PDF.
+  const publishFile = async (id, visibility, message, name) => {
+    const body = { id, visibility };
+    if (message !== undefined) body.message = message;
+    const r = await fetch('/api/publish', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const d = await r.json().catch(() => ({}));
+    if (d.pdfFailed) {
+      alert(`⚠️ Το «${cleanName(name || '')}» δημοσιεύτηκε, αλλά η μετατροπή σε PDF απέτυχε.\n\nΟι μαθητές θα το κατεβάζουν ως αρχείο Office αντί να το βλέπουν ως PDF.\n\nΔοκίμασε απόσυρση και εκ νέου δημοσίευση. Αν επιμένει, το αρχείο ίσως είναι πολύ μεγάλο (όριο PDF ~10MB) ή προστατευμένο — μετάτρεψέ το σε PDF και ανέβασε εκείνο.`);
+    }
+    return d;
+  };
+
   const togglePublic = async (f) => {
     try {
-      await fetch('/api/publish', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: f.id, visibility: isPublicFile(f) ? 'none' : 'public' }) });
+      await publishFile(f.id, isPublicFile(f) ? 'none' : 'public', undefined, f.name);
       await loadShared();
     } catch {}
   };
@@ -519,7 +532,7 @@ export default function Home() {
       if (added.length) {
         await fetch('/api/registry', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ files: added }) });
         for (const a of added) {
-          await fetch('/api/publish', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: a.id, visibility: 'public' }) });
+          await publishFile(a.id, 'public', undefined, a.name);
         }
         await loadShared();
         setShareDone(true);
@@ -562,7 +575,7 @@ export default function Home() {
       if (added.length) {
         await fetch('/api/registry', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ files: added }) });
         for (const a of added) {
-          await fetch('/api/publish', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: a.id, visibility: visForRecipients(rcpts), message: personalMsg.trim() }) });
+          await publishFile(a.id, visForRecipients(rcpts), personalMsg.trim(), a.name);
         }
         await loadShared();
         setPersonalDone(true); setPersonalMsg('');
@@ -597,9 +610,9 @@ export default function Home() {
     if (isPublicFile(f) && !confirm('Το αρχείο είναι τώρα δημόσιο — θα γίνει προσωπικό και θα φύγει από τη δημόσια σελίδα. Συνέχεια;')) return;
     const msg = (prompt('✉️ Μήνυμα προς τον/τους μαθητή/-ές (προαιρετικό):') || '').trim();
     try {
-      await fetch('/api/publish', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: f.id, visibility: visForRecipients(rcpts), message: msg }) });
+      const d = await publishFile(f.id, visForRecipients(rcpts), msg, f.name);
       await loadShared();
-      alert(`✓ Το «${cleanName(f.name)}» στάλθηκε προσωπικά σε: ${rcpts.join(', ')}.`);
+      if (!d.pdfFailed) alert(`✓ Το «${cleanName(f.name)}» στάλθηκε προσωπικά σε: ${rcpts.join(', ')}.`);
     } catch (err) { alert('Σφάλμα: ' + err.message); }
   };
 
