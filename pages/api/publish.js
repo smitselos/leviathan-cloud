@@ -119,6 +119,8 @@ export default async function handler(req, res) {
       // Αποθήκευση μηνύματος στο registry
       if (message !== undefined) reg.files[idx].shareMessage = message || '';
 
+      let pdfFailed = false; // Office χωρίς PDF αντίγραφο → ο μαθητής θα κάνει λήψη αντί για προβολή
+
       if (visibility !== 'none') {
         const shareResult = await sharePublic(drive, id);
         // Αποθήκευσε mimeType αν δεν υπάρχει ήδη
@@ -134,6 +136,7 @@ export default async function handler(req, res) {
             const pdfId = await ensurePdfCopy(drive, id, file.name);
             reg.files[idx].pdfId = pdfId || null;
           } catch { reg.files[idx].pdfId = null; }
+          pdfFailed = !reg.files[idx].pdfId;
         }
       } else {
         await unsharePublic(drive, id);
@@ -172,7 +175,7 @@ export default async function handler(req, res) {
         }));
       }
 
-      return res.status(200).json({ ok: true, items });
+      return res.status(200).json({ ok: true, items, pdfFailed });
     }
 
     /* ── DELETE: αφαίρεση visibility ── */
