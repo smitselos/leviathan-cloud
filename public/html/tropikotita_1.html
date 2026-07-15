@@ -1,1 +1,474 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Τροπικότητα — Ασκήσεις & Θεωρία</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=GFS+Didot&family=Alegreya:ital,wght@0,400;0,500;0,700;1,400&family=Alegreya+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#182131; --ink-2:#212d42;
+    --parchment:#efe7d6; --parchment-2:#e6dcc6;
+    --gold:#b6883f; --gold-soft:#cda85f;
+    --page-bg:#d9d2c4;
+    --ok:#4e7d3e; --ok-bg:#e5efd7; --ok-bd:#bcd3a3;
+    --ko:#b54a2a; --ko-bg:#f6ded3; --ko-bd:#e8bda8;
+    --shadow:rgba(20,26,38,.35);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:radial-gradient(120% 90% at 50% 0%, #e3ddd0 0%, var(--page-bg) 60%, #cfc7b7 100%);
+    color:var(--ink);font-family:"Alegreya",Georgia,serif;
+    min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:max(10px,env(safe-area-inset-top)) 16px max(10px,env(safe-area-inset-bottom));
+    overflow:hidden;
+  }
+  .spine{display:flex;align-items:center;gap:.7rem}
+  .spine .rule{width:30px;height:1px;background:linear-gradient(90deg,transparent,var(--gold))}
+  .spine .rule.r{background:linear-gradient(90deg,var(--gold),transparent)}
+  .spine h1{font-family:"Alegreya Sans",sans-serif;font-weight:700;font-size:.78rem;
+    letter-spacing:.24em;text-transform:uppercase;color:#6a5836}
 
+  /* segmented control = ροή/πρόοδος */
+  .phases{display:flex;gap:6px;margin:10px 0 4px;font-family:"Alegreya Sans",sans-serif}
+  .phase{border:none;cursor:pointer;font-weight:700;font-size:.7rem;letter-spacing:.06em;
+    padding:6px 14px;border-radius:20px;color:#8a7a58;background:rgba(182,136,63,.12);transition:all .2s}
+  .phase.active{background:var(--ink);color:var(--parchment)}
+  .phase .step{opacity:.6;font-weight:500;margin-left:6px}
+  .phase:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .subline{font-family:"Alegreya Sans",sans-serif;font-size:.74rem;color:#93805a;
+    letter-spacing:.03em;margin-bottom:clamp(8px,2vh,14px)}
+  .subline .score{color:#5f5136;font-weight:700}
+
+  .stage{display:flex;align-items:stretch;gap:clamp(6px,2vw,18px);width:100%;max-width:720px}
+  .nav{flex:0 0 auto;width:clamp(38px,9vw,54px);border:none;background:transparent;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;color:#7a6a48;border-radius:14px;
+    transition:color .2s,background .2s}
+  .nav:hover{color:var(--ink);background:rgba(182,136,63,.12)}
+  .nav:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .nav svg{width:24px;height:24px}
+  #slot{flex:1 1 auto;min-width:0;display:flex;align-items:stretch;height:min(calc(100dvh - 150px),820px)}
+
+  /* ── Κάρτα ασκήσεων / γέφυρας (περγαμηνή, με κύλιση) ── */
+  .card{width:100%;position:relative;border-radius:18px;
+    background:linear-gradient(150deg,var(--parchment) 0%,var(--parchment-2) 100%);
+    border:1px solid rgba(24,33,49,.12);box-shadow:0 18px 40px -14px var(--shadow);
+    padding:clamp(20px,4.5vw,30px);display:flex;flex-direction:column;
+    height:100%;overflow-y:auto;animation:fade .3s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}
+  .eyebrow{font-family:"Alegreya Sans",sans-serif;font-weight:700;font-size:.64rem;
+    letter-spacing:.2em;text-transform:uppercase;color:#9a7a35}
+  .badge{font-family:"Alegreya Sans",sans-serif;font-weight:700;font-size:.6rem;letter-spacing:.1em;
+    text-transform:uppercase;color:#6a5836;background:rgba(182,136,63,.16);
+    border:1px solid rgba(182,136,63,.3);border-radius:20px;padding:3px 10px;white-space:nowrap}
+  .prompt{font-family:"Alegreya Sans",sans-serif;font-weight:600;font-size:clamp(.95rem,3vw,1.05rem);
+    color:var(--ink-2);margin-bottom:14px;line-height:1.4}
+  .sentence{font-family:"GFS Didot",serif;font-size:clamp(1.2rem,4.2vw,1.55rem);line-height:1.4;
+    color:#26201a;background:#fff8ec;border:1px solid rgba(182,136,63,.28);border-radius:12px;
+    padding:16px 18px;margin-bottom:16px}
+  .sentence.clk .tok{cursor:pointer;border-radius:5px;padding:0 1px;transition:background .15s}
+  @media(hover:hover){.sentence.clk .tok:hover{background:rgba(182,136,63,.2)}}
+  .sentence .tok.correct{background:var(--ok-bg);box-shadow:inset 0 0 0 1px var(--ok-bd);color:#2f5222}
+  .sentence .tok.wrong{background:var(--ko-bg);box-shadow:inset 0 0 0 1px var(--ko-bd);color:#7a2f1a}
+  .clk-hint{font-family:"Alegreya Sans",sans-serif;font-size:.74rem;color:#9a875f;margin:-6px 0 14px}
+  .options{display:grid;gap:10px}
+  .options.two{grid-template-columns:1fr 1fr}
+  .opt{font-family:"Alegreya Sans",sans-serif;font-weight:600;font-size:clamp(.92rem,2.8vw,1rem);
+    text-align:left;padding:13px 16px;border-radius:12px;cursor:pointer;color:var(--ink);
+    background:#fff8ec;border:1px solid rgba(24,33,49,.16);transition:all .15s}
+  .opt:hover:not(:disabled){border-color:var(--gold);background:#fff}
+  .opt:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .opt:disabled{cursor:default}
+  .opt.correct{background:var(--ok-bg);border-color:var(--ok-bd);color:#2f5222}
+  .opt.wrong{background:var(--ko-bg);border-color:var(--ko-bd);color:#7a2f1a}
+  .opt .mark{float:right;font-weight:700}
+  .feedback{margin-top:14px;border-radius:12px;padding:13px 16px;font-size:clamp(.9rem,2.7vw,.98rem);
+    line-height:1.45;display:none}
+  .feedback.show{display:block;animation:fade .25s ease}
+  .feedback.ok{background:var(--ok-bg);border:1px solid var(--ok-bd);color:#2f5222}
+  .feedback.ko{background:var(--ko-bg);border:1px solid var(--ko-bd);color:#7a2f1a}
+  .feedback b{font-weight:700}
+
+  /* ── Γέφυρα ── */
+  .bridge .title{font-family:"GFS Didot",serif;font-size:clamp(1.5rem,5.4vw,2rem);line-height:1.12;
+    color:var(--ink);margin-bottom:12px}
+  .bridge .lead{font-size:clamp(1rem,3vw,1.12rem);line-height:1.5;color:#3a3226;margin-bottom:14px}
+  .evid{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:16px}
+  @media(min-width:620px){.evid{grid-template-columns:1fr 1fr}}
+  .evid .box{background:#fff8ec;border:1px solid rgba(182,136,63,.28);border-radius:12px;padding:12px 14px}
+  .evid .box h4{font-family:"Alegreya Sans",sans-serif;font-size:.66rem;letter-spacing:.14em;
+    text-transform:uppercase;color:#9a7a35;margin-bottom:6px}
+  .evid .box p{font-style:italic;color:#3a3226;font-size:.98rem;line-height:1.4}
+  .reveal-btn{font-family:"Alegreya Sans",sans-serif;font-weight:700;font-size:.9rem;cursor:pointer;
+    color:var(--parchment);background:var(--ink);border:none;border-radius:12px;padding:12px 18px;
+    transition:background .2s;align-self:flex-start}
+  .reveal-btn:hover{background:var(--ink-2)}
+  .reveal-btn:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .reveal{margin-top:14px;display:none}
+  .reveal.show{display:block;animation:fade .3s ease}
+  .reveal .term{font-family:"GFS Didot",serif;font-size:clamp(1.6rem,6vw,2.2rem);color:var(--ink);margin-bottom:8px}
+  .reveal .term .initial{color:var(--gold)}
+  .reveal p{font-size:clamp(1rem,3vw,1.1rem);line-height:1.5;color:#3a3226}
+  .reveal .go{margin-top:12px;font-family:"Alegreya Sans",sans-serif;font-weight:700;color:var(--gold);
+    font-size:.9rem}
+
+  /* ── Θεωρία (flip) ── */
+  .thwrap{width:100%;height:100%;perspective:1600px;display:flex;align-items:stretch}
+  .thcard{position:relative;width:100%;height:100%;transform-style:preserve-3d;
+    transition:transform .6s cubic-bezier(.2,.7,.2,1);cursor:pointer;border-radius:16px}
+  .thcard.flipped{transform:rotateY(180deg)}
+  .thcard:focus-visible{outline:3px solid var(--gold);outline-offset:4px}
+  .face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+    border-radius:16px;padding:clamp(20px,4.5vw,30px);
+    box-shadow:0 18px 40px -12px var(--shadow);overflow:hidden;display:flex;flex-direction:column}
+  .col{display:flex;flex-direction:column;min-height:0;overflow:hidden;font-size:var(--fs,18px)}
+  .col.main{flex:3 1 0}
+  .col.aside{flex:2 1 0}
+  .front{background:linear-gradient(160deg,var(--ink-2) 0%,var(--ink) 70%);color:var(--parchment)}
+  .front::after{content:"";position:absolute;inset:12px;border:1px solid rgba(182,136,63,.35);border-radius:9px;pointer-events:none}
+  .kicker{font-family:"Alegreya Sans",sans-serif;font-weight:700;font-size:.62em;
+    letter-spacing:.18em;text-transform:uppercase;color:var(--gold-soft);line-height:1.2}
+  .main .kicker{margin-bottom:auto}
+  .term{font-family:"GFS Didot",serif;font-size:2.15em;line-height:1.03;color:#fff;margin:.18em 0 .32em}
+  .term .initial{color:var(--gold-soft)}
+  .def{font-size:1em;line-height:1.46;color:var(--parchment)}
+  .scholion{margin-top:.7em;padding-top:.6em;border-top:1px solid rgba(182,136,63,.3)}
+  .scholion .h{font-family:"Alegreya Sans",sans-serif;font-weight:700;font-size:.58em;
+    letter-spacing:.18em;text-transform:uppercase;color:var(--gold-soft);margin-bottom:.4em}
+  .scholion p{font-size:.86em;line-height:1.42;color:rgba(239,231,214,.86)}
+  .flip-hint{flex:0 0 auto;margin-top:.5em;padding-top:.6em;display:flex;align-items:center;gap:.5em;
+    font-family:"Alegreya Sans",sans-serif;font-size:.72rem;letter-spacing:.06em;color:rgba(239,231,214,.6)}
+  .flip-hint svg{width:15px;height:15px;opacity:.8;flex:0 0 auto}
+  .back{transform:rotateY(180deg);background:linear-gradient(150deg,var(--parchment) 0%,var(--parchment-2) 100%);color:var(--ink)}
+  .back::after{content:"";position:absolute;inset:12px;border:1px solid rgba(24,33,49,.14);border-radius:9px;pointer-events:none}
+  .back .kicker{color:#9a7a35}
+  .term-small{font-family:"GFS Didot",serif;font-size:1.28em;line-height:1.1;color:var(--ink);margin:.25em 0 auto}
+  .ex-list{margin-top:.5em;display:flex;flex-direction:column;gap:.5em}
+  .ex-line{font-family:"Alegreya",serif;font-style:italic;font-size:.98em;line-height:1.3;color:#2a2016;position:relative;padding-left:.7em}
+  .ex-line::before{content:"";position:absolute;left:0;top:.15em;bottom:.15em;width:2px;background:var(--gold);border-radius:2px}
+  .ex-note{margin-top:.7em;padding-top:.6em;border-top:1px solid rgba(24,33,49,.14);font-size:.86em;line-height:1.4;color:#4a4232}
+  .ex-note .h{font-family:"Alegreya Sans",sans-serif;font-weight:700;font-size:.6em;letter-spacing:.18em;text-transform:uppercase;color:#9a7a35;margin-bottom:.4em}
+
+  .kbd-hint{margin-top:11px;font-family:"Alegreya Sans",sans-serif;font-size:.68rem;
+    letter-spacing:.05em;color:#8a7a58;text-align:center}
+  .kbd-hint b{color:#5f5136;font-weight:700}
+  @media (hover:none){.kbd-hint{display:none}}
+
+  /* Οριζόντια / πλατιά οθόνη */
+  @media (min-width:820px),(orientation:landscape){
+    .stage{max-width:min(1180px,95vw)}
+    #slot{height:min(calc(100dvh - 128px),660px)}
+    .options.two{grid-template-columns:1fr 1fr}
+    .options:not(.two){grid-template-columns:1fr 1fr}
+    .face{display:grid;grid-template-columns:1.05fr 1fr;column-gap:clamp(22px,3vw,36px);align-content:stretch;padding:clamp(24px,3vw,40px)}
+    .col.aside{justify-content:center;padding-left:clamp(18px,2.2vw,28px)}
+    .front .col.aside{border-left:1px solid rgba(182,136,63,.32)}
+    .back .col.aside{border-left:1px solid rgba(24,33,49,.16)}
+    .scholion,.ex-note{border-top:none;margin-top:0;padding-top:0}
+    .flip-hint{position:absolute;bottom:clamp(18px,2.6vw,28px);left:clamp(24px,3vw,40px);margin:0;padding:0}
+  }
+  /* ══ Μεγαλύτερα γράμματα & πλαίσια σε ΜΕΓΑΛΕΣ/ανοιχτές οθόνες
+        (οι φύλακες min-height αφήνουν ανέπαφα τα κινητά & τα οριζόντια κινητά) ══ */
+  @media (min-width:1100px) and (min-height:640px){
+    .eyebrow{font-size:.72rem}
+    .badge{font-size:.66rem;padding:4px 12px}
+    .prompt{font-size:1.24rem}
+    .sentence{font-size:1.85rem;padding:22px 26px;border-radius:14px}
+    .clk-hint{font-size:.85rem}
+    .opt{font-size:1.14rem;padding:16px 20px;border-radius:14px}
+    .feedback{font-size:1.08rem;padding:16px 20px}
+    .bridge .title{font-size:2.4rem}
+    .bridge .lead{font-size:1.24rem}
+    .evid .box{padding:16px 18px}
+    .evid .box h4{font-size:.72rem}
+    .evid .box p{font-size:1.12rem}
+    .reveal-btn{font-size:1.02rem;padding:14px 22px}
+    .reveal .term{font-size:2.6rem}
+    .reveal p{font-size:1.22rem}
+  }
+  @media (min-width:1500px) and (min-height:760px){
+    .prompt{font-size:1.4rem}
+    .sentence{font-size:2.25rem;padding:26px 32px}
+    .opt{font-size:1.3rem;padding:19px 24px}
+    .feedback{font-size:1.2rem}
+    .bridge .title{font-size:2.9rem}
+    .bridge .lead{font-size:1.4rem}
+    .evid .box p{font-size:1.26rem}
+    .reveal .term{font-size:3.1rem}
+    .reveal p{font-size:1.38rem}
+  }
+
+  @media (prefers-reduced-motion:reduce){.thcard{transition:none}}
+</style>
+</head>
+<body>
+
+  <div class="spine">
+    <span class="rule"></span><h1>Τροπικότητα</h1><span class="rule r"></span>
+  </div>
+  <div class="phases" id="phases"></div>
+  <div class="subline" id="subline"></div>
+
+  <div class="stage">
+    <button class="nav" id="prev" aria-label="Προηγούμενο">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div id="slot"></div>
+    <button class="nav" id="next" aria-label="Επόμενο">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+  </div>
+
+  <div class="kbd-hint">← → μετακίνηση&nbsp;&nbsp;·&nbsp;&nbsp;στη θεωρία, <b>Space</b> = αναστροφή</div>
+
+<script>
+/* ══ ΑΣΚΗΣΕΙΣ (παραδείγματα από xlsx) ══ */
+const EX = [
+  {type:"mc",domain:"Επιστημική",prompt:"Τι δηλώνει η πρόταση;",
+   sentence:"Κάθε μέλος της ομάδας μπορεί να αναλάβει έναν ρόλο.",
+   options:["Υπόθεση","Δυνατότητα","Πιθανότητα","Βεβαιότητα"],answer:1,
+   explain:"Ο δείκτης «μπορεί να» δηλώνει <b>δυνατότητα</b> — 2ο σκαλί της επιστημικής κλίμακας."},
+  {type:"clk",domain:"Επιστημική",prompt:"Κάνε κλικ στον δείκτη τροπικότητας.",
+   sentence:"Οι αξίες αυτές μάλλον αυτονομούνται και λειτουργούν στην κοινωνία.",
+   answerWord:"μάλλον",explain:"Το επίρρημα «μάλλον» δηλώνει <b>πιθανότητα</b>."},
+  {type:"yesno",domain:"Επιστημική",prompt:"Δηλώνει η πρόταση βεβαιότητα;",
+   sentence:"Τεχνολογικά είναι σίγουρα πιο έξυπνα.",
+   options:["ΝΑΙ","ΟΧΙ"],answer:0,
+   explain:"Ναι· το «σίγουρα» δηλώνει <b>βεβαιότητα</b> — το ανώτερο επίπεδο."},
+  {type:"mc",domain:"Επιστημική",prompt:"Τι δηλώνει η πρόταση;",
+   sentence:"Ο ελεύθερος χρόνος αναμφισβήτητα είναι περιορισμένος.",
+   options:["Υπόθεση","Δυνατότητα","Πιθανότητα","Βεβαιότητα"],answer:3,
+   explain:"Το «αναμφισβήτητα» δηλώνει <b>βεβαιότητα</b>."},
+  {type:"mc",domain:"—",prompt:"Ποιο είδος τροπικότητας εκφράζει η πρόταση;",
+   sentence:"Οι πολίτες δεν πρέπει να πέφτουν θύματα εκμετάλλευσης.",
+   options:["Επιστημική","Δεοντική"],answer:1,
+   explain:"Ο δείκτης «πρέπει να» δηλώνει αναγκαιότητα → <b>δεοντική</b> τροπικότητα."},
+  {type:"mc",domain:"Δεοντική",prompt:"Τι δηλώνει η πρόταση;",
+   sentence:"Μακάρι να πετύχουν τα σχέδιά μας.",
+   options:["Επιθυμία","Ευχή","Πρόθεση","Υποχρέωση"],answer:1,
+   explain:"Το «μακάρι να» δηλώνει <b>ευχή</b> — 2ο σκαλί της δεοντικής κλίμακας."},
+  {type:"clk",domain:"Δεοντική",prompt:"Κάνε κλικ στον δείκτη τροπικότητας.",
+   sentence:"Το Πεντάγωνο δεν σκοπεύει να στείλει στρατιώτες στο Μάλι.",
+   answerWord:"σκοπεύει",explain:"Το ρήμα «σκοπεύει» δηλώνει <b>πρόθεση</b>."},
+  {type:"yesno",domain:"Δεοντική",prompt:"Δηλώνει η πρόταση υποχρέωση / αναγκαιότητα;",
+   sentence:"Θα πρέπει να αντιμετωπίζονται ισότιμα οι πολίτες όλων των κρατών-μελών.",
+   options:["ΝΑΙ","ΟΧΙ"],answer:0,
+   explain:"Ναι· το «(θα) πρέπει να» δηλώνει <b>υποχρέωση / αναγκαιότητα</b>."},
+  {type:"mc",domain:"Δεοντική",prompt:"Τι δηλώνει η πρόταση;",
+   sentence:"Ο άνθρωπος θέλει να ζει σύμφωνα με τις αρχές του.",
+   options:["Επιθυμία","Ευχή","Πρόθεση","Υποχρέωση"],answer:0,
+   explain:"Το «θέλει να» δηλώνει απλή <b>επιθυμία</b> — το χαμηλότερο επίπεδο."},
+  {type:"clk",domain:"Επιστημική",prompt:"Κάνε κλικ στον δείκτη τροπικότητας.",
+   sentence:"Η έξαρσή της πιθανόν να έχει σχέση με την αυξημένη θερμοκρασία.",
+   answerWord:"πιθανόν",explain:"Το «πιθανόν» δηλώνει <b>πιθανότητα</b>."}
+];
+
+/* ══ ΘΕΩΡΙΑ ══ */
+const TH = [
+  {cat:"Επιστημική τροπικότητα",term:"Δυνατότητα",
+   def:"Ο πομπός παρουσιάζει το ενδεχόμενο ως δυνατό, αλλά όχι βέβαιο.",
+   means:"μπορεί (να), είναι δυνατόν, ενδέχεται· θα + οριστική παρελθοντικού χρόνου.",
+   examples:["Οι πυρκαγιές μπορεί να μειώσουν τη βιοποικιλότητα.","Θα ήταν αδύνατο να συμβούν όλα αυτά χωρίς την υπερθέρμανση."],
+   note:"2ο σκαλί: υπόθεση → δυνατότητα → πιθανότητα → βεβαιότητα."},
+  {cat:"Επιστημική τροπικότητα",term:"Πιθανότητα",
+   def:"Ο πομπός θεωρεί ότι το μήνυμα μάλλον ισχύει (πιθανό, όχι βέβαιο).",
+   means:"πιθανόν, μάλλον, ίσως· νομίζω, φαίνεται· θα + οριστική· πρέπει να + οριστική.",
+   examples:["Μάλλον ποτέ δεν θα ξανανοίξει.","Πρέπει να έβρεξε χτες τη νύχτα.","Ίσως τελικά να ήταν καλύτερα έτσι."],
+   note:"Ενδιάμεσο επίπεδο, μεταξύ δυνατότητας και βεβαιότητας."},
+  {cat:"Επιστημική τροπικότητα",term:"Βεβαιότητα",
+   def:"Ο πομπός παρουσιάζει το μήνυμα ως βέβαιο και αναμφισβήτητο.",
+   means:"είναι βέβαιο/αναμφισβήτητο, αποδεικνύεται· βέβαια, σίγουρα, οπωσδήποτε, προφανώς· οριστική.",
+   examples:["Αδιαμφισβήτητα, γλώσσα και πολιτισμός συνδέονται στενά.","Η φετινή 25η Μαρτίου πέφτει σίγουρα Παρασκευή."],
+   note:"Υψηλότερο επίπεδο της επιστημικής κλίμακας."},
+  {cat:"Δεοντική τροπικότητα",term:"Επιθυμία",
+   def:"Ο πομπός εκφράζει μια απλή επιθυμία.",
+   means:"θέλω, επιθυμώ (να)· ευχαρίστως.",
+   examples:["Θέλω να αγοράσω καινούριο αυτοκίνητο.","Ευχαρίστως να σε βοηθήσω."],
+   note:"Χαμηλότερο σκαλί: επιθυμία → ευχή → πρόθεση → (παράκληση/προτροπή) → υποχρέωση."},
+  {cat:"Δεοντική τροπικότητα",term:"Ευχή",
+   def:"Ο πομπός διατυπώνει ευχή — ισχυρότερη από την απλή επιθυμία.",
+   means:"εύχομαι, ελπίζω (να)· είθε, μακάρι να, να.",
+   examples:["Μακάρι να ήσουν εδώ.","Να ’σαι καλά!"],
+   note:"Έντονη προσδοκία, χωρίς δέσμευση για δράση."},
+  {cat:"Δεοντική τροπικότητα",term:"Πρόθεση",
+   def:"Ο πομπός δηλώνει πρόθεση ή σκοπό — σαφή δέσμευση για δράση.",
+   means:"σκοπεύω, πρόκειται, σχεδιάζω, λέω (να), έχω σκοπό να.",
+   examples:["Λέω να αγοράσω καινούριο αυτοκίνητο (= σκοπεύω να αγοράσω)."],
+   note:"Ισχυρότερη από την ευχή: υπάρχει πρόθεση υλοποίησης."},
+  {cat:"Δεοντική τροπικότητα",term:"Παράκληση / Παραχώρηση / Προτροπή",
+   def:"Ο πομπός ζητά κάτι, παραχωρεί άδεια ή προτρέπει τον δέκτη.",
+   means:"παρακαλώ, ζητώ· θα μπορούσατε να…, μπορώ να… (σε ερώτηση)· ας ή να + υποτακτική.",
+   examples:["Μου δίνεις, σε παρακαλώ, πέντε ευρώ;","Ας φροντίσουμε περισσότερο το περιβάλλον."],
+   note:"Ομάδα συγγενών λεκτικών πράξεων στη μέση της κλίμακας."},
+  {cat:"Δεοντική τροπικότητα",term:"Υποχρέωση",
+   def:"Ο πομπός τονίζει υποχρέωση ή αναγκαιότητα — το ανώτερο επίπεδο.",
+   means:"πρέπει, είναι ανάγκη, οφείλω, χρειάζεται, επιβάλλεται· προστακτική.",
+   examples:["Επιβάλλεται να αγωνίζεται κανείς για την ειρήνη.","…οφείλουν να δείξουν μεγαλύτερη τόλμη."],
+   note:"Υψηλότερο σκαλί της δεοντικής κλίμακας (ισχυρή αναγκαιότητα)."}
+];
+
+/* ══ Δόμηση ακολουθίας: Ασκήσεις → Γέφυρα → Θεωρία ══ */
+const SEQ=[];
+EX.forEach((e,idx)=>SEQ.push({kind:"ex",data:e,phase:"Ασκήσεις",n:idx+1,total:EX.length}));
+const BRIDGE_IDX=SEQ.length;
+SEQ.push({kind:"bridge",phase:"Γέφυρα"});
+const THEORY_IDX=SEQ.length;
+TH.forEach((t,idx)=>SEQ.push({kind:"th",data:t,phase:"Θεωρία",n:idx+1,total:TH.length}));
+
+const exState=EX.map(()=>({answered:false,correct:false}));
+let p=0, flipped=false;
+const slot=document.getElementById('slot');
+const norm=s=>s.toLowerCase().replace(/[«».,;:!·()"'\u2018\u2019]/g,'').trim();
+const firstLetter=t=>`<span class="initial">${t.charAt(0)}</span>${t.slice(1)}`;
+
+/* ── segmented control ── */
+const PHASES=[{label:"Ασκήσεις",idx:0},{label:"Γέφυρα",idx:BRIDGE_IDX},{label:"Θεωρία",idx:THEORY_IDX}];
+function buildPhases(){
+  const wrap=document.getElementById('phases');
+  wrap.innerHTML=PHASES.map((ph,k)=>`<button class="phase" data-idx="${ph.idx}">${ph.label}<span class="step" id="step${k}"></span></button>`).join('');
+  wrap.querySelectorAll('.phase').forEach(b=>b.addEventListener('click',()=>{p=+b.dataset.idx;flipped=false;render();}));
+}
+function updatePhases(){
+  const cur=SEQ[p].phase;
+  document.querySelectorAll('.phase').forEach((b,k)=>b.classList.toggle('active',PHASES[k].label===cur));
+  document.getElementById('step0').textContent = exState.filter(s=>s.answered).length+"/"+EX.length;
+  document.getElementById('step2').textContent = SEQ[p].kind==="th" ? SEQ[p].n+"/"+TH.length : "";
+}
+
+/* ── auto-fit ανά τμήμα για τη θεωρία ── */
+function fitCol(col){
+  let lo=10,hi=52;
+  for(let it=0;it<12;it++){const mid=(lo+hi)/2;col.style.setProperty('--fs',mid+'px');
+    const of=col.scrollHeight>col.clientHeight+1||col.scrollWidth>col.clientWidth+1;
+    if(of)hi=mid;else lo=mid;}
+  col.style.setProperty('--fs',Math.floor(lo)+'px');
+}
+function fitTheory(){requestAnimationFrame(()=>slot.querySelectorAll('.face .col').forEach(fitCol));}
+
+/* ── render dispatch ── */
+function render(){
+  const item=SEQ[p];
+  document.getElementById('subline').innerHTML =
+    item.kind==="ex" ? `Άσκηση ${item.n} / ${item.total} &nbsp;·&nbsp; <span class="score">Σωστά: ${exState.filter(s=>s.correct).length}</span>`
+    : item.kind==="bridge" ? "Από τα παραδείγματα στον κανόνα"
+    : `Θεωρία ${item.n} / ${item.total} — πάτησε την κάρτα για παραδείγματα`;
+  if(item.kind==="ex") renderEx(item.data, EX.indexOf(item.data));
+  else if(item.kind==="bridge") renderBridge();
+  else renderTheory(item.data);
+  updatePhases();
+}
+
+/* Ασκήσεις */
+function renderEx(e,exIdx){
+  const st=exState[exIdx];
+  const domainLabel=e.domain==="—"?"Άσκηση":e.domain+" τροπικότητα";
+  const typeLabel=e.type==="clk"?"Κλικ στη λέξη":(e.type==="yesno"?"Ναι / Όχι":"Πολλαπλή επιλογή");
+  let b=`<div class="card"><div class="head"><span class="eyebrow">${domainLabel}</span><span class="badge">${typeLabel}</span></div>`;
+  b+=`<div class="prompt">${e.prompt}</div>`;
+  if(e.type==="clk"){
+    const toks=e.sentence.split(" ").map((w,idx)=>`<span class="tok" data-idx="${idx}">${w}</span>`).join(" ");
+    b+=`<div class="sentence clk">${toks}</div>`;
+    if(!st.answered) b+=`<div class="clk-hint">Διάλεξε τη λέξη που φανερώνει την τροπικότητα.</div>`;
+  }else{
+    b+=`<div class="sentence">«${e.sentence}»</div>`;
+    const two=e.options.length===2?" two":"";
+    b+=`<div class="options${two}">`+e.options.map((o,idx)=>`<button class="opt" data-idx="${idx}">${o}</button>`).join("")+`</div>`;
+  }
+  b+=`<div class="feedback"></div></div>`;
+  slot.innerHTML=b;
+  const card=slot.querySelector('.card'); card.scrollTop=0;
+  if(e.type==="clk") bindClk(e,st,card); else bindOptions(e,st,card);
+  if(st.answered) replay(e,st,card);
+}
+function fb(card,ok,e){const f=card.querySelector('.feedback');f.className='feedback show '+(ok?'ok':'ko');
+  f.innerHTML=(ok?'✓ Σωστά. ':'✗ Όχι ακριβώς. ')+e.explain;}
+function bindOptions(e,st,card){
+  card.querySelectorAll('.opt').forEach(btn=>btn.addEventListener('click',()=>{
+    if(st.answered)return;const idx=+btn.dataset.idx,ok=idx===e.answer;st.answered=true;st.correct=ok;
+    card.querySelectorAll('.opt').forEach((x,k)=>{x.disabled=true;
+      if(k===e.answer){x.classList.add('correct');x.insertAdjacentHTML('beforeend','<span class="mark">✓</span>');}});
+    if(!ok){btn.classList.add('wrong');btn.insertAdjacentHTML('beforeend','<span class="mark">✗</span>');}
+    fb(card,ok,e);updatePhases();
+  }));
+}
+function bindClk(e,st,card){
+  card.querySelectorAll('.tok').forEach(tok=>tok.addEventListener('click',()=>{
+    if(st.answered)return;const ok=norm(tok.textContent)===norm(e.answerWord);st.answered=true;st.correct=ok;
+    if(ok)tok.classList.add('correct');
+    else{tok.classList.add('wrong');card.querySelectorAll('.tok').forEach(t=>{if(norm(t.textContent)===norm(e.answerWord))t.classList.add('correct');});}
+    fb(card,ok,e);updatePhases();
+  }));
+}
+function replay(e,st,card){
+  if(e.type==="clk"){card.querySelectorAll('.tok').forEach(t=>{if(norm(t.textContent)===norm(e.answerWord))t.classList.add('correct');});}
+  else{card.querySelectorAll('.opt').forEach((x,k)=>{x.disabled=true;if(k===e.answer){x.classList.add('correct');x.insertAdjacentHTML('beforeend','<span class="mark">✓</span>');}});}
+  fb(card,st.correct,e);
+}
+
+/* Γέφυρα (επαγωγική μετάβαση) */
+function renderBridge(){
+  slot.innerHTML=`<div class="card bridge">
+    <div class="head"><span class="eyebrow">Γέφυρα</span><span class="badge">Παρατήρηση → κανόνας</span></div>
+    <div class="title">Τι κοινό έχουν όσα είδες;</div>
+    <div class="lead">Σε κάθε πρόταση, μία λέξη ή δομή φανέρωνε τη <b>στάση του πομπού</b> απέναντι σε αυτό που λέει.</div>
+    <div class="evid">
+      <div class="box"><h4>Πόσο βέβαιος είναι</h4><p>μπορεί · μάλλον · σίγουρα · αναμφισβήτητα</p></div>
+      <div class="box"><h4>Πόσο αναγκαίο το θεωρεί</h4><p>θέλω · μακάρι · σκοπεύω · πρέπει</p></div>
+    </div>
+    <button class="reveal-btn" id="revealBtn">Πώς ονομάζεται αυτή η στάση; →</button>
+    <div class="reveal" id="reveal">
+      <div class="term">${firstLetter("Τροπικότητα")}</div>
+      <p>Ο βαθμός <b>βεβαιότητας</b> ή <b>αναγκαιότητας</b> με τον οποίο ο πομπός περιβάλλει το μήνυμά του. Διακρίνεται σε δύο κατηγορίες:
+      την <b>επιστημική</b> (πόσο βέβαιος) και τη <b>δεοντική</b> (πόσο αναγκαίο).</p>
+      <div class="go">Προχώρα στη θεωρία →</div>
+    </div>
+  </div>`;
+  slot.querySelector('#revealBtn').addEventListener('click',function(){
+    slot.querySelector('#reveal').classList.add('show'); this.style.display='none';
+  });
+}
+
+/* Θεωρία (flip) */
+function renderTheory(c){
+  slot.innerHTML=`<div class="thwrap"><div class="thcard" id="thcard" tabindex="0" role="button" aria-label="Κάρτα θεωρίας. Πάτησε για παραδείγματα.">
+    <div class="face front">
+      <div class="col main"><div class="kicker">${c.cat}</div><div class="term">${firstLetter(c.term)}</div><div class="def">${c.def}</div></div>
+      <div class="col aside"><div class="scholion"><div class="h">Γλωσσικά μέσα</div><p>${c.means}</p></div></div>
+      <div class="flip-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><polyline points="21 3 21 9 15 9"/></svg>Πάτησε για παραδείγματα</div>
+    </div>
+    <div class="face back">
+      <div class="col main"><div class="kicker">Παραδείγματα</div><div class="term-small">${c.term}</div>
+        <div class="ex-list">${c.examples.map(x=>`<div class="ex-line">«${x}»</div>`).join("")}</div></div>
+      <div class="col aside"><div class="ex-note"><div class="h">Σημείωση</div><span>${c.note}</span></div></div>
+    </div>
+  </div></div>`;
+  flipped=false;
+  const thcard=slot.querySelector('#thcard');
+  thcard.addEventListener('click',()=>{flipped=!flipped;thcard.classList.toggle('flipped',flipped);});
+  fitTheory();
+}
+
+/* Πλοήγηση */
+function go(dir){p=(p+dir+SEQ.length)%SEQ.length;flipped=false;render();}
+document.getElementById('next').addEventListener('click',()=>go(1));
+document.getElementById('prev').addEventListener('click',()=>go(-1));
+document.addEventListener('keydown',ev=>{
+  if(ev.key==='ArrowRight')go(1);
+  else if(ev.key==='ArrowLeft')go(-1);
+  else if((ev.key===' '||ev.key==='Enter') && SEQ[p].kind==="th"){
+    const t=slot.querySelector('#thcard');
+    if(t && (document.activeElement===t||document.activeElement===document.body)){ev.preventDefault();flipped=!flipped;t.classList.toggle('flipped',flipped);}
+  }
+});
+window.addEventListener('resize',()=>{if(SEQ[p].kind==="th")fitTheory();});
+window.addEventListener('orientationchange',()=>setTimeout(()=>{if(SEQ[p].kind==="th")fitTheory();},120));
+
+buildPhases();
+render();
+</script>
+</body>
+</html>
